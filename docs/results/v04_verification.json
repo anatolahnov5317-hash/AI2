@@ -1,0 +1,84 @@
+{
+  "schema": "ai2-v04-verification-v1",
+  "date": "2026-09-13",
+  "source_commit": "665c53b684f2c4ef7b04e75240279f26bff60aec",
+  "base_commit": "5fb1e5bd84fb5331dd2603decf2caea7a1f553ae",
+  "baseline_tests": {
+    "passed": 280,
+    "seconds": 4.153
+  },
+  "final_tests": {
+    "passed": 505,
+    "seconds": 24.888,
+    "external_timeout_seconds": 100
+  },
+  "ruff": "passed",
+  "format": "passed",
+  "pyright": {
+    "errors": 0,
+    "warnings": 0
+  },
+  "wheel": "built",
+  "environment": {
+    "python": "3.12.14",
+    "numpy": "2.3.5",
+    "platform_family": "POSIX"
+  },
+  "github_ci": {
+    "run": 34757566267,
+    "python_versions": {
+      "3.10": "success",
+      "3.11": "success",
+      "3.12": "success"
+    },
+    "url": "https://github.com/anatolahnov5317-hash/AI2/actions/runs/34757566267"
+  },
+  "original_result_archives_preserved": 15,
+  "reproducibility": {
+    "factorRepeatMatches": true,
+    "reports": [
+      {
+        "file": "v04_held_out_7_17_42.json",
+        "seconds": 96.13252258200373,
+        "sha256": "066fd52f5126e20fbe564cb7b81e1a84c304ecfb12b65c433ca2fa16752c7646",
+        "status": "completed",
+        "supervisor": {
+          "elapsed_seconds": 96.812128,
+          "error": null,
+          "status": "completed"
+        }
+      },
+      {
+        "file": "v04_held_out_factor_repeat.json",
+        "seconds": 8.214386531006312,
+        "sha256": "4e2b10c09df4f4b040a4dbd0b16db0e8ac90188dc6137310ed68074fab8ecae8",
+        "status": "completed",
+        "supervisor": {
+          "elapsed_seconds": 8.600321,
+          "error": null,
+          "status": "completed"
+        }
+      },
+      {
+        "file": "v04_challenge_7_17_42.json",
+        "seconds": 21.08691395400092,
+        "sha256": "ac5d656115fb3c93d5beca5594dca7b667f487831a7daf8641e3b5586092f16e",
+        "status": "completed",
+        "supervisor": {
+          "elapsed_seconds": 21.572358,
+          "error": null,
+          "status": "completed"
+        }
+      }
+    ],
+    "sourceManifestsEqual": true,
+    "sourceMismatches": []
+  },
+  "supervised_wall_seconds": [
+    1.4280629389977548,
+    1.458705908000411,
+    1.6596113660052652,
+    1.990693724997982
+  ],
+  "scope": "Controlled dialogue on taught lexical cues; grammar, world rules and response templates are engineered. No advantage over exact lookup established."
+}

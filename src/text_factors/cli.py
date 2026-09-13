@@ -428,6 +428,9 @@ def build_parser() -> argparse.ArgumentParser:
         description="Sparse online associative memory for recurring text factors.",
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
+    from .conversation.commands import add_parsers as add_conversation_parsers
+
+    add_conversation_parsers(subparsers)
 
     train = subparsers.add_parser("train", help="train a model from UTF-8 text")
     source = train.add_mutually_exclusive_group(required=True)
