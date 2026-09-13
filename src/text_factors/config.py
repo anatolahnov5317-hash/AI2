@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
+from math import isfinite
 from typing import Any
 
 
@@ -60,8 +61,20 @@ class ModelConfig:
             "prediction_vote_threshold": self.prediction_vote_threshold,
         }
         for name, value in positive_fields.items():
-            if value <= 0:
+            if type(value) is not int or value <= 0:
                 raise ValueError(f"{name} must be positive, got {value}")
+
+        if type(self.seed) is not int or self.seed < 0:
+            raise ValueError("seed must be a non-negative integer")
+        if self.input_bits > 2**31 - 1:
+            raise ValueError("input_bits must fit signed 32-bit indices")
+        for name, value in {
+            "prune_keep_ratio": self.prune_keep_ratio,
+            "max_complete_error_rate": self.max_complete_error_rate,
+            "max_partial_error_rate": self.max_partial_error_rate,
+        }.items():
+            if type(value) not in (int, float) or not isfinite(value):
+                raise ValueError(f"{name} must be a finite number")
 
         if self.active_bits_per_symbol > self.input_bits:
             raise ValueError("active_bits_per_symbol cannot exceed input_bits")

@@ -14,7 +14,73 @@ from .model import TextFactorModel
 
 
 def _print_json(value: Any) -> None:
-    print(json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True))
+    print(
+        json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True, allow_nan=False)
+    )
+
+
+def _experiment_report(args: argparse.Namespace, report: dict[str, Any]) -> int:
+    if args.output is None:
+        _print_json(report)
+        return 0
+    payload = (
+        json.dumps(
+            report, ensure_ascii=False, indent=2, sort_keys=True, allow_nan=False
+        )
+        + "\n"
+    )
+    destination = Path(args.output)
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    with destination.open("w" if args.overwrite else "x", encoding="utf-8") as stream:
+        stream.write(payload)
+    _print_json(
+        {
+            "saved_to": str(destination),
+            "summary": report.get("aggregate", report.get("metrics", {})),
+            "scope": "controlled diagnostic experiment, not evidence of AGI",
+        }
+    )
+    return 0
+
+
+def _check_report_destination(args: argparse.Namespace) -> None:
+    if args.output is not None:
+        path = Path(args.output)
+        if path.is_dir():
+            raise ValueError("report destination must be a file, not a directory")
+        if path.exists() and not args.overwrite:
+            raise ValueError("report already exists; use --overwrite to replace it")
+
+
+def _evaluate(args: argparse.Namespace) -> int:
+    from .evaluation.runner import EvaluationConfig, run_evaluation
+
+    _check_report_destination(args)
+    config = EvaluationConfig(
+        seeds=tuple(args.seeds),
+        points=args.points,
+        epochs=args.epochs,
+        train_size=args.train_size,
+        dev_size=args.dev_size,
+        test_size=args.test_size,
+        noise_size=args.noise_size,
+        target_fpr=args.target_fpr,
+        bootstrap_resamples=args.bootstrap_resamples,
+    )
+    return _experiment_report(args, run_evaluation(config))
+
+
+def _microworld(args: argparse.Namespace) -> int:
+    from .evaluation.runner import source_manifest
+    from .microworld import run_microworld
+
+    _check_report_destination(args)
+    report = run_microworld(
+        seed=args.seed, episodes=args.episodes, action_budget=args.action_budget
+    )
+    report["manifest"]["source"] = source_manifest()
+    report["schema_version"] = 1
+    return _experiment_report(args, report)
 
 
 def _read_training_text(args: argparse.Namespace) -> str:
@@ -168,6 +234,37 @@ def build_parser() -> argparse.ArgumentParser:
     demo.add_argument("--seed", type=int, default=42)
     demo.add_argument("--top", type=int, default=10)
     demo.set_defaults(handler=_demo)
+
+    evaluate = subparsers.add_parser(
+        "evaluate", help="run frozen-rule text-memory experiments and matched baselines"
+    )
+    evaluate.add_argument("--seeds", type=int, nargs="+", default=[7, 17, 42])
+    evaluate.add_argument("--points", type=int, default=128)
+    evaluate.add_argument("--epochs", type=int, default=6)
+    evaluate.add_argument("--train-size", type=int, default=24)
+    evaluate.add_argument("--dev-size", type=int, default=32)
+    evaluate.add_argument("--test-size", type=int, default=64)
+    evaluate.add_argument("--noise-size", type=int, default=64)
+    evaluate.add_argument("--target-fpr", type=float, default=0.05)
+    evaluate.add_argument("--bootstrap-resamples", type=int, default=1000)
+    evaluate.set_defaults(handler=_evaluate)
+
+    microworld = subparsers.add_parser(
+        "microworld",
+        help="run a two-hypothesis active-learning pilot (not SDR discovery)",
+    )
+    microworld.add_argument("--seed", type=int, default=42)
+    microworld.add_argument("--episodes", type=int, default=32)
+    microworld.add_argument("--action-budget", type=int, default=1)
+    microworld.set_defaults(handler=_microworld)
+
+    for experiment in (evaluate, microworld):
+        experiment.add_argument(
+            "--output", help="save complete JSON traces to this file"
+        )
+        experiment.add_argument(
+            "--overwrite", action="store_true", help="replace existing report"
+        )
 
     return parser
 
