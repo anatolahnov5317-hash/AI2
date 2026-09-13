@@ -1,0 +1,51 @@
+{
+  "changed_package_source_hashes": {
+    "evaluation/data.py": {
+      "current": "d87eb7f162528aab08e6163d9d334a3817fb127703d4a34ea975bd0b1525e4b2",
+      "historical": "31646a85231463f881ddd05586d3a3d2020c5d5042d047a5152410b76dbaffa7"
+    }
+  },
+  "comparison": {
+    "evaluation_equal_excluding_manifest_and_timings": true,
+    "excluded_evaluation_fields": [
+      "manifest",
+      "runs.*.methods.*.fit_seconds",
+      "runs.*.methods.*.score_latency"
+    ],
+    "microworld_equal_excluding_manifest": true,
+    "scope": "all remaining data, scores, thresholds, metrics, readouts and counters; no parameter tuning"
+  },
+  "current_source": {
+    "git_dirty": false,
+    "git_revision": "08c02e577a5553688083eeb60d11fdb3843889b0",
+    "git_tree": "7c16ee98c60c4d8f34f2267e8e1d81142ff7a6e6",
+    "numpy": "2.3.5",
+    "package_version": "0.2.0",
+    "platform": "linux",
+    "python": "3.12.14",
+    "source_sha256": {
+      "__init__.py": "0c7033abe522921ee12710a82b55d067aad68489374b93bd1a744cbad2368140",
+      "__main__.py": "307299fda7b77d22c64cb51430ec75e5f59d78e9c948786afb3b2544fe45e4b7",
+      "cli.py": "d6888403f0d25507867d0f899a5c53330959dca8d2a8a3270410a5cdb5513604",
+      "config.py": "df59a5927e3c15b7bdaa72ef846daef13f1410cec825987d0ef79e7c1ae54956",
+      "encoder.py": "855dc6df9b138be1d47efa5d15cb7842465f68c888d4396768050dae223908aa",
+      "evaluation/__init__.py": "3356432ca22ad7f6fe4037f2010ebbb891c767665ca4c1c86d59ae51ccedc0c4",
+      "evaluation/baselines.py": "4a6a440138a65cf4ff02927ef87acb876c012023691df6be7da4d4f3c4e4a3ca",
+      "evaluation/data.py": "d87eb7f162528aab08e6163d9d334a3817fb127703d4a34ea975bd0b1525e4b2",
+      "evaluation/runner.py": "2226b22788effbc5f1446280ac7e2e1b8869ee6ec1da518f7adab67147c1d7e0",
+      "evaluation/statistics.py": "37da915bc366af7ee90bd7d052e2851b5328de2e575d97d4cad84666c877dc11",
+      "memory.py": "11984281fe10b91e8a99117cdbcbc2ae1d2d70276b3fbeacb975b7a2803f1bce",
+      "metrics.py": "bc3b8a7eac335c91620103649c1ec9c83e68c1b2079a1d5197846f5169edeb50",
+      "microworld.py": "4b9e37b988112c6dd960033e50e3c7acdb75e7befc0fef7e4ff793dced755021",
+      "model.py": "60b9e3319689aadac6527df6ce5dd7b5989b2caf93c1fe6fc29fa2661d13c036"
+    }
+  },
+  "historical_github_source_commit": "b04f535950510278c73f04f7f6e7abe1daf9fe44",
+  "historical_report_sha256": {
+    "v02-evaluation.json": "357cf37fa56b4e278a1c9a8b7d49333f6afdb9c7d5c146e87d0289a1e9545e25",
+    "v02-microworld.json": "4a0271dd71ccbd2276ba6a0147880f8a998cf67a0b49b45acd16d77e3494863c"
+  },
+  "note": "Current Python source hashes match the final PR implementation. Local git identifiers describe the validation checkout, not the GitHub API commit.",
+  "purpose": "Recheck historical v0.2 results after typing-only Python 3.10/NumPy 2.2 compatibility changes",
+  "schema_version": 1
+}

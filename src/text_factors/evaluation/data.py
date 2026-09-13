@@ -22,6 +22,7 @@ from dataclasses import dataclass
 from hashlib import sha256
 from itertools import product
 from numbers import Integral
+from typing import Any, cast
 
 import numpy as np
 from numpy.random import Generator
@@ -203,7 +204,9 @@ def _make_evaluation_split(
     negatives = _draw_texts(negative_endpoints, rng, used)
     cases = [TextCase(text, True, POSITIVE_FAMILY) for text in positives]
     cases.extend(TextCase(text, False, NEGATIVE_FAMILY) for text in negatives)
-    rng.shuffle(cases)
+    # NumPy accepts mutable sequences at runtime; the 2.2 stubs used on
+    # Python 3.10 incorrectly restrict this argument to ArrayLike.
+    rng.shuffle(cast(Any, cases))
     return tuple(cases)
 
 

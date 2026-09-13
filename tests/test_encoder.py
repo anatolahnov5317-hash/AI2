@@ -114,7 +114,7 @@ class SparseSymbolEncoderTests(unittest.TestCase):
             else:
                 array[0, 0, 0] = 2**32
             with self.subTest(mode=mode), self.assertRaises(ValueError):
-                SparseSymbolEncoder(encoder.config, "abc", codebook=array)
+                SparseSymbolEncoder(encoder.config, "abc", codebook=cast(Any, array))
 
     def test_explicit_positions_and_offsets_validated(self) -> None:
         encoder = SparseSymbolEncoder(encoder_config(), "abc")
