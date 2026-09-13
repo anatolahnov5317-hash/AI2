@@ -51,6 +51,12 @@
 Архитектурные решения: [V03_DESIGN.md](docs/V03_DESIGN.md).
 Измеренные результаты и ограничения: [V03_RESULTS.md](docs/V03_RESULTS.md).
 
+Следующий шаг спроектирован в [NEXT_ARCHITECTURE.md](docs/NEXT_ARCHITECTURE.md):
+наблюдаемость, участники и роли, конкурирующие объяснения и порождение правил
+из факторных свидетельств. [Ручной разбор полного примера](docs/ARCHITECTURE_WALKTHROUGH.md)
+показывает неоднозначность, дополнительное наблюдение и различающий опыт.
+Это проект дальнейшей работы; новые возможности ещё не реализованы.
+
 ```bash
 text-factors train --text "абракадабра абракадабра" --points 128 --consolidation coactivation --history-size 32 --model artifacts/joint.npz
 text-factors factor-recovery --output artifacts/factor-recovery.json
