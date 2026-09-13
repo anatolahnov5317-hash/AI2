@@ -36,3 +36,5 @@ jobs:
           text-factors factor-recovery --seeds 7 --points 8 --train-samples 32 --test-samples 16 --output artifacts/factor-smoke.json
           text-factors context-transfer --seeds 7 --points 16 --epochs 1 --train-size 8 --dev-size 4 --test-size 4 --seconds-per-seed 30 --output artifacts/context-smoke.json
           text-factors experience-demo --seed 7 --output artifacts/experience-smoke.json
+          text-factors transform-learning --seeds 7 --points 32 --epochs 1 --seconds 30 --output artifacts/transform-learning-smoke.json
+          text-factors dialogue-demo --seed 7 --output artifacts/dialogue-smoke.json

@@ -149,6 +149,108 @@ def _experience_demo(args: argparse.Namespace) -> int:
     return _experiment_report(args, report)
 
 
+def _transform_learning(args: argparse.Namespace) -> int:
+    from .evaluation.transform_learning import (
+        TransformLearningConfig,
+        run_transform_learning,
+    )
+
+    _check_report_destination(args)
+    config = TransformLearningConfig(
+        seeds=tuple(args.seeds),
+        points=args.points,
+        epochs=args.epochs,
+        seconds=args.seconds,
+    )
+    report = run_transform_learning(
+        config, progress=lambda message: print(message, file=sys.stderr, flush=True)
+    )
+    return _experiment_report(args, report)
+
+
+def _dialogue_demo(args: argparse.Namespace) -> int:
+    from .chat_lab import run_dialogue_demo
+    from .evaluation.runner import source_manifest
+
+    _check_report_destination(args)
+    report = run_dialogue_demo(
+        seed=args.seed,
+        progress=lambda message: print(message, file=sys.stderr, flush=True),
+    )
+    report["source"] = source_manifest()
+    return _experiment_report(args, report)
+
+
+def _recognize(args: argparse.Namespace) -> int:
+    from .recognition import RecognitionLimits
+
+    model = TextFactorModel.load(args.model)
+    result = model.recognize_text(
+        args.text,
+        stride=args.stride,
+        limits=RecognitionLimits(
+            max_views=args.max_views,
+            max_candidates=args.max_candidates,
+            seconds=args.seconds,
+        ),
+        progress=(lambda message: print(message, file=sys.stderr, flush=True))
+        if args.progress
+        else None,
+    )
+    _print_json(result.to_dict())
+    return 0 if result.complete else 1
+
+
+def _chat(args: argparse.Namespace) -> int:
+    from .chat_lab import ContextChatSession, make_chat_demo_model
+    from .dialogue import GroundedDialogue
+
+    model = (
+        make_chat_demo_model(args.seed)
+        if args.demo
+        else TextFactorModel.load(args.model)
+    )
+    state = Path(args.state) if args.state else None
+    dialogue = (
+        GroundedDialogue.load(state) if state is not None and state.exists() else None
+    )
+    session = ContextChatSession(model, dialogue)
+    if state is not None:
+        state.parent.mkdir(parents=True, exist_ok=True)
+
+    def respond(message: str) -> None:
+        try:
+            reply = session.handle(message)
+            print(reply.text, flush=True)
+            if state is not None:
+                session.dialogue.save(state)
+        except (ValueError, OSError) as error:
+            if args.message is not None:
+                raise
+            print(f"Не удалось обработать: {error}", file=sys.stderr, flush=True)
+
+    if args.message is not None:
+        for message in args.message:
+            respond(message)
+        return 0
+    print(
+        "AI2 — учебный чат с собственной памятью. "
+        "«помощь» — команды, «выход» — завершить.",
+        flush=True,
+    )
+    if args.demo:
+        print("Доступны наблюдения ab и cd. Например: покажи ab | cd", flush=True)
+    try:
+        for line in sys.stdin:
+            if line.strip().casefold() in ("выход", "exit", "quit"):
+                break
+            if line.strip():
+                respond(line.rstrip("\n"))
+    except KeyboardInterrupt:
+        print("Обработка остановлена.", flush=True)
+    return 0
+
+
 def _config_from_args(args: argparse.Namespace) -> ModelConfig:
     return ModelConfig(
         point_count=args.points,
@@ -284,6 +386,37 @@ def build_parser() -> argparse.ArgumentParser:
     analyze.add_argument("--evidence", type=int, default=8)
     analyze.set_defaults(handler=_analyze)
 
+    recognize = subparsers.add_parser(
+        "recognize", help="read multiple context results with located factor evidence"
+    )
+    recognize.add_argument("--model", required=True)
+    recognize.add_argument("--text", required=True)
+    recognize.add_argument("--stride", type=int, default=1)
+    recognize.add_argument("--max-views", type=int, default=128)
+    recognize.add_argument("--max-candidates", type=int, default=64)
+    recognize.add_argument("--seconds", type=float, default=5.0)
+    recognize.add_argument("--progress", action="store_true")
+    recognize.set_defaults(handler=_recognize)
+
+    chat = subparsers.add_parser(
+        "chat", help="teach names to recognized contents in a bounded chat"
+    )
+    chat_source = chat.add_mutually_exclusive_group(required=True)
+    chat_source.add_argument("--model", help="existing unsupervised .npz model")
+    chat_source.add_argument(
+        "--demo", action="store_true", help="use two unnamed demo sensor patterns"
+    )
+    chat.add_argument("--seed", type=int, default=7)
+    chat.add_argument(
+        "--state", help="save/resume vocabulary and observation references"
+    )
+    chat.add_argument(
+        "--message",
+        action="append",
+        help="process a command without entering interactive mode; repeatable",
+    )
+    chat.set_defaults(handler=_chat)
+
     summary = subparsers.add_parser("summary", help="inspect a saved model")
     summary.add_argument("--model", required=True, help="source .npz model")
     summary.add_argument("--top", type=int, default=10)
@@ -336,6 +469,21 @@ def build_parser() -> argparse.ArgumentParser:
     context_transfer.add_argument("--seconds-per-seed", type=float, default=180)
     context_transfer.set_defaults(handler=_context_transfer)
 
+    transform_learning = subparsers.add_parser(
+        "transform-learning", help="test pair-learned SDR mappings and new compositions"
+    )
+    transform_learning.add_argument("--seeds", type=int, nargs="+", default=[7, 17, 42])
+    transform_learning.add_argument("--points", type=int, default=512)
+    transform_learning.add_argument("--epochs", type=int, default=3)
+    transform_learning.add_argument("--seconds", type=float, default=45.0)
+    transform_learning.set_defaults(handler=_transform_learning)
+
+    dialogue_demo = subparsers.add_parser(
+        "dialogue-demo", help="show recognition, taught names and a new arrangement"
+    )
+    dialogue_demo.add_argument("--seed", type=int, default=7)
+    dialogue_demo.set_defaults(handler=_dialogue_demo)
+
     factor_recovery = subparsers.add_parser(
         "factor-recovery", help="measure local factors and matched-marginal controls"
     )
@@ -356,6 +504,8 @@ def build_parser() -> argparse.ArgumentParser:
         evaluate,
         microworld,
         context_transfer,
+        transform_learning,
+        dialogue_demo,
         factor_recovery,
         experience_demo,
     ):

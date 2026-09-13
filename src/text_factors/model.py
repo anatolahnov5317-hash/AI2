@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import tempfile
 import zipfile
-from collections.abc import Mapping
+from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from math import prod
 from pathlib import Path
@@ -22,6 +23,13 @@ from .memory import (
     CombinatorialMemory,
     FactorSummary,
     MemoryReadout,
+)
+from .recognition import (
+    ContextView,
+    RecognitionLimits,
+    RecognitionResult,
+    memory_encoding_id,
+    recognize_views,
 )
 
 MODEL_FORMAT_VERSION = 3
@@ -388,6 +396,166 @@ class TextFactorModel:
         context, scores, active = self._select_context(window, offset=offset)
         readout = self.memory.read(active)
         return self._result(window, offset, context, scores, readout)
+
+    @property
+    def recognition_encoding_id(self) -> str:
+        """Local coordinate identity, preserved by an unchanged model archive."""
+
+        digest = hashlib.sha256(memory_encoding_id(self.memory).encode())
+        digest.update(self.encoder.codebook.astype("<i4", copy=False).tobytes())
+        return digest.hexdigest()
+
+    def _recognize_windows(
+        self,
+        windows: Iterable[tuple[str, int]],
+        *,
+        total_windows: int,
+        observation_id: str,
+        limits: RecognitionLimits | None,
+        progress: Callable[[str], None] | None,
+        cancelled: Callable[[], bool] | None,
+    ) -> RecognitionResult:
+        if self.training_mode == "supervised":
+            raise ValueError(
+                "context recognition requires an unsupervised factor memory"
+            )
+        if (
+            type(observation_id) is not str
+            or not observation_id
+            or len(observation_id) > 256
+        ):
+            raise ValueError(
+                "observation_id must be a nonempty string of at most 256 characters"
+            )
+
+        def views() -> Iterator[ContextView]:
+            for window, start in windows:
+                for context in range(self.config.context_count):
+                    bits = self.encoder.encode_window(
+                        window, offset=start, context=context
+                    )
+                    sources = tuple(
+                        (
+                            start + local,
+                            tuple(
+                                int(bit)
+                                for bit in self.encoder.concept_bits(
+                                    character,
+                                    (start + local + context) % self.config.positions,
+                                )
+                            ),
+                        )
+                        for local, character in enumerate(window)
+                    )
+                    yield ContextView(
+                        view_id=f"w{start}:c{context}",
+                        context_id=str(context),
+                        bits=bits,
+                        source_positions=tuple(range(start, start + len(window))),
+                        observation_id=observation_id,
+                        bit_sources=sources,
+                    )
+
+        return recognize_views(
+            self.memory,
+            views(),
+            total_views=total_windows * self.config.context_count,
+            limits=limits,
+            encoding_id=self.recognition_encoding_id,
+            progress=progress,
+            cancelled=cancelled,
+        )
+
+    def recognize_window(
+        self,
+        window: str,
+        *,
+        offset: int = 0,
+        observation_id: str = "input",
+        limits: RecognitionLimits | None = None,
+        progress: Callable[[str], None] | None = None,
+        cancelled: Callable[[], bool] | None = None,
+    ) -> RecognitionResult:
+        """Return multiple located stable readouts; leave the legacy API intact."""
+
+        self.encoder.encode_window(window, offset=offset)
+        return self._recognize_windows(
+            ((window, offset),),
+            total_windows=1,
+            observation_id=observation_id,
+            limits=limits,
+            progress=progress,
+            cancelled=cancelled,
+        )
+
+    def recognize_text(
+        self,
+        text: str,
+        *,
+        stride: int = 1,
+        observation_id: str = "input",
+        limits: RecognitionLimits | None = None,
+        progress: Callable[[str], None] | None = None,
+        cancelled: Callable[[], bool] | None = None,
+    ) -> RecognitionResult:
+        """Scan finite fixed windows, preserving absolute source positions.
+
+        Window boundaries are the existing explicit observation adapter, not
+        learned object segmentation. Overlapping evidence may stay undetermined.
+        """
+
+        if type(text) is not str or len(text) > 16384:
+            raise ValueError("text must be a string of at most 16384 characters")
+        if type(stride) is not int or stride < 1:
+            raise ValueError("stride must be a positive integer")
+        size = self.config.frame_size
+        starts = range(0, max(1, len(text) - size + 1), stride) if text else range(0)
+        windows = ((text[start : start + size], start) for start in starts)
+        return self._recognize_windows(
+            windows,
+            total_windows=len(starts),
+            observation_id=observation_id,
+            limits=limits,
+            progress=progress,
+            cancelled=cancelled,
+        )
+
+    def recognize_parts(
+        self,
+        parts: Sequence[str],
+        *,
+        observation_id: str = "input",
+        limits: RecognitionLimits | None = None,
+        progress: Callable[[str], None] | None = None,
+        cancelled: Callable[[], bool] | None = None,
+    ) -> RecognitionResult:
+        """Read explicitly separated sensor parts as one observation.
+
+        Part boundaries are given by the caller. This adapter avoids treating
+        every overlapping text fragment as a newly discovered object.
+        """
+
+        if (
+            isinstance(parts, (str, bytes))
+            or not isinstance(parts, Sequence)
+            or len(parts) > 64
+        ):
+            raise ValueError("parts must be a sequence of at most 64 strings")
+        windows: list[tuple[str, int]] = []
+        start = 0
+        for part in parts:
+            if type(part) is not str or not part or len(part) > self.config.frame_size:
+                raise ValueError("each part must be nonempty and fit frame_size")
+            windows.append((part, start))
+            start += len(part) + 1
+        return self._recognize_windows(
+            windows,
+            total_windows=len(windows),
+            observation_id=observation_id,
+            limits=limits,
+            progress=progress,
+            cancelled=cancelled,
+        )
 
     def fit_text(
         self,
