@@ -1,0 +1,1037 @@
+{
+  "aggregate": {
+    "exact_matches": 36,
+    "held_out_cases": 36,
+    "runs": 3
+  },
+  "manifest": {
+    "git_dirty": false,
+    "git_revision": "5c9a1a4db731f301dd05a7d5801aaa6e6ac16ff5",
+    "git_tree": "4d04d196abd47204bce5506d1bdc6e34645d8a40",
+    "numpy": "2.3.5",
+    "package_version": "0.3.0a1",
+    "platform": "linux",
+    "python": "3.12.14",
+    "reproducibility": "scores/counts deterministic for matching source and dependencies; hashes identify but do not embed source; wall-clock timings are not deterministic",
+    "source_sha256": {
+      "__init__.py": "ac102b432d946221211a1e506c32f6976ec0a4e164bbd14392c90f569464eced",
+      "__main__.py": "307299fda7b77d22c64cb51430ec75e5f59d78e9c948786afb3b2544fe45e4b7",
+      "cli.py": "ec15ab473c0afd9b58692f67a364124d7640441328a8ab1313a306712bffe529",
+      "config.py": "9e8c301ad2e177561b5ec429d3545814e99e16656d2c358c6c3a5a33931292d1",
+      "consolidation.py": "c1699ac87fd4c4bcaf34caf0bf00551807779b3c8070ee7fbec5d22aea1c1410",
+      "encoder.py": "855dc6df9b138be1d47efa5d15cb7842465f68c888d4396768050dae223908aa",
+      "evaluation/__init__.py": "3356432ca22ad7f6fe4037f2010ebbb891c767665ca4c1c86d59ae51ccedc0c4",
+      "evaluation/baselines.py": "4a6a440138a65cf4ff02927ef87acb876c012023691df6be7da4d4f3c4e4a3ca",
+      "evaluation/context_transfer.py": "e5c7defd42bab8d9dfb21216189dab49186581f25318545936a88f24731002c3",
+      "evaluation/data.py": "d87eb7f162528aab08e6163d9d334a3817fb127703d4a34ea975bd0b1525e4b2",
+      "evaluation/factor_recovery.py": "eeec0b9ce64f5448fda39f5e8940f64c61776fa7b2e1fb35cce78844cf64d7df",
+      "evaluation/runner.py": "2226b22788effbc5f1446280ac7e2e1b8869ee6ec1da518f7adab67147c1d7e0",
+      "evaluation/statistics.py": "37da915bc366af7ee90bd7d052e2851b5328de2e575d97d4cad84666c877dc11",
+      "experience.py": "fd3beaf63a940144bd4281953d52e08ce8515127e640542d621334b0da734548",
+      "memory.py": "85e91a7bf030edbd1ba7f48f429af84d62e2e02eeba099bc74c1994ad600c0d4",
+      "metrics.py": "bc3b8a7eac335c91620103649c1ec9c83e68c1b2079a1d5197846f5169edeb50",
+      "microworld.py": "4b9e37b988112c6dd960033e50e3c7acdb75e7befc0fef7e4ff793dced755021",
+      "model.py": "48608be49a9acf11f54484699badbf65f3c5ec8148cf12d2bcc80456787db977"
+    }
+  },
+  "runs": [
+    {
+      "actual_action_outcome_bits": [
+        24,
+        25
+      ],
+      "all_zero_exact_match": 0.0,
+      "config": {
+        "activation_threshold": 2,
+        "active_bits_per_symbol": 2,
+        "coactivation_history_size": 32,
+        "coactivation_passes": 3,
+        "consolidation_method": "coactivation",
+        "context_count": 4,
+        "create_threshold": 2,
+        "frame_size": 2,
+        "input_bits": 32,
+        "max_clusters_per_point": 4,
+        "max_complete_error_rate": 0.05,
+        "max_partial_error_rate": 0.3,
+        "min_active_points": 1,
+        "min_error_observations": 5,
+        "output_bits": 32,
+        "point_count": 1024,
+        "positions": 4,
+        "prediction_vote_threshold": 1,
+        "probation_after": 2,
+        "prune_keep_ratio": 0.75,
+        "receptive_bits": 16,
+        "seed": 7,
+        "stable_after": 4
+      },
+      "constant_output_distinguishes_factors": false,
+      "constant_output_exact_match": 0.5,
+      "cross_view_input_codes_distinct": true,
+      "different_factor_codes_distinct_nonempty": true,
+      "final_stats": {
+        "cluster_capacity": 12288,
+        "clusters": 166,
+        "memory_steps": 37,
+        "model_numpy_payload_bytes_lower_bound": 213479,
+        "observations": 37,
+        "operations": 3,
+        "retained_events": 37
+      },
+      "held_out": [
+        {
+          "action": "left",
+          "distractor_bit": 10,
+          "exact_match": true,
+          "observed_truth_bits_for_scoring_only": [
+            24,
+            25
+          ],
+          "predicted_bits": [
+            24,
+            25
+          ],
+          "scoring_factor_id": 0,
+          "source_bits": [
+            0,
+            1,
+            10
+          ],
+          "source_context": "view-a",
+          "target_context": "consequence"
+        },
+        {
+          "action": "left",
+          "distractor_bit": 10,
+          "exact_match": true,
+          "observed_truth_bits_for_scoring_only": [
+            26,
+            27
+          ],
+          "predicted_bits": [
+            26,
+            27
+          ],
+          "scoring_factor_id": 1,
+          "source_bits": [
+            2,
+            3,
+            10
+          ],
+          "source_context": "view-a",
+          "target_context": "consequence"
+        },
+        {
+          "action": "left",
+          "distractor_bit": 11,
+          "exact_match": true,
+          "observed_truth_bits_for_scoring_only": [
+            24,
+            25
+          ],
+          "predicted_bits": [
+            24,
+            25
+          ],
+          "scoring_factor_id": 0,
+          "source_bits": [
+            0,
+            1,
+            11
+          ],
+          "source_context": "view-a",
+          "target_context": "consequence"
+        },
+        {
+          "action": "left",
+          "distractor_bit": 11,
+          "exact_match": true,
+          "observed_truth_bits_for_scoring_only": [
+            26,
+            27
+          ],
+          "predicted_bits": [
+            26,
+            27
+          ],
+          "scoring_factor_id": 1,
+          "source_bits": [
+            2,
+            3,
+            11
+          ],
+          "source_context": "view-a",
+          "target_context": "consequence"
+        },
+        {
+          "action": "right",
+          "distractor_bit": 10,
+          "exact_match": true,
+          "observed_truth_bits_for_scoring_only": [
+            26,
+            27
+          ],
+          "predicted_bits": [
+            26,
+            27
+          ],
+          "scoring_factor_id": 0,
+          "source_bits": [
+            0,
+            1,
+            10
+          ],
+          "source_context": "view-a",
+          "target_context": "consequence"
+        },
+        {
+          "action": "right",
+          "distractor_bit": 10,
+          "exact_match": true,
+          "observed_truth_bits_for_scoring_only": [
+            24,
+            25
+          ],
+          "predicted_bits": [
+            24,
+            25
+          ],
+          "scoring_factor_id": 1,
+          "source_bits": [
+            2,
+            3,
+            10
+          ],
+          "source_context": "view-a",
+          "target_context": "consequence"
+        },
+        {
+          "action": "right",
+          "distractor_bit": 11,
+          "exact_match": true,
+          "observed_truth_bits_for_scoring_only": [
+            26,
+            27
+          ],
+          "predicted_bits": [
+            26,
+            27
+          ],
+          "scoring_factor_id": 0,
+          "source_bits": [
+            0,
+            1,
+            11
+          ],
+          "source_context": "view-a",
+          "target_context": "consequence"
+        },
+        {
+          "action": "right",
+          "distractor_bit": 11,
+          "exact_match": true,
+          "observed_truth_bits_for_scoring_only": [
+            24,
+            25
+          ],
+          "predicted_bits": [
+            24,
+            25
+          ],
+          "scoring_factor_id": 1,
+          "source_bits": [
+            2,
+            3,
+            11
+          ],
+          "source_context": "view-a",
+          "target_context": "consequence"
+        },
+        {
+          "action": "paired-view",
+          "distractor_bit": 10,
+          "exact_match": true,
+          "observed_truth_bits_for_scoring_only": [
+            24,
+            25
+          ],
+          "predicted_bits": [
+            24,
+            25
+          ],
+          "scoring_factor_id": 0,
+          "source_bits": [
+            10,
+            16,
+            17
+          ],
+          "source_context": "view-b",
+          "target_context": "consequence"
+        },
+        {
+          "action": "paired-view",
+          "distractor_bit": 10,
+          "exact_match": true,
+          "observed_truth_bits_for_scoring_only": [
+            26,
+            27
+          ],
+          "predicted_bits": [
+            26,
+            27
+          ],
+          "scoring_factor_id": 1,
+          "source_bits": [
+            10,
+            18,
+            19
+          ],
+          "source_context": "view-b",
+          "target_context": "consequence"
+        },
+        {
+          "action": "paired-view",
+          "distractor_bit": 11,
+          "exact_match": true,
+          "observed_truth_bits_for_scoring_only": [
+            24,
+            25
+          ],
+          "predicted_bits": [
+            24,
+            25
+          ],
+          "scoring_factor_id": 0,
+          "source_bits": [
+            11,
+            16,
+            17
+          ],
+          "source_context": "view-b",
+          "target_context": "consequence"
+        },
+        {
+          "action": "paired-view",
+          "distractor_bit": 11,
+          "exact_match": true,
+          "observed_truth_bits_for_scoring_only": [
+            26,
+            27
+          ],
+          "predicted_bits": [
+            26,
+            27
+          ],
+          "scoring_factor_id": 1,
+          "source_bits": [
+            11,
+            18,
+            19
+          ],
+          "source_context": "view-b",
+          "target_context": "consequence"
+        }
+      ],
+      "held_out_bit_precision": 1.0,
+      "held_out_bit_recall": 1.0,
+      "held_out_count": 12,
+      "held_out_exact_match": 1.0,
+      "new_real_interactions_after_scoring": 1,
+      "policy_seed": 7,
+      "prediction_before_training": [],
+      "replay": {
+        "removed_bits": 0,
+        "removed_clusters": 0
+      },
+      "replay_added_memory_steps": 0,
+      "replay_added_observations": 0,
+      "retained_inverse_predecessors_for_one_outcome": 6,
+      "same_factor_cross_view_agreement_nonempty": true,
+      "schema_version": 1,
+      "scope": "structured toy integration; context labels and encodings supplied",
+      "scoring_did_not_learn": true,
+      "seed": 7,
+      "selected_action": "right",
+      "selected_forecast_bits": [
+        24,
+        25
+      ],
+      "timing": {
+        "fit_seconds": 0.056039859002339654,
+        "new_interaction_seconds": 0.0015761000031488948,
+        "replay_seconds": 0.00737932000629371,
+        "score_seconds": 0.00044504399556899443
+      },
+      "training_observations": 36
+    },
+    {
+      "actual_action_outcome_bits": [
+        24,
+        25
+      ],
+      "all_zero_exact_match": 0.0,
+      "config": {
+        "activation_threshold": 2,
+        "active_bits_per_symbol": 2,
+        "coactivation_history_size": 32,
+        "coactivation_passes": 3,
+        "consolidation_method": "coactivation",
+        "context_count": 4,
+        "create_threshold": 2,
+        "frame_size": 2,
+        "input_bits": 32,
+        "max_clusters_per_point": 4,
+        "max_complete_error_rate": 0.05,
+        "max_partial_error_rate": 0.3,
+        "min_active_points": 1,
+        "min_error_observations": 5,
+        "output_bits": 32,
+        "point_count": 1024,
+        "positions": 4,
+        "prediction_vote_threshold": 1,
+        "probation_after": 2,
+        "prune_keep_ratio": 0.75,
+        "receptive_bits": 16,
+        "seed": 17,
+        "stable_after": 4
+      },
+      "constant_output_distinguishes_factors": false,
+      "constant_output_exact_match": 0.5,
+      "cross_view_input_codes_distinct": true,
+      "different_factor_codes_distinct_nonempty": true,
+      "final_stats": {
+        "cluster_capacity": 12288,
+        "clusters": 168,
+        "memory_steps": 37,
+        "model_numpy_payload_bytes_lower_bound": 213518,
+        "observations": 37,
+        "operations": 3,
+        "retained_events": 37
+      },
+      "held_out": [
+        {
+          "action": "left",
+          "distractor_bit": 10,
+          "exact_match": true,
+          "observed_truth_bits_for_scoring_only": [
+            24,
+            25
+          ],
+          "predicted_bits": [
+            24,
+            25
+          ],
+          "scoring_factor_id": 0,
+          "source_bits": [
+            0,
+            1,
+            10
+          ],
+          "source_context": "view-a",
+          "target_context": "consequence"
+        },
+        {
+          "action": "left",
+          "distractor_bit": 10,
+          "exact_match": true,
+          "observed_truth_bits_for_scoring_only": [
+            26,
+            27
+          ],
+          "predicted_bits": [
+            26,
+            27
+          ],
+          "scoring_factor_id": 1,
+          "source_bits": [
+            2,
+            3,
+            10
+          ],
+          "source_context": "view-a",
+          "target_context": "consequence"
+        },
+        {
+          "action": "left",
+          "distractor_bit": 11,
+          "exact_match": true,
+          "observed_truth_bits_for_scoring_only": [
+            24,
+            25
+          ],
+          "predicted_bits": [
+            24,
+            25
+          ],
+          "scoring_factor_id": 0,
+          "source_bits": [
+            0,
+            1,
+            11
+          ],
+          "source_context": "view-a",
+          "target_context": "consequence"
+        },
+        {
+          "action": "left",
+          "distractor_bit": 11,
+          "exact_match": true,
+          "observed_truth_bits_for_scoring_only": [
+            26,
+            27
+          ],
+          "predicted_bits": [
+            26,
+            27
+          ],
+          "scoring_factor_id": 1,
+          "source_bits": [
+            2,
+            3,
+            11
+          ],
+          "source_context": "view-a",
+          "target_context": "consequence"
+        },
+        {
+          "action": "right",
+          "distractor_bit": 10,
+          "exact_match": true,
+          "observed_truth_bits_for_scoring_only": [
+            26,
+            27
+          ],
+          "predicted_bits": [
+            26,
+            27
+          ],
+          "scoring_factor_id": 0,
+          "source_bits": [
+            0,
+            1,
+            10
+          ],
+          "source_context": "view-a",
+          "target_context": "consequence"
+        },
+        {
+          "action": "right",
+          "distractor_bit": 10,
+          "exact_match": true,
+          "observed_truth_bits_for_scoring_only": [
+            24,
+            25
+          ],
+          "predicted_bits": [
+            24,
+            25
+          ],
+          "scoring_factor_id": 1,
+          "source_bits": [
+            2,
+            3,
+            10
+          ],
+          "source_context": "view-a",
+          "target_context": "consequence"
+        },
+        {
+          "action": "right",
+          "distractor_bit": 11,
+          "exact_match": true,
+          "observed_truth_bits_for_scoring_only": [
+            26,
+            27
+          ],
+          "predicted_bits": [
+            26,
+            27
+          ],
+          "scoring_factor_id": 0,
+          "source_bits": [
+            0,
+            1,
+            11
+          ],
+          "source_context": "view-a",
+          "target_context": "consequence"
+        },
+        {
+          "action": "right",
+          "distractor_bit": 11,
+          "exact_match": true,
+          "observed_truth_bits_for_scoring_only": [
+            24,
+            25
+          ],
+          "predicted_bits": [
+            24,
+            25
+          ],
+          "scoring_factor_id": 1,
+          "source_bits": [
+            2,
+            3,
+            11
+          ],
+          "source_context": "view-a",
+          "target_context": "consequence"
+        },
+        {
+          "action": "paired-view",
+          "distractor_bit": 10,
+          "exact_match": true,
+          "observed_truth_bits_for_scoring_only": [
+            24,
+            25
+          ],
+          "predicted_bits": [
+            24,
+            25
+          ],
+          "scoring_factor_id": 0,
+          "source_bits": [
+            10,
+            16,
+            17
+          ],
+          "source_context": "view-b",
+          "target_context": "consequence"
+        },
+        {
+          "action": "paired-view",
+          "distractor_bit": 10,
+          "exact_match": true,
+          "observed_truth_bits_for_scoring_only": [
+            26,
+            27
+          ],
+          "predicted_bits": [
+            26,
+            27
+          ],
+          "scoring_factor_id": 1,
+          "source_bits": [
+            10,
+            18,
+            19
+          ],
+          "source_context": "view-b",
+          "target_context": "consequence"
+        },
+        {
+          "action": "paired-view",
+          "distractor_bit": 11,
+          "exact_match": true,
+          "observed_truth_bits_for_scoring_only": [
+            24,
+            25
+          ],
+          "predicted_bits": [
+            24,
+            25
+          ],
+          "scoring_factor_id": 0,
+          "source_bits": [
+            11,
+            16,
+            17
+          ],
+          "source_context": "view-b",
+          "target_context": "consequence"
+        },
+        {
+          "action": "paired-view",
+          "distractor_bit": 11,
+          "exact_match": true,
+          "observed_truth_bits_for_scoring_only": [
+            26,
+            27
+          ],
+          "predicted_bits": [
+            26,
+            27
+          ],
+          "scoring_factor_id": 1,
+          "source_bits": [
+            11,
+            18,
+            19
+          ],
+          "source_context": "view-b",
+          "target_context": "consequence"
+        }
+      ],
+      "held_out_bit_precision": 1.0,
+      "held_out_bit_recall": 1.0,
+      "held_out_count": 12,
+      "held_out_exact_match": 1.0,
+      "new_real_interactions_after_scoring": 1,
+      "policy_seed": 17,
+      "prediction_before_training": [],
+      "replay": {
+        "removed_bits": 0,
+        "removed_clusters": 0
+      },
+      "replay_added_memory_steps": 0,
+      "replay_added_observations": 0,
+      "retained_inverse_predecessors_for_one_outcome": 6,
+      "same_factor_cross_view_agreement_nonempty": true,
+      "schema_version": 1,
+      "scope": "structured toy integration; context labels and encodings supplied",
+      "scoring_did_not_learn": true,
+      "seed": 17,
+      "selected_action": "right",
+      "selected_forecast_bits": [
+        24,
+        25
+      ],
+      "timing": {
+        "fit_seconds": 0.045991946004505735,
+        "new_interaction_seconds": 0.0007945949982968159,
+        "replay_seconds": 0.0057817580018308945,
+        "score_seconds": 0.0003700989982462488
+      },
+      "training_observations": 36
+    },
+    {
+      "actual_action_outcome_bits": [
+        24,
+        25
+      ],
+      "all_zero_exact_match": 0.0,
+      "config": {
+        "activation_threshold": 2,
+        "active_bits_per_symbol": 2,
+        "coactivation_history_size": 32,
+        "coactivation_passes": 3,
+        "consolidation_method": "coactivation",
+        "context_count": 4,
+        "create_threshold": 2,
+        "frame_size": 2,
+        "input_bits": 32,
+        "max_clusters_per_point": 4,
+        "max_complete_error_rate": 0.05,
+        "max_partial_error_rate": 0.3,
+        "min_active_points": 1,
+        "min_error_observations": 5,
+        "output_bits": 32,
+        "point_count": 1024,
+        "positions": 4,
+        "prediction_vote_threshold": 1,
+        "probation_after": 2,
+        "prune_keep_ratio": 0.75,
+        "receptive_bits": 16,
+        "seed": 42,
+        "stable_after": 4
+      },
+      "constant_output_distinguishes_factors": false,
+      "constant_output_exact_match": 0.5,
+      "cross_view_input_codes_distinct": true,
+      "different_factor_codes_distinct_nonempty": true,
+      "final_stats": {
+        "cluster_capacity": 12288,
+        "clusters": 169,
+        "memory_steps": 37,
+        "model_numpy_payload_bytes_lower_bound": 213531,
+        "observations": 37,
+        "operations": 3,
+        "retained_events": 37
+      },
+      "held_out": [
+        {
+          "action": "left",
+          "distractor_bit": 10,
+          "exact_match": true,
+          "observed_truth_bits_for_scoring_only": [
+            24,
+            25
+          ],
+          "predicted_bits": [
+            24,
+            25
+          ],
+          "scoring_factor_id": 0,
+          "source_bits": [
+            0,
+            1,
+            10
+          ],
+          "source_context": "view-a",
+          "target_context": "consequence"
+        },
+        {
+          "action": "left",
+          "distractor_bit": 10,
+          "exact_match": true,
+          "observed_truth_bits_for_scoring_only": [
+            26,
+            27
+          ],
+          "predicted_bits": [
+            26,
+            27
+          ],
+          "scoring_factor_id": 1,
+          "source_bits": [
+            2,
+            3,
+            10
+          ],
+          "source_context": "view-a",
+          "target_context": "consequence"
+        },
+        {
+          "action": "left",
+          "distractor_bit": 11,
+          "exact_match": true,
+          "observed_truth_bits_for_scoring_only": [
+            24,
+            25
+          ],
+          "predicted_bits": [
+            24,
+            25
+          ],
+          "scoring_factor_id": 0,
+          "source_bits": [
+            0,
+            1,
+            11
+          ],
+          "source_context": "view-a",
+          "target_context": "consequence"
+        },
+        {
+          "action": "left",
+          "distractor_bit": 11,
+          "exact_match": true,
+          "observed_truth_bits_for_scoring_only": [
+            26,
+            27
+          ],
+          "predicted_bits": [
+            26,
+            27
+          ],
+          "scoring_factor_id": 1,
+          "source_bits": [
+            2,
+            3,
+            11
+          ],
+          "source_context": "view-a",
+          "target_context": "consequence"
+        },
+        {
+          "action": "right",
+          "distractor_bit": 10,
+          "exact_match": true,
+          "observed_truth_bits_for_scoring_only": [
+            26,
+            27
+          ],
+          "predicted_bits": [
+            26,
+            27
+          ],
+          "scoring_factor_id": 0,
+          "source_bits": [
+            0,
+            1,
+            10
+          ],
+          "source_context": "view-a",
+          "target_context": "consequence"
+        },
+        {
+          "action": "right",
+          "distractor_bit": 10,
+          "exact_match": true,
+          "observed_truth_bits_for_scoring_only": [
+            24,
+            25
+          ],
+          "predicted_bits": [
+            24,
+            25
+          ],
+          "scoring_factor_id": 1,
+          "source_bits": [
+            2,
+            3,
+            10
+          ],
+          "source_context": "view-a",
+          "target_context": "consequence"
+        },
+        {
+          "action": "right",
+          "distractor_bit": 11,
+          "exact_match": true,
+          "observed_truth_bits_for_scoring_only": [
+            26,
+            27
+          ],
+          "predicted_bits": [
+            26,
+            27
+          ],
+          "scoring_factor_id": 0,
+          "source_bits": [
+            0,
+            1,
+            11
+          ],
+          "source_context": "view-a",
+          "target_context": "consequence"
+        },
+        {
+          "action": "right",
+          "distractor_bit": 11,
+          "exact_match": true,
+          "observed_truth_bits_for_scoring_only": [
+            24,
+            25
+          ],
+          "predicted_bits": [
+            24,
+            25
+          ],
+          "scoring_factor_id": 1,
+          "source_bits": [
+            2,
+            3,
+            11
+          ],
+          "source_context": "view-a",
+          "target_context": "consequence"
+        },
+        {
+          "action": "paired-view",
+          "distractor_bit": 10,
+          "exact_match": true,
+          "observed_truth_bits_for_scoring_only": [
+            24,
+            25
+          ],
+          "predicted_bits": [
+            24,
+            25
+          ],
+          "scoring_factor_id": 0,
+          "source_bits": [
+            10,
+            16,
+            17
+          ],
+          "source_context": "view-b",
+          "target_context": "consequence"
+        },
+        {
+          "action": "paired-view",
+          "distractor_bit": 10,
+          "exact_match": true,
+          "observed_truth_bits_for_scoring_only": [
+            26,
+            27
+          ],
+          "predicted_bits": [
+            26,
+            27
+          ],
+          "scoring_factor_id": 1,
+          "source_bits": [
+            10,
+            18,
+            19
+          ],
+          "source_context": "view-b",
+          "target_context": "consequence"
+        },
+        {
+          "action": "paired-view",
+          "distractor_bit": 11,
+          "exact_match": true,
+          "observed_truth_bits_for_scoring_only": [
+            24,
+            25
+          ],
+          "predicted_bits": [
+            24,
+            25
+          ],
+          "scoring_factor_id": 0,
+          "source_bits": [
+            11,
+            16,
+            17
+          ],
+          "source_context": "view-b",
+          "target_context": "consequence"
+        },
+        {
+          "action": "paired-view",
+          "distractor_bit": 11,
+          "exact_match": true,
+          "observed_truth_bits_for_scoring_only": [
+            26,
+            27
+          ],
+          "predicted_bits": [
+            26,
+            27
+          ],
+          "scoring_factor_id": 1,
+          "source_bits": [
+            11,
+            18,
+            19
+          ],
+          "source_context": "view-b",
+          "target_context": "consequence"
+        }
+      ],
+      "held_out_bit_precision": 1.0,
+      "held_out_bit_recall": 1.0,
+      "held_out_count": 12,
+      "held_out_exact_match": 1.0,
+      "new_real_interactions_after_scoring": 1,
+      "policy_seed": 42,
+      "prediction_before_training": [],
+      "replay": {
+        "removed_bits": 0,
+        "removed_clusters": 0
+      },
+      "replay_added_memory_steps": 0,
+      "replay_added_observations": 0,
+      "retained_inverse_predecessors_for_one_outcome": 6,
+      "same_factor_cross_view_agreement_nonempty": true,
+      "schema_version": 1,
+      "scope": "structured toy integration; context labels and encodings supplied",
+      "scoring_did_not_learn": true,
+      "seed": 42,
+      "selected_action": "right",
+      "selected_forecast_bits": [
+        24,
+        25
+      ],
+      "timing": {
+        "fit_seconds": 0.04773342399857938,
+        "new_interaction_seconds": 0.0010722739971242845,
+        "replay_seconds": 0.00691403700329829,
+        "score_seconds": 0.0003683579998323694
+      },
+      "training_observations": 36
+    }
+  ],
+  "schema_version": 1,
+  "scope": "structured integration probe; supplied encoding, contexts and actions",
+  "seeds": [
+    7,
+    17,
+    42
+  ],
+  "status": "complete"
+}

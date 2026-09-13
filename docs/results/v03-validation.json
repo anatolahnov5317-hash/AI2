@@ -1,0 +1,53 @@
+{
+  "all_experiment_source_hashes_match": true,
+  "ci_conclusions": [
+    "success",
+    "success",
+    "success"
+  ],
+  "ci_python_versions": [
+    "3.10",
+    "3.11",
+    "3.12"
+  ],
+  "ci_source_run": 34744183082,
+  "compileall": "passed",
+  "context_counts_recomputed_from_raw_traces": true,
+  "context_report_serialization": "compact JSON; complete traces unchanged",
+  "installed_wheel": "text_factors-0.3.0a1-py3-none-any.whl",
+  "numpy": "2.3.5",
+  "pyright_errors": 0,
+  "python": "3.12.14",
+  "reports": {
+    "v03-context-transfer.json": "4f8e08b5a9f610a2525460aba91509dccd48bb93829e843b20466a39d85eb90a",
+    "v03-experience.json": "6294ee76b1d8e4bbd13119a19f70e3222362d53b6c11572b061bd1c24decf8ba",
+    "v03-factor-recovery.json": "6fd794d850eccb0490827e1881d949f8d3be5afe89fb60ba504eec8c854790ad"
+  },
+  "ruff_check": "passed",
+  "ruff_format": "passed",
+  "schema_version": 1,
+  "source_commit": "5c9a1a4db731f301dd05a7d5801aaa6e6ac16ff5",
+  "source_sha256": {
+    "__init__.py": "ac102b432d946221211a1e506c32f6976ec0a4e164bbd14392c90f569464eced",
+    "__main__.py": "307299fda7b77d22c64cb51430ec75e5f59d78e9c948786afb3b2544fe45e4b7",
+    "cli.py": "ec15ab473c0afd9b58692f67a364124d7640441328a8ab1313a306712bffe529",
+    "config.py": "9e8c301ad2e177561b5ec429d3545814e99e16656d2c358c6c3a5a33931292d1",
+    "consolidation.py": "c1699ac87fd4c4bcaf34caf0bf00551807779b3c8070ee7fbec5d22aea1c1410",
+    "encoder.py": "855dc6df9b138be1d47efa5d15cb7842465f68c888d4396768050dae223908aa",
+    "evaluation/__init__.py": "3356432ca22ad7f6fe4037f2010ebbb891c767665ca4c1c86d59ae51ccedc0c4",
+    "evaluation/baselines.py": "4a6a440138a65cf4ff02927ef87acb876c012023691df6be7da4d4f3c4e4a3ca",
+    "evaluation/context_transfer.py": "e5c7defd42bab8d9dfb21216189dab49186581f25318545936a88f24731002c3",
+    "evaluation/data.py": "d87eb7f162528aab08e6163d9d334a3817fb127703d4a34ea975bd0b1525e4b2",
+    "evaluation/factor_recovery.py": "eeec0b9ce64f5448fda39f5e8940f64c61776fa7b2e1fb35cce78844cf64d7df",
+    "evaluation/runner.py": "2226b22788effbc5f1446280ac7e2e1b8869ee6ec1da518f7adab67147c1d7e0",
+    "evaluation/statistics.py": "37da915bc366af7ee90bd7d052e2851b5328de2e575d97d4cad84666c877dc11",
+    "experience.py": "fd3beaf63a940144bd4281953d52e08ce8515127e640542d621334b0da734548",
+    "memory.py": "85e91a7bf030edbd1ba7f48f429af84d62e2e02eeba099bc74c1994ad600c0d4",
+    "metrics.py": "bc3b8a7eac335c91620103649c1ec9c83e68c1b2079a1d5197846f5169edeb50",
+    "microworld.py": "4b9e37b988112c6dd960033e50e3c7acdb75e7befc0fef7e4ff793dced755021",
+    "model.py": "48608be49a9acf11f54484699badbf65f3c5ec8148cf12d2bcc80456787db977"
+  },
+  "source_tree": "4d04d196abd47204bce5506d1bdc6e34645d8a40",
+  "unit_tests_passed": 138,
+  "wheel_experience_cli": "passed"
+}
