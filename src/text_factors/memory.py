@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable, Iterator
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import IntEnum
 from math import log1p
 
@@ -11,6 +11,7 @@ import numpy as np
 from numpy.typing import NDArray
 
 from .config import ModelConfig
+from .consolidation import coactivation_weights
 
 
 class ClusterStatus(IntEnum):
@@ -34,6 +35,7 @@ class Cluster:
     exact_hits: int = 1
     partial_errors: int = 0
     complete_errors: int = 0
+    activation_history: list[NDArray[np.bool_]] = field(default_factory=list)
 
     @property
     def signature(self) -> tuple[int, ...]:
@@ -224,6 +226,11 @@ class CombinatorialMemory:
                 cluster.partial_hits += 1
                 cluster.bit_hits += active[cluster.bits].astype(np.int64)
                 cluster.last_seen = self.step
+                if self.config.consolidation_method == "coactivation":
+                    cluster.activation_history.append(active[cluster.bits].copy())
+                    del cluster.activation_history[
+                        : -self.config.coactivation_history_size
+                    ]
                 if target is not None and not target_is_active:
                     cluster.partial_errors += 1
 
@@ -260,6 +267,11 @@ class CombinatorialMemory:
                 bit_hits=np.ones(len(bits), dtype=np.int64),
                 created_at=self.step,
                 last_seen=self.step,
+                activation_history=(
+                    [np.ones(len(bits), dtype=np.bool_)]
+                    if self.config.consolidation_method == "coactivation"
+                    else []
+                ),
             )
             self.clusters[point_index].append(cluster)
             self._signatures[output_bit].add(signature)
@@ -281,13 +293,55 @@ class CombinatorialMemory:
         return complete_bad or partial_bad
 
     def _prune(self, cluster: Cluster) -> bool:
-        frequencies = cluster.bit_hits / max(cluster.partial_hits, 1)
-        keep = frequencies >= self.config.prune_keep_ratio
+        if self.config.consolidation_method == "coactivation":
+            weights = coactivation_weights(
+                cluster.activation_history, passes=self.config.coactivation_passes
+            )
+            keep = weights > self.config.prune_keep_ratio
+        else:
+            frequencies = cluster.bit_hits / max(cluster.partial_hits, 1)
+            keep = frequencies >= self.config.prune_keep_ratio
         if int(np.count_nonzero(keep)) < self.config.activation_threshold:
             return False
         cluster.bits = cluster.bits[keep].copy()
         cluster.bit_hits = cluster.bit_hits[keep].copy()
+        cluster.activation_history = [
+            row[keep].copy() for row in cluster.activation_history
+        ]
         return True
+
+    def replay_consolidation(self) -> dict[str, int]:
+        """Refine existing hypotheses from bounded history, without new support.
+
+        No observation is replayed through ``observe``: counters, timestamps,
+        stages and ``step`` are unchanged. No new clusters are born. Unsupported
+        or duplicate hypotheses can disappear; this is not independent evidence.
+        """
+
+        if self.config.consolidation_method != "coactivation":
+            raise ValueError("history replay requires coactivation consolidation")
+        before = sum(len(clusters) for clusters in self.clusters)
+        removed_bits = 0
+        for point_index in sorted(self._nonempty_points):
+            output_bit = int(self.output_map[point_index])
+            retained: list[Cluster] = []
+            for cluster in self.clusters[point_index]:
+                old_size = len(cluster.bits)
+                self._signatures[output_bit].discard(cluster.signature)
+                if self._has_excess_error(cluster) or not self._prune(cluster):
+                    removed_bits += old_size
+                    continue
+                if cluster.signature in self._signatures[output_bit]:
+                    removed_bits += old_size
+                    continue
+                self._signatures[output_bit].add(cluster.signature)
+                removed_bits += old_size - len(cluster.bits)
+                retained.append(cluster)
+            self.clusters[point_index] = retained
+            if not retained:
+                self._nonempty_points.discard(point_index)
+        after = sum(len(clusters) for clusters in self.clusters)
+        return {"removed_clusters": before - after, "removed_bits": removed_bits}
 
     def _consolidate(self) -> None:
         for point_index in tuple(self._nonempty_points):
@@ -526,8 +580,27 @@ class CombinatorialMemory:
         if not isinstance(cluster.status, ClusterStatus):
             raise ValueError("loaded cluster has an invalid status")
 
+        history = cluster.activation_history
+        if not isinstance(history, list):
+            raise ValueError("loaded cluster activation_history must be a list")
+        if self.config.consolidation_method == "frequency":
+            if history:
+                raise ValueError("frequency clusters cannot contain activation history")
+        elif len(history) != min(
+            self.config.coactivation_history_size, counters["partial_hits"]
+        ):
+            raise ValueError("loaded cluster activation history count is invalid")
+        for row in history:
+            if not isinstance(row, np.ndarray) or row.dtype != np.dtype(np.bool_):
+                raise ValueError("loaded cluster history must contain boolean arrays")
+            if row.shape != bits.shape:
+                raise ValueError("loaded cluster history shape differs from bits")
+        if history and np.any(np.sum(history, axis=0, dtype=np.int64) > bit_hits):
+            raise ValueError("loaded cluster activation history exceeds bit_hits")
+
         cluster.bits = bits.astype(np.int32, copy=True)
         cluster.bit_hits = bit_hits.astype(np.int64, copy=True)
+        cluster.activation_history = [row.copy() for row in history]
         for name, value in counters.items():
             setattr(cluster, name, value)
 

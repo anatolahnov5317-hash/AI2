@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
@@ -20,9 +21,10 @@ def _print_json(value: Any) -> None:
 
 
 def _experiment_report(args: argparse.Namespace, report: dict[str, Any]) -> int:
+    exit_code = 1 if report.get("status") == "incomplete" else 0
     if args.output is None:
         _print_json(report)
-        return 0
+        return exit_code
     payload = (
         json.dumps(
             report, ensure_ascii=False, indent=2, sort_keys=True, allow_nan=False
@@ -36,11 +38,12 @@ def _experiment_report(args: argparse.Namespace, report: dict[str, Any]) -> int:
     _print_json(
         {
             "saved_to": str(destination),
+            "status": report.get("status", "complete"),
             "summary": report.get("aggregate", report.get("metrics", {})),
             "scope": "controlled diagnostic experiment, not evidence of AGI",
         }
     )
-    return 0
+    return exit_code
 
 
 def _check_report_destination(args: argparse.Namespace) -> None:
@@ -89,12 +92,71 @@ def _read_training_text(args: argparse.Namespace) -> str:
     return Path(args.input).read_text(encoding="utf-8")
 
 
+def _context_transfer(args: argparse.Namespace) -> int:
+    from .evaluation.context_transfer import ContextTransferConfig, run_context_transfer
+
+    _check_report_destination(args)
+    config = ContextTransferConfig(
+        seeds=tuple(args.seeds),
+        points=args.points,
+        epochs=args.epochs,
+        train_size=args.train_size,
+        dev_size=args.dev_size,
+        test_size=args.test_size,
+        seconds_per_seed=args.seconds_per_seed,
+    )
+    return _experiment_report(
+        args,
+        run_context_transfer(
+            config, progress=lambda message: print(message, file=sys.stderr, flush=True)
+        ),
+    )
+
+
+def _factor_recovery(args: argparse.Namespace) -> int:
+    from .evaluation.factor_recovery import run_factor_recovery
+
+    _check_report_destination(args)
+    return _experiment_report(
+        args,
+        run_factor_recovery(
+            tuple(args.seeds),
+            train_samples=args.train_samples,
+            test_samples=args.test_samples,
+            point_count=args.points,
+            seconds_per_seed=args.seconds_per_seed,
+        ),
+    )
+
+
+def _experience_demo(args: argparse.Namespace) -> int:
+    from .evaluation.runner import source_manifest
+    from .experience import run_experience_demo
+
+    _check_report_destination(args)
+    report = run_experience_demo(seed=args.seed)
+    report["source"] = source_manifest()
+    report["metrics"] = {
+        key: report[key]
+        for key in (
+            "held_out_exact_match",
+            "held_out_bit_precision",
+            "held_out_bit_recall",
+            "training_observations",
+            "held_out_count",
+        )
+    }
+    return _experiment_report(args, report)
+
+
 def _config_from_args(args: argparse.Namespace) -> ModelConfig:
     return ModelConfig(
         point_count=args.points,
         seed=args.seed,
         probation_after=args.probation_after,
         stable_after=args.stable_after,
+        consolidation_method=args.consolidation,
+        coactivation_history_size=args.history_size,
     )
 
 
@@ -106,6 +168,10 @@ def _add_model_size_options(parser: argparse.ArgumentParser) -> None:
         help="number of random receptive points (default: 20000)",
     )
     parser.add_argument("--seed", type=int, default=42, help="random seed")
+    parser.add_argument(
+        "--consolidation", choices=("frequency", "coactivation"), default="frequency"
+    )
+    parser.add_argument("--history-size", type=int, default=32)
     parser.add_argument(
         "--probation-after",
         type=int,
@@ -258,7 +324,41 @@ def build_parser() -> argparse.ArgumentParser:
     microworld.add_argument("--action-budget", type=int, default=1)
     microworld.set_defaults(handler=_microworld)
 
-    for experiment in (evaluate, microworld):
+    context_transfer = subparsers.add_parser(
+        "context-transfer", help="measure learned SDR transforms on unseen combinations"
+    )
+    context_transfer.add_argument("--seeds", type=int, nargs="+", default=[7, 17, 42])
+    context_transfer.add_argument("--points", type=int, default=1024)
+    context_transfer.add_argument("--epochs", type=int, default=3)
+    context_transfer.add_argument("--train-size", type=int, default=128)
+    context_transfer.add_argument("--dev-size", type=int, default=32)
+    context_transfer.add_argument("--test-size", type=int, default=64)
+    context_transfer.add_argument("--seconds-per-seed", type=float, default=180)
+    context_transfer.set_defaults(handler=_context_transfer)
+
+    factor_recovery = subparsers.add_parser(
+        "factor-recovery", help="measure local factors and matched-marginal controls"
+    )
+    factor_recovery.add_argument("--seeds", type=int, nargs="+", default=[7, 17, 42])
+    factor_recovery.add_argument("--points", type=int, default=64)
+    factor_recovery.add_argument("--train-samples", type=int, default=192)
+    factor_recovery.add_argument("--test-samples", type=int, default=64)
+    factor_recovery.add_argument("--seconds-per-seed", type=float, default=180)
+    factor_recovery.set_defaults(handler=_factor_recovery)
+
+    experience_demo = subparsers.add_parser(
+        "experience-demo", help="exercise observed outcomes and a bounded context bank"
+    )
+    experience_demo.add_argument("--seed", type=int, default=42)
+    experience_demo.set_defaults(handler=_experience_demo)
+
+    for experiment in (
+        evaluate,
+        microworld,
+        context_transfer,
+        factor_recovery,
+        experience_demo,
+    ):
         experiment.add_argument(
             "--output", help="save complete JSON traces to this file"
         )
