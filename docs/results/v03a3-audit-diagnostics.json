@@ -1,0 +1,251 @@
+{
+  "schema_version": 1,
+  "audited_repository_head": "3472eb0625490f87ef2cdbdec5dc888475f76ec3",
+  "scope": "Post-hoc audit of frozen v0.3.0a3 results. No retraining, parameter search, or runtime modifications. Repetitions and wiring replicas are not independent meanings.",
+  "source_report_sha256": {
+    "v03a3-context-integration.json": "13f962078e5d720a0a770e8dcab7894e92aa35bf588338b2e3ffdf1988596508",
+    "v03a3-coactivation-structure.json": "a606113358276e3f0e8acc5a011b2d80c3f723f3fdb33b8a8d2855f5be4b8623"
+  },
+  "counting_rule": "Select part_traces with phase=before, split=test; keys are (seed,position,value,context). Correct factor names require nonambiguous words equal to the evaluator target word.",
+  "integration_recount": {
+    "context_query_occurrences": 135,
+    "part_rows": 45,
+    "unique_seed_parts": 26,
+    "unique_seed_part_contexts": 78,
+    "part_repetition_histogram": {
+      "1": 8,
+      "2": 17,
+      "3": 1
+    },
+    "nonempty_transform_predictions": 124,
+    "raw_candidates": 24,
+    "unique_raw_seed_part_contexts": 14,
+    "correct_factor_name_occurrences": 8,
+    "unique_correct_seed_part_contexts": 4,
+    "correct_unique_keys": [
+      [
+        23,
+        1,
+        1,
+        "neighbor"
+      ],
+      [
+        23,
+        2,
+        0,
+        "neighbor"
+      ],
+      [
+        23,
+        2,
+        1,
+        "alternative"
+      ],
+      [
+        47,
+        2,
+        2,
+        "neighbor"
+      ]
+    ],
+    "per_seed": [
+      {
+        "seed": 11,
+        "raw_candidates": 7,
+        "correct_factor_names": 0
+      },
+      {
+        "seed": 23,
+        "raw_candidates": 8,
+        "correct_factor_names": 6
+      },
+      {
+        "seed": 47,
+        "raw_candidates": 9,
+        "correct_factor_names": 2
+      }
+    ]
+  },
+  "affinity_recount": [
+    {
+      "seed": 11,
+      "event_ids": 54,
+      "unique_recognition_payload_digests": 19,
+      "pairs": [
+        {
+          "exposures": 6,
+          "left": "alternative",
+          "positive": 0,
+          "right": "primary"
+        }
+      ]
+    },
+    {
+      "seed": 23,
+      "event_ids": 54,
+      "unique_recognition_payload_digests": 25,
+      "pairs": [
+        {
+          "exposures": 6,
+          "left": "neighbor",
+          "positive": 6,
+          "right": "primary"
+        }
+      ]
+    },
+    {
+      "seed": 47,
+      "event_ids": 54,
+      "unique_recognition_payload_digests": 25,
+      "pairs": [
+        {
+          "exposures": 6,
+          "left": "alternative",
+          "positive": 0,
+          "right": "neighbor"
+        }
+      ]
+    }
+  ],
+  "spectral_method": "np.linalg.eigh(H.T @ H), leading eigenvector oriented to positive sum, divided by max, strict threshold >0.75. Same histories, one row-order replica per scenario/variant; row order leaves H.T@H unchanged. This is an exact uncentered spectral diagnostic, not the finite-step online coactivation algorithm and not a proposed replacement.",
+  "numpy_version": "2.3.5",
+  "spectral_diagnostic": [
+    {
+      "scenario": "single_joint",
+      "variant": "joint",
+      "leading_two_eigenvalues": [
+        9.792343904486378,
+        38.94224524219223
+      ],
+      "weights_max_normalized": [
+        0.9999999999999989,
+        1.0,
+        0.9999999999999994,
+        0.7919231684599307,
+        0.7919231684599307,
+        0.7919231684599307,
+        0.8127955628368079,
+        0.7293283231086028
+      ],
+      "threshold": 0.75,
+      "selected_bits": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "exact_any_original_group": false
+    },
+    {
+      "scenario": "single_joint",
+      "variant": "marginal_shuffle",
+      "leading_two_eigenvalues": [
+        6.745755190664281,
+        34.84392536499461
+      ],
+      "weights_max_normalized": [
+        0.8804045573174838,
+        0.8834035028453843,
+        0.8553699406403855,
+        0.9101739870481607,
+        0.8564020272705501,
+        0.8879728409802461,
+        0.9722090199211063,
+        1.0
+      ],
+      "threshold": 0.75,
+      "selected_bits": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "exact_any_original_group": false
+    },
+    {
+      "scenario": "competing_joint",
+      "variant": "joint",
+      "leading_two_eigenvalues": [
+        25.101501255521523,
+        36.61579978245649
+      ],
+      "weights_max_normalized": [
+        0.9999999999999997,
+        1.0,
+        0.9999999999999998,
+        0.9999999999999978,
+        0.9999999999999979,
+        0.9999999999999978,
+        0.8673167306521619,
+        0.7304972945684896,
+        0.7304972945684892,
+        0.8523702390396287,
+        0.8523702390396284,
+        0.6235708417098837
+      ],
+      "threshold": 0.75,
+      "selected_bits": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        9,
+        10
+      ],
+      "exact_any_original_group": false
+    },
+    {
+      "scenario": "competing_joint",
+      "variant": "marginal_shuffle",
+      "leading_two_eigenvalues": [
+        12.455978461727097,
+        36.18290489130202
+      ],
+      "weights_max_normalized": [
+        0.9582321520221252,
+        0.8020468131437845,
+        0.9644781267391503,
+        0.904685003228374,
+        0.9018215467904312,
+        0.729976991173759,
+        0.8915143248854769,
+        1.0,
+        0.8286599520786591,
+        0.9177820048655692,
+        0.9561742340171768,
+        0.8726400977576932
+      ],
+      "threshold": 0.75,
+      "selected_bits": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11
+      ],
+      "exact_any_original_group": false
+    }
+  ],
+  "limitations": [
+    "135 occurrences are 78 distinct seed/part/context inputs; primary and neighbor still share an intended mapping.",
+    "The single positive affinity edge has six repeated exposures to one isolated source part, not six independent patterns.",
+    "Source coactivation results have zero exact original-group matches in six structured probes and six shuffled controls. Exact original-group recovery is not an appropriate success target for the shuffled controls.",
+    "Dense leading components do not prove that every finite online trajectory fails; they show that exact leading-component extraction is not sufficient for isolating the planted groups at the fixed threshold on these histories."
+  ]
+}

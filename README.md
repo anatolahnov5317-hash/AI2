@@ -39,6 +39,8 @@ text-factors chat --demo --grounding factor --state artifacts/factor-chat.json
 
 API, ограничения и протокол:
 [V03_CONTEXT_INTEGRATION.md](docs/V03_CONTEXT_INTEGRATION.md).
+Повторная сверка с источниками, пересчёт уникальных случаев и следующий
+архитектурный этап: [V03A3_THEORY_AUDIT.md](docs/V03A3_THEORY_AUDIT.md).
 
 ## v0.3.0a2: несколько контекстов и учебный чат
 
