@@ -4,7 +4,8 @@ This is a small chat laboratory, not a learned Russian grammar or a second
 recognition engine. Commands and response templates are supplied by this module.
 Only caller-confirmed word/content pairs are learned. A recognition result is a
 memory readout, not independently verified truth; a LabelEvent is a trust boundary.
-Words are associated with (encoding_id, content_key), never with output bits alone.
+Exact word associations use (encoding_id, content_key), never output bits alone.
+An optional factor matcher compares unchanged, explicitly confirmed exemplars.
 Replies do not add evidence. Complete state is stored as validated JSON, without
 pickle; the caller must save the recognition model separately.
 """
@@ -19,10 +20,19 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from .grounding import (
+    MAX_MATCH_ATOMS,
+    FactorAtoms,
+    FactorExemplar,
+    GroundingPolicy,
+    WordResolution,
+    match_factor_words,
+)
+
 if TYPE_CHECKING:
     from .recognition import RecognitionResult
 
-FORMAT_VERSION = 1
+FORMAT_VERSION = 2
 MAX_STATE_BYTES = 8 * 1024 * 1024
 MAX_CODE_WIDTH = 1_000_000
 MAX_TEXT = 128
@@ -231,9 +241,10 @@ class GroundedDialogue:
     """Single-threaded, bounded vocabulary and explicit reference tracking.
 
     Capacities reject additions before mutation; nothing silently evicts evidence.
-    Changing a recognition cluster can change its content key and require a new
-    word confirmation. Different content keys remain different even if output
-    bits collide. This interface does not certify a universal semantic identity.
+    Exact matching remains the default. Optional factor matching can propose a
+    name after cluster changes, using only previously confirmed exemplars.
+    Different content keys retain their identity and provenance. This interface
+    does not certify a universal semantic identity or a calibrated probability.
     """
 
     def __init__(
@@ -242,14 +253,21 @@ class GroundedDialogue:
         *,
         output_width: int,
         limits: DialogueLimits | None = None,
+        grounding_policy: GroundingPolicy | None = None,
     ) -> None:
         _identifier(encoding_id, "encoding_id")
         _integer(output_width, "output_width", 1, MAX_CODE_WIDTH)
         if limits is not None and type(limits) is not DialogueLimits:
             raise TypeError("limits must be DialogueLimits")
+        if (
+            grounding_policy is not None
+            and type(grounding_policy) is not GroundingPolicy
+        ):
+            raise TypeError("grounding_policy must be GroundingPolicy")
         self.encoding_id = encoding_id
         self.output_width = output_width
         self.limits = limits or DialogueLimits()
+        self.grounding_policy = grounding_policy or GroundingPolicy()
         self._references: dict[str, SceneReference] = {}
         self._events: dict[int, LabelEvent] = {}
         self._active_events: dict[int, LabelEvent] = {}
@@ -416,6 +434,77 @@ class GroundedDialogue:
         }
 
     @staticmethod
+    def _atoms(candidate: GroundedCandidate) -> FactorAtoms | None:
+        if sum(len(item.matched_bits) for item in candidate.evidence) > MAX_MATCH_ATOMS:
+            return None
+        return frozenset(
+            (item.point_index, bit)
+            for item in candidate.evidence
+            for bit in item.matched_bits
+        )
+
+    def resolve_candidate(
+        self, candidate: GroundedCandidate, *, encoding_id: str | None = None
+    ) -> WordResolution:
+        """Read a name without learning or replacing its exact content key.
+
+        Archived candidates have already passed the recognition encoding guard.
+        A caller resolving an unarchived candidate must explicitly supply its
+        encoding_id, because GroundedCandidate itself has no encoding field.
+        """
+
+        if type(candidate) is not GroundedCandidate:
+            raise TypeError("resolve_candidate requires GroundedCandidate")
+        if encoding_id is not None and encoding_id != self.encoding_id:
+            raise ValueError("candidate encoding_id does not match this dialogue")
+        if encoding_id is None and not any(
+            candidate in reference.candidates for reference in self._references.values()
+        ):
+            raise ValueError("unarchived candidate requires an explicit encoding_id")
+        if any(bit >= self.output_width for bit in candidate.output_bits):
+            raise ValueError("candidate readout exceeds configured output_width")
+        lexicon = self._lexicon()
+        exact = lexicon.get(candidate.content_key)
+        if exact:
+            return WordResolution(
+                words=tuple(exact),
+                support_event_ids=tuple(
+                    sorted(event for events in exact.values() for event in events)
+                ),
+                method="exact",
+                score=1.0,
+                matched_content_keys=(candidate.content_key,),
+                reason="exact_content_key",
+            )
+        if self.grounding_policy.mode == "exact":
+            return WordResolution()
+        atoms = self._atoms(candidate)
+        if atoms is None:
+            return WordResolution(reason="work_limit")
+        exemplars: list[FactorExemplar] = []
+        seen: set[tuple[str, str]] = set()
+        for event in self._active_events.values():
+            reference_key = event.reference_id, event.candidate_id
+            if reference_key in seen:
+                continue
+            seen.add(reference_key)
+            confirmed = self._candidate(*reference_key)
+            confirmed_atoms = self._atoms(confirmed)
+            if confirmed_atoms is None:
+                # Omitting a competing exemplar could create false confidence.
+                return WordResolution(reason="work_limit")
+            names = lexicon[confirmed.content_key]
+            exemplars.append(
+                FactorExemplar(
+                    confirmed.content_key,
+                    tuple(names),
+                    tuple(sorted(e for events in names.values() for e in events)),
+                    confirmed_atoms,
+                )
+            )
+        return match_factor_words(atoms, tuple(exemplars), self.grounding_policy)
+
+    @staticmethod
     def _reply(
         kind: str,
         text: str,
@@ -450,17 +539,19 @@ class GroundedDialogue:
                 text,
                 reference_id,
             )
-        lexicon = self._lexicon()
+        resolutions = tuple(
+            self.resolve_candidate(item) for item in reference.candidates
+        )
         names: list[str] = []
         support: list[int] = []
         unknown: list[int] = []
-        for number, candidate in enumerate(reference.candidates, 1):
-            words = lexicon.get(candidate.content_key, {})
-            if words:
-                names.append(f"{number}: " + " / ".join(words))
-                support.extend(
-                    event_id for events in words.values() for event_id in events
-                )
+        ambiguous: list[int] = []
+        for number, resolution in enumerate(resolutions, 1):
+            if resolution.words:
+                names.append(f"{number}: " + " / ".join(resolution.words))
+                support.extend(resolution.support_event_ids)
+                if resolution.ambiguous:
+                    ambiguous.append(number)
             else:
                 names.append(f"{number}: содержание без названия")
                 unknown.append(number)
@@ -479,18 +570,26 @@ class GroundedDialogue:
                 f"Есть несколько трактовок: {listing}. "
                 "Их совместимость не подтверждена. Уточните, какую имеете в виду."
             )
+        elif ambiguous:
+            text = (
+                f"Возможные названия: {listing}. "
+                f"Уточните название всего содержания {ambiguous[0]}."
+            )
         elif unknown:
             text = f"Узнанные части: {listing}. Как назвать объект {unknown[0]}?"
         else:
-            labels = [
-                " / ".join(lexicon[item.content_key]) for item in reference.candidates
-            ]
-            text = "Вижу: " + " и ".join(labels) + "."
+            labels = [" / ".join(resolution.words) for resolution in resolutions]
+            prefix = (
+                "По сходству признаков: "
+                if any(item.method == "factor" for item in resolutions)
+                else "Вижу: "
+            )
+            text = prefix + " и ".join(labels) + "."
         if not reference.complete:
             text += " Проверена только часть контекстов; это неполный результат."
         kind = (
             "description"
-            if compatible and not unknown and reference.complete
+            if compatible and not unknown and not ambiguous and reference.complete
             else "clarification"
         )
         return self._reply(kind, text, reference_id, ids, tuple(support))
@@ -509,11 +608,25 @@ class GroundedDialogue:
             )
         support = tuple(event for events in contents.values() for event in events)
         reference = self._references.get(self._current_reference or "")
-        matching = tuple(
-            candidate
+        resolved = tuple(
+            (candidate, self.resolve_candidate(candidate))
             for candidate in (reference.candidates if reference else ())
-            if candidate.content_key in contents
         )
+        matching = tuple(
+            candidate for candidate, result in resolved if word in result.words
+        )
+        uncertain = any(
+            result.ambiguous for _, result in resolved if word in result.words
+        )
+        if uncertain:
+            return self._reply(
+                "clarification",
+                f"Название «{word}» подходит к одной из трактовок. "
+                "Уточните содержание.",
+                self._current_reference,
+                tuple(candidate.candidate_id for candidate in matching),
+                support,
+            )
         if len(contents) > 1:
             return self._reply(
                 "clarification",
@@ -523,7 +636,16 @@ class GroundedDialogue:
                 support,
             )
         if matching:
-            text = f"«{word}» — подтверждённое вами название узнанного содержания."
+            approximate = any(
+                result.method == "factor"
+                for _, result in resolved
+                if word in result.words
+            )
+            text = (
+                f"«{word}» — название сходного содержания по подтверждённым примерам."
+                if approximate
+                else f"«{word}» — подтверждённое вами название узнанного содержания."
+            )
         else:
             text = f"Название «{word}» сохранено; в текущем наблюдении оно не узнано."
         return self._reply(
@@ -633,6 +755,7 @@ class GroundedDialogue:
                 "encoding_id": self.encoding_id,
                 "output_width": self.output_width,
                 "limits": asdict(self.limits),
+                "grounding_policy": asdict(self.grounding_policy),
                 "current_reference": self._current_reference,
                 "references": [asdict(item) for item in self._references.values()],
                 "events": [asdict(item) for item in self._events.values()],
@@ -643,24 +766,37 @@ class GroundedDialogue:
     def from_dict(cls, value: Any) -> GroundedDialogue:
         """Validate all counts, types and references before returning new state."""
 
-        data = _object(
-            value,
-            {
-                "format_version",
-                "encoding_id",
-                "output_width",
-                "limits",
-                "current_reference",
-                "references",
-                "events",
-            },
-        )
-        if type(data["format_version"]) is not int or data["format_version"] != 1:
+        if type(value) is not dict:
+            raise ValueError("invalid dialogue state")
+        version = value.get("format_version")
+        if type(version) is not int or version not in (1, FORMAT_VERSION):
             raise ValueError("unsupported dialogue format version")
+        fields = {
+            "format_version",
+            "encoding_id",
+            "output_width",
+            "limits",
+            "current_reference",
+            "references",
+            "events",
+        }
+        if version == FORMAT_VERSION:
+            fields.add("grounding_policy")
+        data = _object(value, fields)
+        policy = GroundingPolicy()
+        if version == FORMAT_VERSION:
+            policy = GroundingPolicy(
+                **_object(
+                    data["grounding_policy"], set(GroundingPolicy.__dataclass_fields__)
+                )
+            )
         limits_data = _object(data["limits"], set(DialogueLimits.__dataclass_fields__))
         limits = DialogueLimits(**limits_data)
         dialogue = cls(
-            data["encoding_id"], output_width=data["output_width"], limits=limits
+            data["encoding_id"],
+            output_width=data["output_width"],
+            limits=limits,
+            grounding_policy=policy,
         )
         references = _list(data["references"], limits.max_references)
         events = _list(data["events"], limits.max_events)

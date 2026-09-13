@@ -6,6 +6,7 @@ import argparse
 import json
 import sys
 from collections.abc import Sequence
+from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
@@ -181,6 +182,39 @@ def _dialogue_demo(args: argparse.Namespace) -> int:
     return _experiment_report(args, report)
 
 
+def _context_integration(args: argparse.Namespace) -> int:
+    from .evaluation.context_integration import (
+        ContextIntegrationConfig,
+        run_context_integration,
+    )
+
+    _check_report_destination(args)
+    config = ContextIntegrationConfig(
+        seeds=tuple(args.seeds),
+        points=args.points,
+        epochs=args.epochs,
+        seconds=args.seconds,
+    )
+    report = run_context_integration(
+        config, progress=lambda message: print(message, file=sys.stderr, flush=True)
+    )
+    return _experiment_report(args, report)
+
+
+def _coactivation_structure(args: argparse.Namespace) -> int:
+    from .evaluation.coactivation_structure import (
+        CoactivationStructureConfig,
+        run_coactivation_structure,
+    )
+
+    _check_report_destination(args)
+    report = run_coactivation_structure(
+        CoactivationStructureConfig(seeds=tuple(args.seeds), seconds=args.seconds),
+        progress=lambda message: print(message, file=sys.stderr, flush=True),
+    )
+    return _experiment_report(args, report)
+
+
 def _recognize(args: argparse.Namespace) -> int:
     from .recognition import RecognitionLimits
 
@@ -203,7 +237,7 @@ def _recognize(args: argparse.Namespace) -> int:
 
 def _chat(args: argparse.Namespace) -> int:
     from .chat_lab import ContextChatSession, make_chat_demo_model
-    from .dialogue import GroundedDialogue
+    from .dialogue import GroundedDialogue, GroundingPolicy
 
     model = (
         make_chat_demo_model(args.seed)
@@ -214,6 +248,17 @@ def _chat(args: argparse.Namespace) -> int:
     dialogue = (
         GroundedDialogue.load(state) if state is not None and state.exists() else None
     )
+    if args.grounding is not None:
+        if dialogue is None:
+            dialogue = GroundedDialogue(
+                model.recognition_encoding_id,
+                output_width=model.config.output_bits,
+                grounding_policy=GroundingPolicy(mode=args.grounding),
+            )
+        else:
+            dialogue.grounding_policy = replace(
+                dialogue.grounding_policy, mode=args.grounding
+            )
     session = ContextChatSession(model, dialogue)
     if state is not None:
         state.parent.mkdir(parents=True, exist_ok=True)
@@ -408,6 +453,11 @@ def build_parser() -> argparse.ArgumentParser:
     )
     chat.add_argument("--seed", type=int, default=7)
     chat.add_argument(
+        "--grounding",
+        choices=("exact", "factor"),
+        help="word matching policy; defaults to saved policy, or exact for new state",
+    )
+    chat.add_argument(
         "--state", help="save/resume vocabulary and observation references"
     )
     chat.add_argument(
@@ -484,6 +534,28 @@ def build_parser() -> argparse.ArgumentParser:
     dialogue_demo.add_argument("--seed", type=int, default=7)
     dialogue_demo.set_defaults(handler=_dialogue_demo)
 
+    context_integration = subparsers.add_parser(
+        "context-integration",
+        help="test learned contexts, common recognition and persistent word grounding",
+    )
+    context_integration.add_argument(
+        "--seeds", type=int, nargs="+", default=[11, 23, 47]
+    )
+    context_integration.add_argument("--points", type=int, default=512)
+    context_integration.add_argument("--epochs", type=int, default=3)
+    context_integration.add_argument("--seconds", type=float, default=90.0)
+    context_integration.set_defaults(handler=_context_integration)
+
+    coactivation_structure = subparsers.add_parser(
+        "coactivation-structure",
+        help="diagnose joint structure at matched bit frequencies and fixed orders",
+    )
+    coactivation_structure.add_argument(
+        "--seeds", type=int, nargs="+", default=[101, 211, 307]
+    )
+    coactivation_structure.add_argument("--seconds", type=float, default=30.0)
+    coactivation_structure.set_defaults(handler=_coactivation_structure)
+
     factor_recovery = subparsers.add_parser(
         "factor-recovery", help="measure local factors and matched-marginal controls"
     )
@@ -506,6 +578,8 @@ def build_parser() -> argparse.ArgumentParser:
         context_transfer,
         transform_learning,
         dialogue_demo,
+        context_integration,
+        coactivation_structure,
         factor_recovery,
         experience_demo,
     ):

@@ -38,3 +38,5 @@ jobs:
           text-factors experience-demo --seed 7 --output artifacts/experience-smoke.json
           text-factors transform-learning --seeds 7 --points 32 --epochs 1 --seconds 30 --output artifacts/transform-learning-smoke.json
           text-factors dialogue-demo --seed 7 --output artifacts/dialogue-smoke.json
+          text-factors coactivation-structure --seconds 30 --output artifacts/coactivation-structure-smoke.json
+          text-factors context-integration --seeds 11 --points 32 --epochs 1 --seconds 60 --output artifacts/context-integration-smoke.json
