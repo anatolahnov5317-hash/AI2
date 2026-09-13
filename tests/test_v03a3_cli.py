@@ -11,7 +11,11 @@ from text_factors.dialogue import GroundedDialogue
 
 class IntegrationCliTests(unittest.TestCase):
     def test_timeout_reports_remain_incomplete_and_fail_exit_code(self) -> None:
-        for command in ("context-integration", "coactivation-structure"):
+        for command in (
+            "context-integration",
+            "coactivation-structure",
+            "scene-integration",
+        ):
             with self.subTest(command=command), tempfile.TemporaryDirectory() as tmp:
                 destination = Path(tmp) / "partial.json"
                 with redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):

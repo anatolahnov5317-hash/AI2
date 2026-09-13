@@ -40,3 +40,4 @@ jobs:
           text-factors dialogue-demo --seed 7 --output artifacts/dialogue-smoke.json
           text-factors coactivation-structure --seconds 30 --output artifacts/coactivation-structure-smoke.json
           text-factors context-integration --seeds 11 --points 32 --epochs 1 --seconds 60 --output artifacts/context-integration-smoke.json
+          text-factors scene-integration --seeds 59 --points 32 --epochs 1 --seconds 90 --output artifacts/scene-integration-smoke.json

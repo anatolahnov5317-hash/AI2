@@ -215,6 +215,25 @@ def _coactivation_structure(args: argparse.Namespace) -> int:
     return _experiment_report(args, report)
 
 
+def _scene_integration(args: argparse.Namespace) -> int:
+    from .evaluation.scene_integration import (
+        SceneIntegrationConfig,
+        run_scene_integration,
+    )
+
+    _check_report_destination(args)
+    config = SceneIntegrationConfig(
+        seeds=tuple(args.seeds),
+        points=args.points,
+        epochs=args.epochs,
+        seconds=args.seconds,
+    )
+    report = run_scene_integration(
+        config, progress=lambda message: print(message, file=sys.stderr, flush=True)
+    )
+    return _experiment_report(args, report)
+
+
 def _recognize(args: argparse.Namespace) -> int:
     from .recognition import RecognitionLimits
 
@@ -556,6 +575,16 @@ def build_parser() -> argparse.ArgumentParser:
     coactivation_structure.add_argument("--seconds", type=float, default=30.0)
     coactivation_structure.set_defaults(handler=_coactivation_structure)
 
+    scene_integration = subparsers.add_parser(
+        "scene-integration",
+        help="test factor portraits in whole scenes and matched-density surroundings",
+    )
+    scene_integration.add_argument("--seeds", type=int, nargs="+", default=[59, 71, 89])
+    scene_integration.add_argument("--points", type=int, default=512)
+    scene_integration.add_argument("--epochs", type=int, default=3)
+    scene_integration.add_argument("--seconds", type=float, default=120.0)
+    scene_integration.set_defaults(handler=_scene_integration)
+
     factor_recovery = subparsers.add_parser(
         "factor-recovery", help="measure local factors and matched-marginal controls"
     )
@@ -580,6 +609,7 @@ def build_parser() -> argparse.ArgumentParser:
         dialogue_demo,
         context_integration,
         coactivation_structure,
+        scene_integration,
         factor_recovery,
         experience_demo,
     ):

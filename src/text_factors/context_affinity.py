@@ -21,6 +21,7 @@ from typing import Any
 from .recognition import (
     CandidateRelation,
     ClusterEvidence,
+    ContextResponse,
     InterpretationClaim,
     RecognitionCandidate,
     RecognitionResult,
@@ -316,8 +317,12 @@ class ContextAffinity:
         features, conflicts = self._validated(result, budget)
         if not result.complete:
             return False
+        # This legacy store predates completed-read traces. Keep its historical
+        # event digest stable when loading a v1 ledger across the API addition.
+        legacy_payload = result.to_dict()
+        legacy_payload.pop("responses", None)
         digest = hashlib.sha256(
-            json.dumps(result.to_dict(), sort_keys=True, separators=(",", ":")).encode()
+            json.dumps(legacy_payload, sort_keys=True, separators=(",", ":")).encode()
         ).hexdigest()
         budget.check()
         if event_id in self._events:
@@ -493,4 +498,403 @@ class ContextAffinity:
             _integer(pair["exposures"], "exposures", 1, len(events))
             _integer(pair["positive"], "positive", 0, pair["exposures"])
             restored._pairs[key] = _PairCounts(pair["exposures"], pair["positive"])
+        return restored
+
+
+@dataclass(frozen=True, slots=True)
+class AdaptiveContextAffinityConfig:
+    """A fixed recent-event window, with explicit support and diversity gates.
+
+    Activation agreement is n11/(n11+n10+n01); jointly silent reads are reported
+    separately. Neither agreement nor the input-pattern count establishes
+    semantic equivalence or statistical independence. A maximum event ledger is
+    retained for idempotence; reaching it rejects new events without eviction.
+    """
+
+    window_events: int = 32
+    min_observations: int = 3
+    min_distinct_patterns: int = 3
+    min_shared: int = 2
+    evidence_threshold: float = 0.6
+    affinity_threshold: float = 0.8
+    max_events: int = 512
+    max_pairs: int = 2048
+    max_candidates: int = 128
+    max_responses: int = 2048
+    max_evidence: int = 32768
+    seconds: float = 2.0
+
+    def __post_init__(self) -> None:
+        self.legacy_config()
+        _integer(self.window_events, "window_events", 1, self.max_events)
+        _integer(self.min_distinct_patterns, "min_distinct_patterns", 1, 4096)
+        _integer(self.max_responses, "max_responses", 1, 2048)
+        if max(self.min_observations, self.min_distinct_patterns) > self.window_events:
+            raise ValueError("support and diversity gates cannot exceed the window")
+
+    def legacy_config(self) -> ContextAffinityConfig:
+        return ContextAffinityConfig(
+            **{name: getattr(self, name) for name in asdict(ContextAffinityConfig())}
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class _RecentPair:
+    left: str
+    right: str
+    state: int
+    pattern: str
+
+
+@dataclass(frozen=True, slots=True)
+class _RecentEvent:
+    event_id: str
+    pairs: tuple[_RecentPair, ...]
+
+
+def _digest(value: Any, name: str) -> None:
+    if (
+        type(value) is not str
+        or len(value) != 64
+        or any(char not in "0123456789abcdef" for char in value)
+    ):
+        raise ValueError(f"{name} must be a lowercase SHA256 digest")
+
+
+class AdaptiveContextAffinity:
+    """Learn recent binary context activation agreement from completed reads.
+
+    Each context pair contributes at most once per event, even when there are
+    multiple views/candidates. Context activity is the OR of its actual reads.
+    Unobserved contexts are not assigned zero activity. All response records must
+    refer to one observation. Positive diversity is counted from transformed
+    input digests, without event IDs, locations, scores or memory-step counters.
+
+    This deliberately modest approximation is not Pearson correlation or a map
+    of equivalent transformations: different transformations may both regularly
+    recognize familiar scenes. Selection therefore additionally requires current
+    overlapping factor evidence at exactly the same nonempty supplied origin.
+    """
+
+    def __init__(
+        self, encoding_id: str, config: AdaptiveContextAffinityConfig | None = None
+    ) -> None:
+        if config is not None and type(config) is not AdaptiveContextAffinityConfig:
+            raise ValueError("config must be AdaptiveContextAffinityConfig")
+        self.config = config or AdaptiveContextAffinityConfig()
+        self._validator = ContextAffinity(encoding_id, self.config.legacy_config())
+        self.encoding_id = encoding_id
+        self._events: dict[str, str] = {}
+        self._history: tuple[_RecentEvent, ...] = ()
+
+    def _responses(
+        self, result: RecognitionResult, budget: _Budget
+    ) -> dict[str, tuple[bool, tuple[str, ...]]]:
+        if (
+            type(result.responses) is not tuple
+            or len(result.responses) > self.config.max_responses
+            or len(result.responses) != result.examined_views
+        ):
+            raise ValueError("every completed view needs one bounded response record")
+        seen: set[str] = set()
+        observations: set[str] = set()
+        contexts: dict[str, list[ContextResponse]] = {}
+        for response in result.responses:
+            budget.check()
+            if type(response) is not ContextResponse:
+                raise ValueError("invalid context response")
+            for name in ("context_id", "view_id", "observation_id"):
+                _identifier(getattr(response, name), name)
+            if response.view_id in seen:
+                raise ValueError("duplicate response view ID")
+            seen.add(response.view_id)
+            observations.add(response.observation_id)
+            _indices(response.source_positions, "response source_positions")
+            _digest(response.input_digest, "input_digest")
+            if (
+                type(response.active) is not bool
+                or type(response.score) not in (int, float)
+                or not isfinite(response.score)
+                or response.score < 0
+            ):
+                raise ValueError("invalid response activity or score")
+            contexts.setdefault(response.context_id, []).append(response)
+        if len(observations) > 1:
+            raise ValueError("one affinity event must refer to one observation")
+        for candidate in result.candidates + result.suppressed:
+            budget.check()
+            if not any(
+                response.active and response.observation_id == candidate.observation_id
+                for response in contexts.get(candidate.context_id, ())
+            ):
+                raise ValueError("candidate has no active completed context response")
+        return {
+            context: (
+                any(response.active for response in responses),
+                tuple(sorted({response.input_digest for response in responses})),
+            )
+            for context, responses in contexts.items()
+        }
+
+    def _statistics(
+        self, history: tuple[_RecentEvent, ...], budget: _Budget
+    ) -> tuple[dict[str, Any], ...]:
+        counts: dict[ContextPair, list[int]] = {}
+        patterns: dict[ContextPair, set[str]] = {}
+        joint_patterns: dict[ContextPair, set[str]] = {}
+        for event in history:
+            budget.check()
+            for pair in event.pairs:
+                budget.check()
+                key = pair.left, pair.right
+                counts.setdefault(key, [0, 0, 0, 0])[pair.state] += 1
+                if pair.state:
+                    patterns.setdefault(key, set()).add(pair.pattern)
+                if pair.state == 3:
+                    joint_patterns.setdefault(key, set()).add(pair.pattern)
+        rows: list[dict[str, Any]] = []
+        for key, (n00, n01, n10, n11) in sorted(counts.items()):
+            budget.check()
+            active_events = n11 + n10 + n01
+            agreement = n11 / active_events if active_events else None
+            distinct_joint = len(joint_patterns.get(key, ()))
+            rows.append(
+                {
+                    "left": key[0],
+                    "right": key[1],
+                    "observations": n00 + active_events,
+                    "n11": n11,
+                    "n10": n10,
+                    "n01": n01,
+                    "n00": n00,
+                    "activation_agreement": agreement,
+                    "distinct_active_patterns": len(patterns.get(key, ())),
+                    "distinct_joint_patterns": distinct_joint,
+                    "edge": (
+                        n11 >= self.config.min_observations
+                        and distinct_joint >= self.config.min_distinct_patterns
+                        and agreement is not None
+                        and agreement >= self.config.affinity_threshold
+                    ),
+                }
+            )
+        return tuple(rows)
+
+    def pair_statistics(self) -> tuple[dict[str, Any], ...]:
+        """Return recent counts; jointly silent reads never inflate agreement."""
+
+        return self._statistics(self._history, _Budget(self.config.seconds, None))
+
+    def observe(
+        self,
+        event_id: str,
+        result: RecognitionResult,
+        *,
+        cancelled: Callable[[], bool] | None = None,
+    ) -> bool:
+        """Atomically record a complete event; incomplete inputs never teach."""
+
+        _identifier(event_id, "event_id")
+        budget = _Budget(self.config.seconds, cancelled)
+        self._validator._validated(result, budget)
+        budget.check()
+        if not result.complete:
+            return False
+        contexts = self._responses(result, budget)
+        event_digest = hashlib.sha256(
+            json.dumps(result.to_dict(), sort_keys=True, separators=(",", ":")).encode()
+        ).hexdigest()
+        budget.check()
+        if event_id in self._events:
+            if self._events[event_id] != event_digest:
+                raise ValueError("event ID was already used with different evidence")
+            return False
+        if len(self._events) >= self.config.max_events:
+            raise ValueError("adaptive affinity event capacity exceeded")
+        names = sorted(contexts)
+        if len(names) * (len(names) - 1) // 2 > self.config.max_pairs:
+            raise ValueError("adaptive affinity pair capacity exceeded")
+        pairs: list[_RecentPair] = []
+        for index, left in enumerate(names):
+            for right in names[index + 1 :]:
+                budget.check()
+                left_active, left_patterns = contexts[left]
+                right_active, right_patterns = contexts[right]
+                pattern = hashlib.sha256(
+                    json.dumps(
+                        (left_patterns, right_patterns), separators=(",", ":")
+                    ).encode()
+                ).hexdigest()
+                pairs.append(
+                    _RecentPair(
+                        left, right, 2 * int(left_active) + int(right_active), pattern
+                    )
+                )
+        history = (*self._history, _RecentEvent(event_id, tuple(pairs)))[
+            -self.config.window_events :
+        ]
+        if len(self._statistics(history, budget)) > self.config.max_pairs:
+            raise ValueError("adaptive affinity pair capacity exceeded")
+        budget.check()
+        self._history = history
+        self._events[event_id] = event_digest
+        return True
+
+    def select(
+        self,
+        result: RecognitionResult,
+        *,
+        cancelled: Callable[[], bool] | None = None,
+    ) -> RecognitionResult:
+        """Select direct local maxima without inventing object provenance.
+
+        An interrupted selection returns all original candidates and suppression
+        records with explicit incompleteness. Selection never teaches the map.
+        """
+
+        budget = _Budget(self.config.seconds, cancelled)
+        try:
+            features, conflicts = self._validator._validated(result, budget)
+            budget.check()
+            if not result.complete:
+                return result
+            edges = {
+                (row["left"], row["right"])
+                for row in self._statistics(self._history, budget)
+                if row["edge"]
+            }
+            remaining = sorted(
+                result.candidates,
+                key=lambda item: (-item.familiarity, -item.quality, item.candidate_id),
+            )
+            kept: list[RecognitionCandidate] = []
+            suppressed = list(result.suppressed)
+            while remaining:
+                budget.check()
+                winner = remaining.pop(0)
+                kept.append(winner)
+                survivors: list[RecognitionCandidate] = []
+                for candidate in remaining:
+                    budget.check()
+                    if _pair(
+                        winner.context_id, candidate.context_id
+                    ) in edges and self._validator._supported(
+                        winner, candidate, features, conflicts
+                    ):
+                        suppressed.append(candidate)
+                    else:
+                        survivors.append(candidate)
+                remaining = survivors
+            retained = {candidate.candidate_id for candidate in kept}
+            relations = tuple(
+                relation
+                for relation in result.relations
+                if relation.left in retained and relation.right in retained
+            )
+            budget.check()
+            return replace(
+                result,
+                candidates=tuple(kept),
+                suppressed=tuple(suppressed),
+                relations=relations,
+            )
+        except InterruptedError as error:
+            return replace(
+                result, complete=False, stop_reason=result.stop_reason or str(error)
+            )
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "kind": "adaptive_context_affinity",
+            "format_version": 1,
+            "encoding_id": self.encoding_id,
+            "config": asdict(self.config),
+            "events": [
+                {"event_id": event_id, "digest": digest}
+                for event_id, digest in self._events.items()
+            ],
+            "history": [asdict(event) for event in self._history],
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> AdaptiveContextAffinity:
+        """Restore bounded history and derive counts instead of trusting them."""
+
+        if type(data) is not dict or set(data) != {
+            "kind",
+            "format_version",
+            "encoding_id",
+            "config",
+            "events",
+            "history",
+        }:
+            raise ValueError("invalid adaptive affinity state fields")
+        if (
+            data["kind"] != "adaptive_context_affinity"
+            or type(data["format_version"]) is not int
+            or data["format_version"] != 1
+        ):
+            raise ValueError("unsupported adaptive affinity state version")
+        config_data = data["config"]
+        if type(config_data) is not dict or set(config_data) != set(
+            asdict(AdaptiveContextAffinityConfig())
+        ):
+            raise ValueError("invalid adaptive affinity configuration fields")
+        config = AdaptiveContextAffinityConfig(**config_data)
+        restored = cls(data["encoding_id"], config)
+        budget = _Budget(config.seconds, None)
+        events, history = data["events"], data["history"]
+        if type(events) is not list or len(events) > config.max_events:
+            raise ValueError("invalid or oversized adaptive event list")
+        if type(history) is not list or len(history) > config.window_events:
+            raise ValueError("invalid or oversized adaptive history")
+        for event in events:
+            budget.check()
+            if type(event) is not dict or set(event) != {"event_id", "digest"}:
+                raise ValueError("invalid adaptive event")
+            _identifier(event["event_id"], "event_id")
+            _digest(event["digest"], "event digest")
+            if event["event_id"] in restored._events:
+                raise ValueError("duplicate adaptive event ID")
+            restored._events[event["event_id"]] = event["digest"]
+        recent: list[_RecentEvent] = []
+        for event in history:
+            budget.check()
+            if type(event) is not dict or set(event) != {"event_id", "pairs"}:
+                raise ValueError("invalid adaptive history event")
+            _identifier(event["event_id"], "history event_id")
+            if (
+                type(event["pairs"]) not in (list, tuple)
+                or len(event["pairs"]) > config.max_pairs
+            ):
+                raise ValueError("invalid or oversized history pairs")
+            pairs: list[_RecentPair] = []
+            seen: set[ContextPair] = set()
+            for pair in event["pairs"]:
+                budget.check()
+                if type(pair) is not dict or set(pair) != {
+                    "left",
+                    "right",
+                    "state",
+                    "pattern",
+                }:
+                    raise ValueError("invalid adaptive history pair")
+                _identifier(pair["left"], "left context")
+                _identifier(pair["right"], "right context")
+                key = pair["left"], pair["right"]
+                if key[0] >= key[1] or key in seen:
+                    raise ValueError("history pairs must be unique and ordered")
+                seen.add(key)
+                _integer(pair["state"], "activation state", 0, 3)
+                _digest(pair["pattern"], "pattern digest")
+                pairs.append(_RecentPair(**pair))
+            recent.append(_RecentEvent(event["event_id"], tuple(pairs)))
+        if [event.event_id for event in recent] != list(restored._events)[
+            -config.window_events :
+        ]:
+            raise ValueError("history must be the recent ordered event suffix")
+        restored._history = tuple(recent)
+        if len(restored._statistics(restored._history, budget)) > config.max_pairs:
+            raise ValueError("adaptive affinity pair capacity exceeded")
+        budget.check()
         return restored

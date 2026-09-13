@@ -2,6 +2,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from typing import Any
+from unittest.mock import patch
 
 import numpy as np
 
@@ -107,6 +108,71 @@ def candidate(
 
 
 class RecognitionTests(unittest.TestCase):
+    def test_cancel_or_deadline_at_read_boundaries_cannot_report_complete(self) -> None:
+        for phase in ("view_source", "empty_clusters", "last_progress"):
+            for reason in ("cancelled", "time_budget"):
+                with self.subTest(phase=phase, reason=reason):
+                    memory = CombinatorialMemory(memory_config())
+                    flag = [False]
+                    clock = [0.0]
+
+                    def trigger(local_flag=flag, local_clock=clock):
+                        local_flag[0] = True
+                        local_clock[0] = 2.0
+
+                    def views(stage=phase, interrupt=trigger):
+                        if stage == "view_source":
+                            interrupt()
+                        yield ContextView("view", "ctx", bits(), ())
+
+                    def clusters(stage=phase, interrupt=trigger):
+                        if stage == "empty_clusters":
+                            interrupt()
+                        return iter(())
+
+                    def progress(_message, stage=phase, interrupt=trigger):
+                        if stage == "last_progress":
+                            interrupt()
+
+                    with (
+                        patch.object(memory, "iter_clusters", side_effect=clusters),
+                        patch(
+                            "text_factors.recognition.perf_counter",
+                            side_effect=lambda local_clock=clock: local_clock[0],
+                        ),
+                    ):
+                        result = recognize_views(
+                            memory,
+                            views(),
+                            total_views=1,
+                            limits=RecognitionLimits(seconds=1.0),
+                            progress=progress,
+                            cancelled=lambda local_flag=flag, kind=reason: (
+                                local_flag[0] and kind == "cancelled"
+                            ),
+                        )
+                    self.assertFalse(result.complete)
+                    self.assertEqual(result.stop_reason, reason)
+                    completed = int(phase == "last_progress")
+                    self.assertEqual(result.examined_views, completed)
+                    self.assertEqual(len(result.responses), completed)
+
+    def test_response_digest_uses_logical_bits_not_boolean_storage_bytes(self) -> None:
+        memory = trained_memory()
+        canonical = bits(0, 1, 2)
+        unusual = np.where(canonical, 255, 0).astype(np.uint8).view(np.bool_)
+        np.testing.assert_array_equal(canonical, unusual)
+        self.assertNotEqual(canonical.tobytes(), unusual.tobytes())
+        ordinary = recognize_views(
+            memory, (ContextView("view", "ctx", canonical, (0,)),), total_views=1
+        )
+        noncanonical = recognize_views(
+            memory, (ContextView("view", "ctx", unusual, (0,)),), total_views=1
+        )
+        self.assertTrue(ordinary.complete and noncanonical.complete)
+        self.assertEqual(ordinary.responses, noncanonical.responses)
+        self.assertEqual(ordinary.candidates, noncanonical.candidates)
+
     def test_recognition_does_not_mutate_memory_and_preserves_legacy_result(
         self,
     ) -> None:

@@ -102,6 +102,11 @@ class ContextPipelineTests(unittest.TestCase):
         self.assertTrue(result.complete)
         self.assertEqual(result.recognition.examined_views, 2)
         self.assertEqual(result.recognition.total_views, 2)
+        self.assertEqual(len(result.recognition.responses), 2)
+        self.assertTrue(all(r.active for r in result.recognition.responses))
+        self.assertEqual(
+            {r.context_id for r in result.recognition.responses}, {"left", "right"}
+        )
         self.assertEqual(
             {trace.predicted_bits for trace in result.transforms}, {(2, 3), (4, 5)}
         )
@@ -135,6 +140,9 @@ class ContextPipelineTests(unittest.TestCase):
         self.assertTrue(result.complete)
         self.assertEqual(result.transforms[0].predicted_bits, ())
         self.assertEqual(result.recognition.candidates, ())
+        self.assertEqual(len(result.recognition.responses), 1)
+        self.assertFalse(result.recognition.responses[0].active)
+        self.assertEqual(result.recognition.responses[0].score, 0.0)
 
     def test_predictions_and_readouts_do_not_mutate_any_memory(self) -> None:
         source, common, transforms = self.fixture()
@@ -146,6 +154,26 @@ class ContextPipelineTests(unittest.TestCase):
         pipeline.recognize(source)
         pipeline.recognize(source)
         self.assertEqual(tuple(snapshot(memory) for memory in memories), before)
+
+    def test_response_input_digest_excludes_observation_name_and_scope(self) -> None:
+        source, common, transforms = self.fixture()
+        pipeline = LearnedContextPipeline(
+            common, transforms, input_encoding_id="sensor-v1"
+        )
+        first = pipeline.recognize(
+            source, observation_id="first", source_positions=(0,)
+        )
+        renamed = pipeline.recognize(
+            source, observation_id="renamed", source_positions=(9,)
+        )
+        self.assertEqual(
+            [r.input_digest for r in first.recognition.responses],
+            [r.input_digest for r in renamed.recognition.responses],
+        )
+        self.assertNotEqual(
+            first.recognition.responses[0].observation_id,
+            renamed.recognition.responses[0].observation_id,
+        )
 
     def test_source_copy_is_readonly_and_isolated_from_caller_changes(self) -> None:
         source, common, transforms = self.fixture()
@@ -226,6 +254,8 @@ class ContextPipelineTests(unittest.TestCase):
         self.assertEqual(result.recognition.examined_views, 1)
         self.assertEqual(len(result.recognition.candidates), 1)
         self.assertEqual(len(result.transforms), 1)
+        self.assertEqual(len(result.recognition.responses), 1)
+        self.assertEqual(result.recognition.responses[0].context_id, "left")
 
     def test_cancellation_before_and_after_prediction_is_visible(self) -> None:
         source, common, transforms = self.fixture()
@@ -250,6 +280,7 @@ class ContextPipelineTests(unittest.TestCase):
         self.assertEqual(late.transforms[0].predicted_bits, (2, 3))
         self.assertFalse(late.transforms[0].forwarded)
         self.assertEqual(late.recognition.examined_views, 0)
+        self.assertEqual(late.recognition.responses, ())
 
     def test_cancellation_during_recognition_preserves_completed_prefix(self) -> None:
         source, common, transforms = self.fixture()
@@ -269,6 +300,7 @@ class ContextPipelineTests(unittest.TestCase):
         self.assertEqual(result.stop_reason, "cancelled")
         self.assertEqual(result.recognition.examined_views, 1)
         self.assertEqual(len(result.recognition.candidates), 1)
+        self.assertEqual(len(result.recognition.responses), 1)
 
     def test_prediction_crossing_deadline_does_not_become_complete_recognition(
         self,

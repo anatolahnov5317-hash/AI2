@@ -102,6 +102,26 @@ class CandidateRelation:
 
 
 @dataclass(frozen=True, slots=True)
+class ContextResponse:
+    """One completed view read, including reads without a surviving candidate.
+
+    ``active`` means the view passed the memory's minimum active-point gate.
+    ``score`` is uncalibrated factor support, not a probability. The input digest
+    identifies the actual transformed Boolean vector and excludes event/view
+    names; repeating a sample with a new name cannot manufacture diversity.
+    Source positions remain the adapter's scope, not a discovered object.
+    """
+
+    context_id: str
+    view_id: str
+    observation_id: str
+    source_positions: tuple[int, ...]
+    score: float
+    active: bool
+    input_digest: str
+
+
+@dataclass(frozen=True, slots=True)
 class RecognitionResult:
     candidates: tuple[RecognitionCandidate, ...]
     relations: tuple[CandidateRelation, ...]
@@ -112,6 +132,7 @@ class RecognitionResult:
     stop_reason: str | None = None
     memory_step: int = 0
     encoding_id: str = ""
+    responses: tuple[ContextResponse, ...] = ()
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -279,6 +300,7 @@ def recognize_views(
     started = perf_counter()
     examined = 0
     found: list[RecognitionCandidate] = []
+    responses: list[ContextResponse] = []
     seen_ids: set[str] = set()
     stop_reason: str | None = None
     evidence_count = 0
@@ -300,7 +322,9 @@ def recognize_views(
                 view = next(iterator)
             except StopIteration as error:
                 raise ValueError("view stream is shorter than total_views") from error
+            check_budget()
             active = _validate_view(view, memory)
+            check_budget()
             if view.view_id in seen_ids:
                 raise ValueError("view identifiers must be unique")
             seen_ids.add(view.view_id)
@@ -331,8 +355,27 @@ def recognize_views(
                     4.0 * len(matched) / len(cluster.bits) * log1p(cluster.partial_hits)
                 )
                 quality = max(quality, len(matched))
-            examined += 1
+            # A source generator or even an empty cluster iterator can consume
+            # the budget. Do not commit an inactive response from that read.
+            check_budget()
             points = {e.point_index for e in evidence}
+            input_digest = hashlib.sha256(
+                len(active).to_bytes(8, "little")
+                + np.packbits(active, bitorder="little").tobytes()
+            ).hexdigest()
+            check_budget()
+            examined += 1
+            responses.append(
+                ContextResponse(
+                    view.context_id,
+                    view.view_id,
+                    view.observation_id,
+                    view.source_positions,
+                    score,
+                    len(points) >= memory.config.min_active_points,
+                    input_digest,
+                )
+            )
             if len(points) >= memory.config.min_active_points:
                 evidence.sort(key=lambda e: (e.point_index, e.signature))
                 digest = hashlib.sha256(namespace.encode())
@@ -374,6 +417,7 @@ def recognize_views(
                     f"recognition: {examined}/{total_views} views; "
                     f"{len(found)} candidates"
                 )
+            check_budget()
     except InterruptedError as error:
         stop_reason = str(error)
 
@@ -402,6 +446,10 @@ def recognize_views(
     for index, left in enumerate(kept):
         for right in kept[index + 1 :]:
             relations.append(relate_candidates(left, right))
+    try:
+        check_budget()
+    except InterruptedError as error:
+        stop_reason = stop_reason or str(error)
     return RecognitionResult(
         tuple(kept),
         tuple(relations),
@@ -412,4 +460,5 @@ def recognize_views(
         stop_reason,
         memory.step,
         namespace,
+        tuple(responses),
     )
