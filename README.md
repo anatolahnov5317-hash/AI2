@@ -49,6 +49,7 @@ text-factors converse --state conversation.json
 свободному диалогу.
 
 [Запуск, API и ограничения](docs/V04_GROUNDED_DIALOGUE.md),
+[измеренные результаты](docs/V04_RESULTS.md),
 [протокол до опыта](docs/V04_DIALOGUE_PROTOCOL.md),
 [зафиксированные сценарии](docs/V04_DIALOGUE_CASES.md).
 

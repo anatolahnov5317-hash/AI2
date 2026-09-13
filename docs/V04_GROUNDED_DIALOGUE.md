@@ -168,6 +168,7 @@ text-factors dialogue-evaluate --split held_out --seeds 7 17 42 --seconds 180 --
 
 Граница между обучением и проверкой зафиксирована в
 [протоколе](V04_DIALOGUE_PROTOCOL.md) и [описании корпуса](V04_DIALOGUE_CASES.md).
+Фактические измерения и контрольные варианты: [V04_RESULTS.md](V04_RESULTS.md).
 
 ## Связь с исходной исследовательской идеей
 
