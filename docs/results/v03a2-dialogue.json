@@ -1,0 +1,3213 @@
+{
+  "given": [
+    "sensor alphabet and part boundaries",
+    "two unnamed sensor patterns",
+    "explicit human label confirmations",
+    "command grammar and answer templates"
+  ],
+  "learned": [
+    "local clusters from repeated sensor presentations",
+    "word bindings to recognized cluster content"
+  ],
+  "metrics": {
+    "both_taught_names_present": true,
+    "combined_description": true,
+    "factor_training_presentations": 8,
+    "label_events": 2,
+    "lookup_reply_kind": "definition",
+    "recognition_did_not_train_memory": true,
+    "reload_preserves_description": true,
+    "unknown_requests_clarification": true
+  },
+  "model_config": {
+    "activation_threshold": 4,
+    "active_bits_per_symbol": 8,
+    "coactivation_history_size": 32,
+    "coactivation_passes": 3,
+    "consolidation_method": "frequency",
+    "context_count": 4,
+    "create_threshold": 4,
+    "frame_size": 2,
+    "input_bits": 128,
+    "max_clusters_per_point": 16,
+    "max_complete_error_rate": 0.05,
+    "max_partial_error_rate": 0.3,
+    "min_active_points": 1,
+    "min_error_observations": 5,
+    "output_bits": 64,
+    "point_count": 128,
+    "positions": 4,
+    "prediction_vote_threshold": 2,
+    "probation_after": 2,
+    "prune_keep_ratio": 0.75,
+    "receptive_bits": 24,
+    "seed": 7,
+    "stable_after": 3
+  },
+  "not_tested": [
+    "free Russian grammar",
+    "learned segmentation",
+    "autonomous context discovery",
+    "arbitrary semantic relations"
+  ],
+  "schema_version": 1,
+  "seed": 7,
+  "source": {
+    "git_dirty": false,
+    "git_revision": "537c45ef87bf3dd5b0685160873aeeff49cf9226",
+    "git_tree": "67b2e6ae555ecaf1f907c0d6d2eae5630c064d9b",
+    "numpy": "2.3.5",
+    "package_version": "0.3.0a2",
+    "platform": "linux",
+    "python": "3.12.14",
+    "reproducibility": "scores/counts deterministic for matching source and dependencies; hashes identify but do not embed source; wall-clock timings are not deterministic",
+    "source_sha256": {
+      "__init__.py": "ebc20cd3c6ca4a6e1eb02d72334dcb83c2a936d969c5a03978a23e7b5729f8c2",
+      "__main__.py": "307299fda7b77d22c64cb51430ec75e5f59d78e9c948786afb3b2544fe45e4b7",
+      "chat_lab.py": "17db167b7cd388d7d63a66a49e09513acdf2201eede2848653be71836387cba4",
+      "cli.py": "3a6fb66ed22b2942f5d6b09e49a0f86ec4a8836a9799594e5ef1de5f0c0b3415",
+      "config.py": "9e8c301ad2e177561b5ec429d3545814e99e16656d2c358c6c3a5a33931292d1",
+      "consolidation.py": "c1699ac87fd4c4bcaf34caf0bf00551807779b3c8070ee7fbec5d22aea1c1410",
+      "dialogue.py": "ddffeea256d71203bd7c29088b8bff364aeb4aa2e0f3e7a58b5e846294d3c012",
+      "encoder.py": "855dc6df9b138be1d47efa5d15cb7842465f68c888d4396768050dae223908aa",
+      "evaluation/__init__.py": "3356432ca22ad7f6fe4037f2010ebbb891c767665ca4c1c86d59ae51ccedc0c4",
+      "evaluation/baselines.py": "4a6a440138a65cf4ff02927ef87acb876c012023691df6be7da4d4f3c4e4a3ca",
+      "evaluation/context_transfer.py": "e5c7defd42bab8d9dfb21216189dab49186581f25318545936a88f24731002c3",
+      "evaluation/data.py": "d87eb7f162528aab08e6163d9d334a3817fb127703d4a34ea975bd0b1525e4b2",
+      "evaluation/factor_recovery.py": "eeec0b9ce64f5448fda39f5e8940f64c61776fa7b2e1fb35cce78844cf64d7df",
+      "evaluation/runner.py": "2226b22788effbc5f1446280ac7e2e1b8869ee6ec1da518f7adab67147c1d7e0",
+      "evaluation/statistics.py": "37da915bc366af7ee90bd7d052e2851b5328de2e575d97d4cad84666c877dc11",
+      "evaluation/transform_learning.py": "f21da5e1f1bc02cdf366f856c6ac3c3dc1822b186e6d27cc3be972d6ff3f9e8d",
+      "experience.py": "fd3beaf63a940144bd4281953d52e08ce8515127e640542d621334b0da734548",
+      "memory.py": "85e91a7bf030edbd1ba7f48f429af84d62e2e02eeba099bc74c1994ad600c0d4",
+      "metrics.py": "bc3b8a7eac335c91620103649c1ec9c83e68c1b2079a1d5197846f5169edeb50",
+      "microworld.py": "4b9e37b988112c6dd960033e50e3c7acdb75e7befc0fef7e4ff793dced755021",
+      "model.py": "23dac0d18e2564ee4ade8068fd5cfa9cdb32d03a6708d9fd9a4a7855c851c8d9",
+      "recognition.py": "d54ab4b78b267ca8b3e279e9bba1b8f8542e0a0ba7d96ffc984e56b162d916fc",
+      "transforms.py": "bb9924838adfd1993c9e3c1548c98d53141711546d24b5dde6187ac6bf6aec85"
+    }
+  },
+  "status": "complete",
+  "trace": [
+    {
+      "recognition": {
+        "candidates": [
+          {
+            "active_points": 41,
+            "candidate_id": "w0:c0",
+            "claims": [],
+            "content_key": "0dba4fc8babaa1e3c27a5d44b47b183f655a5a46d674a33f52670eba60387a57",
+            "context_id": "0",
+            "evidence": [
+              {
+                "matched_bits": [
+                  76,
+                  84,
+                  97,
+                  105,
+                  111
+                ],
+                "observations": 4,
+                "output_bit": 34,
+                "point_index": 1,
+                "signature": [
+                  76,
+                  84,
+                  97,
+                  105,
+                  111
+                ]
+              },
+              {
+                "matched_bits": [
+                  0,
+                  28,
+                  76,
+                  84,
+                  102,
+                  123
+                ],
+                "observations": 4,
+                "output_bit": 3,
+                "point_index": 3,
+                "signature": [
+                  0,
+                  28,
+                  76,
+                  84,
+                  102,
+                  123
+                ]
+              },
+              {
+                "matched_bits": [
+                  0,
+                  19,
+                  28,
+                  67,
+                  82
+                ],
+                "observations": 4,
+                "output_bit": 2,
+                "point_index": 11,
+                "signature": [
+                  0,
+                  19,
+                  28,
+                  67,
+                  82
+                ]
+              },
+              {
+                "matched_bits": [
+                  0,
+                  33,
+                  102,
+                  123
+                ],
+                "observations": 4,
+                "output_bit": 55,
+                "point_index": 13,
+                "signature": [
+                  0,
+                  33,
+                  102,
+                  123
+                ]
+              },
+              {
+                "matched_bits": [
+                  19,
+                  67,
+                  75,
+                  76,
+                  82,
+                  97
+                ],
+                "observations": 4,
+                "output_bit": 37,
+                "point_index": 17,
+                "signature": [
+                  19,
+                  67,
+                  75,
+                  76,
+                  82,
+                  97
+                ]
+              },
+              {
+                "matched_bits": [
+                  84,
+                  102,
+                  105,
+                  111
+                ],
+                "observations": 4,
+                "output_bit": 1,
+                "point_index": 21,
+                "signature": [
+                  84,
+                  102,
+                  105,
+                  111
+                ]
+              },
+              {
+                "matched_bits": [
+                  67,
+                  75,
+                  114,
+                  123
+                ],
+                "observations": 4,
+                "output_bit": 28,
+                "point_index": 22,
+                "signature": [
+                  67,
+                  75,
+                  114,
+                  123
+                ]
+              },
+              {
+                "matched_bits": [
+                  28,
+                  67,
+                  84,
+                  97
+                ],
+                "observations": 4,
+                "output_bit": 4,
+                "point_index": 24,
+                "signature": [
+                  28,
+                  67,
+                  84,
+                  97
+                ]
+              },
+              {
+                "matched_bits": [
+                  19,
+                  84,
+                  97,
+                  114
+                ],
+                "observations": 4,
+                "output_bit": 54,
+                "point_index": 27,
+                "signature": [
+                  19,
+                  84,
+                  97,
+                  114
+                ]
+              },
+              {
+                "matched_bits": [
+                  72,
+                  76,
+                  105,
+                  114
+                ],
+                "observations": 4,
+                "output_bit": 55,
+                "point_index": 28,
+                "signature": [
+                  72,
+                  76,
+                  105,
+                  114
+                ]
+              },
+              {
+                "matched_bits": [
+                  82,
+                  84,
+                  97,
+                  111
+                ],
+                "observations": 4,
+                "output_bit": 57,
+                "point_index": 29,
+                "signature": [
+                  82,
+                  84,
+                  97,
+                  111
+                ]
+              },
+              {
+                "matched_bits": [
+                  75,
+                  76,
+                  84,
+                  105
+                ],
+                "observations": 4,
+                "output_bit": 30,
+                "point_index": 40,
+                "signature": [
+                  75,
+                  76,
+                  84,
+                  105
+                ]
+              },
+              {
+                "matched_bits": [
+                  0,
+                  84,
+                  105,
+                  111,
+                  114
+                ],
+                "observations": 4,
+                "output_bit": 7,
+                "point_index": 42,
+                "signature": [
+                  0,
+                  84,
+                  105,
+                  111,
+                  114
+                ]
+              },
+              {
+                "matched_bits": [
+                  19,
+                  76,
+                  105,
+                  111
+                ],
+                "observations": 4,
+                "output_bit": 28,
+                "point_index": 48,
+                "signature": [
+                  19,
+                  76,
+                  105,
+                  111
+                ]
+              },
+              {
+                "matched_bits": [
+                  0,
+                  72,
+                  102,
+                  114
+                ],
+                "observations": 8,
+                "output_bit": 43,
+                "point_index": 49,
+                "signature": [
+                  0,
+                  72,
+                  102,
+                  114
+                ]
+              },
+              {
+                "matched_bits": [
+                  28,
+                  76,
+                  97,
+                  111
+                ],
+                "observations": 4,
+                "output_bit": 0,
+                "point_index": 51,
+                "signature": [
+                  28,
+                  76,
+                  97,
+                  111
+                ]
+              },
+              {
+                "matched_bits": [
+                  28,
+                  76,
+                  82,
+                  97,
+                  105,
+                  114
+                ],
+                "observations": 4,
+                "output_bit": 25,
+                "point_index": 53,
+                "signature": [
+                  28,
+                  76,
+                  82,
+                  97,
+                  105,
+                  114
+                ]
+              },
+              {
+                "matched_bits": [
+                  28,
+                  33,
+                  75,
+                  111
+                ],
+                "observations": 4,
+                "output_bit": 42,
+                "point_index": 54,
+                "signature": [
+                  28,
+                  33,
+                  75,
+                  111
+                ]
+              },
+              {
+                "matched_bits": [
+                  0,
+                  75,
+                  102,
+                  114
+                ],
+                "observations": 8,
+                "output_bit": 12,
+                "point_index": 57,
+                "signature": [
+                  0,
+                  75,
+                  102,
+                  114
+                ]
+              },
+              {
+                "matched_bits": [
+                  19,
+                  28,
+                  33,
+                  75,
+                  82,
+                  102
+                ],
+                "observations": 4,
+                "output_bit": 43,
+                "point_index": 61,
+                "signature": [
+                  19,
+                  28,
+                  33,
+                  75,
+                  82,
+                  102
+                ]
+              },
+              {
+                "matched_bits": [
+                  0,
+                  67,
+                  75,
+                  84,
+                  97
+                ],
+                "observations": 4,
+                "output_bit": 28,
+                "point_index": 62,
+                "signature": [
+                  0,
+                  67,
+                  75,
+                  84,
+                  97
+                ]
+              },
+              {
+                "matched_bits": [
+                  75,
+                  76,
+                  84,
+                  111,
+                  114
+                ],
+                "observations": 4,
+                "output_bit": 11,
+                "point_index": 63,
+                "signature": [
+                  75,
+                  76,
+                  84,
+                  111,
+                  114
+                ]
+              },
+              {
+                "matched_bits": [
+                  0,
+                  28,
+                  82,
+                  114
+                ],
+                "observations": 4,
+                "output_bit": 44,
+                "point_index": 64,
+                "signature": [
+                  0,
+                  28,
+                  82,
+                  114
+                ]
+              },
+              {
+                "matched_bits": [
+                  0,
+                  67,
+                  72,
+                  102
+                ],
+                "observations": 4,
+                "output_bit": 38,
+                "point_index": 70,
+                "signature": [
+                  0,
+                  67,
+                  72,
+                  102
+                ]
+              },
+              {
+                "matched_bits": [
+                  28,
+                  33,
+                  76,
+                  97
+                ],
+                "observations": 4,
+                "output_bit": 16,
+                "point_index": 74,
+                "signature": [
+                  28,
+                  33,
+                  76,
+                  97
+                ]
+              },
+              {
+                "matched_bits": [
+                  0,
+                  28,
+                  76,
+                  97
+                ],
+                "observations": 4,
+                "output_bit": 0,
+                "point_index": 83,
+                "signature": [
+                  0,
+                  28,
+                  76,
+                  97
+                ]
+              },
+              {
+                "matched_bits": [
+                  75,
+                  82,
+                  111,
+                  114,
+                  123
+                ],
+                "observations": 4,
+                "output_bit": 32,
+                "point_index": 85,
+                "signature": [
+                  75,
+                  82,
+                  111,
+                  114,
+                  123
+                ]
+              },
+              {
+                "matched_bits": [
+                  19,
+                  28,
+                  76,
+                  84
+                ],
+                "observations": 4,
+                "output_bit": 21,
+                "point_index": 86,
+                "signature": [
+                  19,
+                  28,
+                  76,
+                  84
+                ]
+              },
+              {
+                "matched_bits": [
+                  75,
+                  76,
+                  97,
+                  123
+                ],
+                "observations": 4,
+                "output_bit": 54,
+                "point_index": 87,
+                "signature": [
+                  75,
+                  76,
+                  97,
+                  123
+                ]
+              },
+              {
+                "matched_bits": [
+                  67,
+                  76,
+                  82,
+                  97,
+                  105
+                ],
+                "observations": 4,
+                "output_bit": 33,
+                "point_index": 88,
+                "signature": [
+                  67,
+                  76,
+                  82,
+                  97,
+                  105
+                ]
+              },
+              {
+                "matched_bits": [
+                  0,
+                  72,
+                  82,
+                  102
+                ],
+                "observations": 4,
+                "output_bit": 63,
+                "point_index": 96,
+                "signature": [
+                  0,
+                  72,
+                  82,
+                  102
+                ]
+              },
+              {
+                "matched_bits": [
+                  28,
+                  67,
+                  97,
+                  114
+                ],
+                "observations": 4,
+                "output_bit": 49,
+                "point_index": 100,
+                "signature": [
+                  28,
+                  67,
+                  97,
+                  114
+                ]
+              },
+              {
+                "matched_bits": [
+                  0,
+                  28,
+                  33,
+                  105
+                ],
+                "observations": 4,
+                "output_bit": 52,
+                "point_index": 101,
+                "signature": [
+                  0,
+                  28,
+                  33,
+                  105
+                ]
+              },
+              {
+                "matched_bits": [
+                  19,
+                  67,
+                  76,
+                  84
+                ],
+                "observations": 4,
+                "output_bit": 36,
+                "point_index": 102,
+                "signature": [
+                  19,
+                  67,
+                  76,
+                  84
+                ]
+              },
+              {
+                "matched_bits": [
+                  0,
+                  19,
+                  33,
+                  82
+                ],
+                "observations": 4,
+                "output_bit": 9,
+                "point_index": 105,
+                "signature": [
+                  0,
+                  19,
+                  33,
+                  82
+                ]
+              },
+              {
+                "matched_bits": [
+                  0,
+                  67,
+                  72,
+                  102
+                ],
+                "observations": 4,
+                "output_bit": 17,
+                "point_index": 117,
+                "signature": [
+                  0,
+                  67,
+                  72,
+                  102
+                ]
+              },
+              {
+                "matched_bits": [
+                  0,
+                  33,
+                  76,
+                  97
+                ],
+                "observations": 4,
+                "output_bit": 24,
+                "point_index": 120,
+                "signature": [
+                  0,
+                  33,
+                  76,
+                  97
+                ]
+              },
+              {
+                "matched_bits": [
+                  33,
+                  72,
+                  75,
+                  102,
+                  105,
+                  123
+                ],
+                "observations": 4,
+                "output_bit": 23,
+                "point_index": 121,
+                "signature": [
+                  33,
+                  72,
+                  75,
+                  102,
+                  105,
+                  123
+                ]
+              },
+              {
+                "matched_bits": [
+                  19,
+                  97,
+                  102,
+                  111,
+                  114
+                ],
+                "observations": 4,
+                "output_bit": 9,
+                "point_index": 122,
+                "signature": [
+                  19,
+                  97,
+                  102,
+                  111,
+                  114
+                ]
+              },
+              {
+                "matched_bits": [
+                  0,
+                  19,
+                  28,
+                  76,
+                  105
+                ],
+                "observations": 4,
+                "output_bit": 59,
+                "point_index": 123,
+                "signature": [
+                  0,
+                  19,
+                  28,
+                  76,
+                  105
+                ]
+              },
+              {
+                "matched_bits": [
+                  67,
+                  84,
+                  97,
+                  105
+                ],
+                "observations": 4,
+                "output_bit": 63,
+                "point_index": 127,
+                "signature": [
+                  67,
+                  84,
+                  97,
+                  105
+                ]
+              }
+            ],
+            "familiarity": 268.6501109584096,
+            "observation_id": "teaching-a",
+            "output_bits": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              7,
+              9,
+              11,
+              12,
+              16,
+              17,
+              21,
+              23,
+              24,
+              25,
+              28,
+              30,
+              32,
+              33,
+              34,
+              36,
+              37,
+              38,
+              42,
+              43,
+              44,
+              49,
+              52,
+              54,
+              55,
+              57,
+              59,
+              63
+            ],
+            "quality": 6,
+            "source_positions": [
+              0,
+              1
+            ]
+          }
+        ],
+        "complete": true,
+        "encoding_id": "01fc4523c26eea310ee25099a6b235ba32a5f22db69001c2f43fe57c261494b0",
+        "examined_views": 4,
+        "memory_step": 8,
+        "relations": [],
+        "stop_reason": null,
+        "suppressed": [],
+        "total_views": 4
+      },
+      "reply": {
+        "candidate_ids": [
+          "w0:c0"
+        ],
+        "kind": "clarification",
+        "reference_id": "teaching-a",
+        "support_event_ids": [],
+        "text": "Узнанные части: 1: содержание без названия. Как назвать объект 1?"
+      },
+      "show": [
+        "ab"
+      ]
+    },
+    {
+      "message": "назови 1 куб",
+      "reply": {
+        "candidate_ids": [
+          "w0:c0"
+        ],
+        "kind": "confirmation",
+        "reference_id": "teaching-a",
+        "support_event_ids": [
+          0
+        ],
+        "text": "Название объекта 1 подтверждено: «куб»."
+      }
+    },
+    {
+      "recognition": {
+        "candidates": [
+          {
+            "active_points": 36,
+            "candidate_id": "w0:c2",
+            "claims": [],
+            "content_key": "77d80475fe8f818295b4febd9affd3ec998c8ddb6c73deb2396fda0200cebfff",
+            "context_id": "2",
+            "evidence": [
+              {
+                "matched_bits": [
+                  0,
+                  18,
+                  102,
+                  103,
+                  127
+                ],
+                "observations": 4,
+                "output_bit": 3,
+                "point_index": 3,
+                "signature": [
+                  0,
+                  18,
+                  102,
+                  103,
+                  127
+                ]
+              },
+              {
+                "matched_bits": [
+                  18,
+                  38,
+                  59,
+                  72,
+                  103
+                ],
+                "observations": 4,
+                "output_bit": 30,
+                "point_index": 5,
+                "signature": [
+                  18,
+                  38,
+                  59,
+                  72,
+                  103
+                ]
+              },
+              {
+                "matched_bits": [
+                  50,
+                  95,
+                  102,
+                  127
+                ],
+                "observations": 4,
+                "output_bit": 3,
+                "point_index": 6,
+                "signature": [
+                  50,
+                  95,
+                  102,
+                  127
+                ]
+              },
+              {
+                "matched_bits": [
+                  18,
+                  114,
+                  121,
+                  127
+                ],
+                "observations": 4,
+                "output_bit": 30,
+                "point_index": 12,
+                "signature": [
+                  18,
+                  114,
+                  121,
+                  127
+                ]
+              },
+              {
+                "matched_bits": [
+                  59,
+                  72,
+                  75,
+                  95,
+                  113
+                ],
+                "observations": 4,
+                "output_bit": 7,
+                "point_index": 16,
+                "signature": [
+                  59,
+                  72,
+                  75,
+                  95,
+                  113
+                ]
+              },
+              {
+                "matched_bits": [
+                  38,
+                  75,
+                  103,
+                  127
+                ],
+                "observations": 4,
+                "output_bit": 37,
+                "point_index": 17,
+                "signature": [
+                  38,
+                  75,
+                  103,
+                  127
+                ]
+              },
+              {
+                "matched_bits": [
+                  50,
+                  95,
+                  117,
+                  121
+                ],
+                "observations": 4,
+                "output_bit": 13,
+                "point_index": 23,
+                "signature": [
+                  50,
+                  95,
+                  117,
+                  121
+                ]
+              },
+              {
+                "matched_bits": [
+                  38,
+                  95,
+                  103,
+                  114
+                ],
+                "observations": 4,
+                "output_bit": 54,
+                "point_index": 27,
+                "signature": [
+                  38,
+                  95,
+                  103,
+                  114
+                ]
+              },
+              {
+                "matched_bits": [
+                  59,
+                  72,
+                  113,
+                  114
+                ],
+                "observations": 4,
+                "output_bit": 55,
+                "point_index": 28,
+                "signature": [
+                  59,
+                  72,
+                  113,
+                  114
+                ]
+              },
+              {
+                "matched_bits": [
+                  0,
+                  103,
+                  114,
+                  117
+                ],
+                "observations": 4,
+                "output_bit": 25,
+                "point_index": 35,
+                "signature": [
+                  0,
+                  103,
+                  114,
+                  117
+                ]
+              },
+              {
+                "matched_bits": [
+                  0,
+                  59,
+                  95,
+                  113,
+                  117,
+                  121,
+                  127
+                ],
+                "observations": 4,
+                "output_bit": 40,
+                "point_index": 38,
+                "signature": [
+                  0,
+                  59,
+                  95,
+                  113,
+                  117,
+                  121,
+                  127
+                ]
+              },
+              {
+                "matched_bits": [
+                  0,
+                  50,
+                  59,
+                  114
+                ],
+                "observations": 4,
+                "output_bit": 7,
+                "point_index": 42,
+                "signature": [
+                  0,
+                  50,
+                  59,
+                  114
+                ]
+              },
+              {
+                "matched_bits": [
+                  0,
+                  72,
+                  102,
+                  114
+                ],
+                "observations": 8,
+                "output_bit": 43,
+                "point_index": 49,
+                "signature": [
+                  0,
+                  72,
+                  102,
+                  114
+                ]
+              },
+              {
+                "matched_bits": [
+                  0,
+                  75,
+                  102,
+                  114
+                ],
+                "observations": 8,
+                "output_bit": 12,
+                "point_index": 57,
+                "signature": [
+                  0,
+                  75,
+                  102,
+                  114
+                ]
+              },
+              {
+                "matched_bits": [
+                  38,
+                  50,
+                  117,
+                  121
+                ],
+                "observations": 4,
+                "output_bit": 59,
+                "point_index": 59,
+                "signature": [
+                  38,
+                  50,
+                  117,
+                  121
+                ]
+              },
+              {
+                "matched_bits": [
+                  18,
+                  103,
+                  113,
+                  121
+                ],
+                "observations": 4,
+                "output_bit": 33,
+                "point_index": 68,
+                "signature": [
+                  18,
+                  103,
+                  113,
+                  121
+                ]
+              },
+              {
+                "matched_bits": [
+                  0,
+                  18,
+                  72,
+                  102,
+                  117
+                ],
+                "observations": 4,
+                "output_bit": 38,
+                "point_index": 70,
+                "signature": [
+                  0,
+                  18,
+                  72,
+                  102,
+                  117
+                ]
+              },
+              {
+                "matched_bits": [
+                  18,
+                  38,
+                  59,
+                  114,
+                  117
+                ],
+                "observations": 4,
+                "output_bit": 53,
+                "point_index": 79,
+                "signature": [
+                  18,
+                  38,
+                  59,
+                  114,
+                  117
+                ]
+              },
+              {
+                "matched_bits": [
+                  0,
+                  75,
+                  102,
+                  113,
+                  127
+                ],
+                "observations": 4,
+                "output_bit": 14,
+                "point_index": 80,
+                "signature": [
+                  0,
+                  75,
+                  102,
+                  113,
+                  127
+                ]
+              },
+              {
+                "matched_bits": [
+                  50,
+                  59,
+                  103,
+                  117
+                ],
+                "observations": 4,
+                "output_bit": 56,
+                "point_index": 81,
+                "signature": [
+                  50,
+                  59,
+                  103,
+                  117
+                ]
+              },
+              {
+                "matched_bits": [
+                  0,
+                  18,
+                  50,
+                  59,
+                  113
+                ],
+                "observations": 4,
+                "output_bit": 0,
+                "point_index": 83,
+                "signature": [
+                  0,
+                  18,
+                  50,
+                  59,
+                  113
+                ]
+              },
+              {
+                "matched_bits": [
+                  59,
+                  75,
+                  102,
+                  117
+                ],
+                "observations": 4,
+                "output_bit": 16,
+                "point_index": 84,
+                "signature": [
+                  59,
+                  75,
+                  102,
+                  117
+                ]
+              },
+              {
+                "matched_bits": [
+                  38,
+                  59,
+                  75,
+                  114,
+                  117,
+                  121
+                ],
+                "observations": 4,
+                "output_bit": 32,
+                "point_index": 85,
+                "signature": [
+                  38,
+                  59,
+                  75,
+                  114,
+                  117,
+                  121
+                ]
+              },
+              {
+                "matched_bits": [
+                  50,
+                  59,
+                  95,
+                  127
+                ],
+                "observations": 4,
+                "output_bit": 21,
+                "point_index": 86,
+                "signature": [
+                  50,
+                  59,
+                  95,
+                  127
+                ]
+              },
+              {
+                "matched_bits": [
+                  50,
+                  95,
+                  113,
+                  127
+                ],
+                "observations": 4,
+                "output_bit": 0,
+                "point_index": 89,
+                "signature": [
+                  50,
+                  95,
+                  113,
+                  127
+                ]
+              },
+              {
+                "matched_bits": [
+                  0,
+                  72,
+                  102,
+                  117
+                ],
+                "observations": 4,
+                "output_bit": 63,
+                "point_index": 96,
+                "signature": [
+                  0,
+                  72,
+                  102,
+                  117
+                ]
+              },
+              {
+                "matched_bits": [
+                  95,
+                  114,
+                  117,
+                  121
+                ],
+                "observations": 4,
+                "output_bit": 49,
+                "point_index": 100,
+                "signature": [
+                  95,
+                  114,
+                  117,
+                  121
+                ]
+              },
+              {
+                "matched_bits": [
+                  50,
+                  59,
+                  114,
+                  117
+                ],
+                "observations": 4,
+                "output_bit": 17,
+                "point_index": 104,
+                "signature": [
+                  50,
+                  59,
+                  114,
+                  117
+                ]
+              },
+              {
+                "matched_bits": [
+                  18,
+                  72,
+                  75,
+                  127
+                ],
+                "observations": 4,
+                "output_bit": 8,
+                "point_index": 110,
+                "signature": [
+                  18,
+                  72,
+                  75,
+                  127
+                ]
+              },
+              {
+                "matched_bits": [
+                  18,
+                  59,
+                  72,
+                  113,
+                  127
+                ],
+                "observations": 4,
+                "output_bit": 36,
+                "point_index": 116,
+                "signature": [
+                  18,
+                  59,
+                  72,
+                  113,
+                  127
+                ]
+              },
+              {
+                "matched_bits": [
+                  0,
+                  59,
+                  72,
+                  102
+                ],
+                "observations": 4,
+                "output_bit": 17,
+                "point_index": 117,
+                "signature": [
+                  0,
+                  59,
+                  72,
+                  102
+                ]
+              },
+              {
+                "matched_bits": [
+                  0,
+                  18,
+                  50,
+                  103,
+                  113,
+                  121
+                ],
+                "observations": 4,
+                "output_bit": 31,
+                "point_index": 118,
+                "signature": [
+                  0,
+                  18,
+                  50,
+                  103,
+                  113,
+                  121
+                ]
+              },
+              {
+                "matched_bits": [
+                  18,
+                  75,
+                  95,
+                  103
+                ],
+                "observations": 4,
+                "output_bit": 0,
+                "point_index": 119,
+                "signature": [
+                  18,
+                  75,
+                  95,
+                  103
+                ]
+              },
+              {
+                "matched_bits": [
+                  50,
+                  72,
+                  75,
+                  102
+                ],
+                "observations": 4,
+                "output_bit": 23,
+                "point_index": 121,
+                "signature": [
+                  50,
+                  72,
+                  75,
+                  102
+                ]
+              },
+              {
+                "matched_bits": [
+                  50,
+                  102,
+                  113,
+                  114
+                ],
+                "observations": 4,
+                "output_bit": 9,
+                "point_index": 122,
+                "signature": [
+                  50,
+                  102,
+                  113,
+                  114
+                ]
+              },
+              {
+                "matched_bits": [
+                  0,
+                  59,
+                  95,
+                  113
+                ],
+                "observations": 4,
+                "output_bit": 59,
+                "point_index": 123,
+                "signature": [
+                  0,
+                  59,
+                  95,
+                  113
+                ]
+              }
+            ],
+            "familiarity": 236.46135270972755,
+            "observation_id": "teaching-b",
+            "output_bits": [
+              0,
+              3,
+              7,
+              8,
+              9,
+              12,
+              13,
+              14,
+              16,
+              17,
+              21,
+              23,
+              25,
+              30,
+              31,
+              32,
+              33,
+              36,
+              37,
+              38,
+              40,
+              43,
+              49,
+              53,
+              54,
+              55,
+              56,
+              59,
+              63
+            ],
+            "quality": 7,
+            "source_positions": [
+              0,
+              1
+            ]
+          }
+        ],
+        "complete": true,
+        "encoding_id": "01fc4523c26eea310ee25099a6b235ba32a5f22db69001c2f43fe57c261494b0",
+        "examined_views": 4,
+        "memory_step": 8,
+        "relations": [],
+        "stop_reason": null,
+        "suppressed": [],
+        "total_views": 4
+      },
+      "reply": {
+        "candidate_ids": [
+          "w0:c2"
+        ],
+        "kind": "clarification",
+        "reference_id": "teaching-b",
+        "support_event_ids": [],
+        "text": "Узнанные части: 1: содержание без названия. Как назвать объект 1?"
+      },
+      "show": [
+        "cd"
+      ]
+    },
+    {
+      "message": "назови 1 шар",
+      "reply": {
+        "candidate_ids": [
+          "w0:c2"
+        ],
+        "kind": "confirmation",
+        "reference_id": "teaching-b",
+        "support_event_ids": [
+          1
+        ],
+        "text": "Название объекта 1 подтверждено: «шар»."
+      }
+    },
+    {
+      "recognition": {
+        "candidates": [
+          {
+            "active_points": 41,
+            "candidate_id": "w3:c1",
+            "claims": [],
+            "content_key": "0dba4fc8babaa1e3c27a5d44b47b183f655a5a46d674a33f52670eba60387a57",
+            "context_id": "1",
+            "evidence": [
+              {
+                "matched_bits": [
+                  76,
+                  84,
+                  97,
+                  105,
+                  111
+                ],
+                "observations": 4,
+                "output_bit": 34,
+                "point_index": 1,
+                "signature": [
+                  76,
+                  84,
+                  97,
+                  105,
+                  111
+                ]
+              },
+              {
+                "matched_bits": [
+                  0,
+                  28,
+                  76,
+                  84,
+                  102,
+                  123
+                ],
+                "observations": 4,
+                "output_bit": 3,
+                "point_index": 3,
+                "signature": [
+                  0,
+                  28,
+                  76,
+                  84,
+                  102,
+                  123
+                ]
+              },
+              {
+                "matched_bits": [
+                  0,
+                  19,
+                  28,
+                  67,
+                  82
+                ],
+                "observations": 4,
+                "output_bit": 2,
+                "point_index": 11,
+                "signature": [
+                  0,
+                  19,
+                  28,
+                  67,
+                  82
+                ]
+              },
+              {
+                "matched_bits": [
+                  0,
+                  33,
+                  102,
+                  123
+                ],
+                "observations": 4,
+                "output_bit": 55,
+                "point_index": 13,
+                "signature": [
+                  0,
+                  33,
+                  102,
+                  123
+                ]
+              },
+              {
+                "matched_bits": [
+                  19,
+                  67,
+                  75,
+                  76,
+                  82,
+                  97
+                ],
+                "observations": 4,
+                "output_bit": 37,
+                "point_index": 17,
+                "signature": [
+                  19,
+                  67,
+                  75,
+                  76,
+                  82,
+                  97
+                ]
+              },
+              {
+                "matched_bits": [
+                  84,
+                  102,
+                  105,
+                  111
+                ],
+                "observations": 4,
+                "output_bit": 1,
+                "point_index": 21,
+                "signature": [
+                  84,
+                  102,
+                  105,
+                  111
+                ]
+              },
+              {
+                "matched_bits": [
+                  67,
+                  75,
+                  114,
+                  123
+                ],
+                "observations": 4,
+                "output_bit": 28,
+                "point_index": 22,
+                "signature": [
+                  67,
+                  75,
+                  114,
+                  123
+                ]
+              },
+              {
+                "matched_bits": [
+                  28,
+                  67,
+                  84,
+                  97
+                ],
+                "observations": 4,
+                "output_bit": 4,
+                "point_index": 24,
+                "signature": [
+                  28,
+                  67,
+                  84,
+                  97
+                ]
+              },
+              {
+                "matched_bits": [
+                  19,
+                  84,
+                  97,
+                  114
+                ],
+                "observations": 4,
+                "output_bit": 54,
+                "point_index": 27,
+                "signature": [
+                  19,
+                  84,
+                  97,
+                  114
+                ]
+              },
+              {
+                "matched_bits": [
+                  72,
+                  76,
+                  105,
+                  114
+                ],
+                "observations": 4,
+                "output_bit": 55,
+                "point_index": 28,
+                "signature": [
+                  72,
+                  76,
+                  105,
+                  114
+                ]
+              },
+              {
+                "matched_bits": [
+                  82,
+                  84,
+                  97,
+                  111
+                ],
+                "observations": 4,
+                "output_bit": 57,
+                "point_index": 29,
+                "signature": [
+                  82,
+                  84,
+                  97,
+                  111
+                ]
+              },
+              {
+                "matched_bits": [
+                  75,
+                  76,
+                  84,
+                  105
+                ],
+                "observations": 4,
+                "output_bit": 30,
+                "point_index": 40,
+                "signature": [
+                  75,
+                  76,
+                  84,
+                  105
+                ]
+              },
+              {
+                "matched_bits": [
+                  0,
+                  84,
+                  105,
+                  111,
+                  114
+                ],
+                "observations": 4,
+                "output_bit": 7,
+                "point_index": 42,
+                "signature": [
+                  0,
+                  84,
+                  105,
+                  111,
+                  114
+                ]
+              },
+              {
+                "matched_bits": [
+                  19,
+                  76,
+                  105,
+                  111
+                ],
+                "observations": 4,
+                "output_bit": 28,
+                "point_index": 48,
+                "signature": [
+                  19,
+                  76,
+                  105,
+                  111
+                ]
+              },
+              {
+                "matched_bits": [
+                  0,
+                  72,
+                  102,
+                  114
+                ],
+                "observations": 8,
+                "output_bit": 43,
+                "point_index": 49,
+                "signature": [
+                  0,
+                  72,
+                  102,
+                  114
+                ]
+              },
+              {
+                "matched_bits": [
+                  28,
+                  76,
+                  97,
+                  111
+                ],
+                "observations": 4,
+                "output_bit": 0,
+                "point_index": 51,
+                "signature": [
+                  28,
+                  76,
+                  97,
+                  111
+                ]
+              },
+              {
+                "matched_bits": [
+                  28,
+                  76,
+                  82,
+                  97,
+                  105,
+                  114
+                ],
+                "observations": 4,
+                "output_bit": 25,
+                "point_index": 53,
+                "signature": [
+                  28,
+                  76,
+                  82,
+                  97,
+                  105,
+                  114
+                ]
+              },
+              {
+                "matched_bits": [
+                  28,
+                  33,
+                  75,
+                  111
+                ],
+                "observations": 4,
+                "output_bit": 42,
+                "point_index": 54,
+                "signature": [
+                  28,
+                  33,
+                  75,
+                  111
+                ]
+              },
+              {
+                "matched_bits": [
+                  0,
+                  75,
+                  102,
+                  114
+                ],
+                "observations": 8,
+                "output_bit": 12,
+                "point_index": 57,
+                "signature": [
+                  0,
+                  75,
+                  102,
+                  114
+                ]
+              },
+              {
+                "matched_bits": [
+                  19,
+                  28,
+                  33,
+                  75,
+                  82,
+                  102
+                ],
+                "observations": 4,
+                "output_bit": 43,
+                "point_index": 61,
+                "signature": [
+                  19,
+                  28,
+                  33,
+                  75,
+                  82,
+                  102
+                ]
+              },
+              {
+                "matched_bits": [
+                  0,
+                  67,
+                  75,
+                  84,
+                  97
+                ],
+                "observations": 4,
+                "output_bit": 28,
+                "point_index": 62,
+                "signature": [
+                  0,
+                  67,
+                  75,
+                  84,
+                  97
+                ]
+              },
+              {
+                "matched_bits": [
+                  75,
+                  76,
+                  84,
+                  111,
+                  114
+                ],
+                "observations": 4,
+                "output_bit": 11,
+                "point_index": 63,
+                "signature": [
+                  75,
+                  76,
+                  84,
+                  111,
+                  114
+                ]
+              },
+              {
+                "matched_bits": [
+                  0,
+                  28,
+                  82,
+                  114
+                ],
+                "observations": 4,
+                "output_bit": 44,
+                "point_index": 64,
+                "signature": [
+                  0,
+                  28,
+                  82,
+                  114
+                ]
+              },
+              {
+                "matched_bits": [
+                  0,
+                  67,
+                  72,
+                  102
+                ],
+                "observations": 4,
+                "output_bit": 38,
+                "point_index": 70,
+                "signature": [
+                  0,
+                  67,
+                  72,
+                  102
+                ]
+              },
+              {
+                "matched_bits": [
+                  28,
+                  33,
+                  76,
+                  97
+                ],
+                "observations": 4,
+                "output_bit": 16,
+                "point_index": 74,
+                "signature": [
+                  28,
+                  33,
+                  76,
+                  97
+                ]
+              },
+              {
+                "matched_bits": [
+                  0,
+                  28,
+                  76,
+                  97
+                ],
+                "observations": 4,
+                "output_bit": 0,
+                "point_index": 83,
+                "signature": [
+                  0,
+                  28,
+                  76,
+                  97
+                ]
+              },
+              {
+                "matched_bits": [
+                  75,
+                  82,
+                  111,
+                  114,
+                  123
+                ],
+                "observations": 4,
+                "output_bit": 32,
+                "point_index": 85,
+                "signature": [
+                  75,
+                  82,
+                  111,
+                  114,
+                  123
+                ]
+              },
+              {
+                "matched_bits": [
+                  19,
+                  28,
+                  76,
+                  84
+                ],
+                "observations": 4,
+                "output_bit": 21,
+                "point_index": 86,
+                "signature": [
+                  19,
+                  28,
+                  76,
+                  84
+                ]
+              },
+              {
+                "matched_bits": [
+                  75,
+                  76,
+                  97,
+                  123
+                ],
+                "observations": 4,
+                "output_bit": 54,
+                "point_index": 87,
+                "signature": [
+                  75,
+                  76,
+                  97,
+                  123
+                ]
+              },
+              {
+                "matched_bits": [
+                  67,
+                  76,
+                  82,
+                  97,
+                  105
+                ],
+                "observations": 4,
+                "output_bit": 33,
+                "point_index": 88,
+                "signature": [
+                  67,
+                  76,
+                  82,
+                  97,
+                  105
+                ]
+              },
+              {
+                "matched_bits": [
+                  0,
+                  72,
+                  82,
+                  102
+                ],
+                "observations": 4,
+                "output_bit": 63,
+                "point_index": 96,
+                "signature": [
+                  0,
+                  72,
+                  82,
+                  102
+                ]
+              },
+              {
+                "matched_bits": [
+                  28,
+                  67,
+                  97,
+                  114
+                ],
+                "observations": 4,
+                "output_bit": 49,
+                "point_index": 100,
+                "signature": [
+                  28,
+                  67,
+                  97,
+                  114
+                ]
+              },
+              {
+                "matched_bits": [
+                  0,
+                  28,
+                  33,
+                  105
+                ],
+                "observations": 4,
+                "output_bit": 52,
+                "point_index": 101,
+                "signature": [
+                  0,
+                  28,
+                  33,
+                  105
+                ]
+              },
+              {
+                "matched_bits": [
+                  19,
+                  67,
+                  76,
+                  84
+                ],
+                "observations": 4,
+                "output_bit": 36,
+                "point_index": 102,
+                "signature": [
+                  19,
+                  67,
+                  76,
+                  84
+                ]
+              },
+              {
+                "matched_bits": [
+                  0,
+                  19,
+                  33,
+                  82
+                ],
+                "observations": 4,
+                "output_bit": 9,
+                "point_index": 105,
+                "signature": [
+                  0,
+                  19,
+                  33,
+                  82
+                ]
+              },
+              {
+                "matched_bits": [
+                  0,
+                  67,
+                  72,
+                  102
+                ],
+                "observations": 4,
+                "output_bit": 17,
+                "point_index": 117,
+                "signature": [
+                  0,
+                  67,
+                  72,
+                  102
+                ]
+              },
+              {
+                "matched_bits": [
+                  0,
+                  33,
+                  76,
+                  97
+                ],
+                "observations": 4,
+                "output_bit": 24,
+                "point_index": 120,
+                "signature": [
+                  0,
+                  33,
+                  76,
+                  97
+                ]
+              },
+              {
+                "matched_bits": [
+                  33,
+                  72,
+                  75,
+                  102,
+                  105,
+                  123
+                ],
+                "observations": 4,
+                "output_bit": 23,
+                "point_index": 121,
+                "signature": [
+                  33,
+                  72,
+                  75,
+                  102,
+                  105,
+                  123
+                ]
+              },
+              {
+                "matched_bits": [
+                  19,
+                  97,
+                  102,
+                  111,
+                  114
+                ],
+                "observations": 4,
+                "output_bit": 9,
+                "point_index": 122,
+                "signature": [
+                  19,
+                  97,
+                  102,
+                  111,
+                  114
+                ]
+              },
+              {
+                "matched_bits": [
+                  0,
+                  19,
+                  28,
+                  76,
+                  105
+                ],
+                "observations": 4,
+                "output_bit": 59,
+                "point_index": 123,
+                "signature": [
+                  0,
+                  19,
+                  28,
+                  76,
+                  105
+                ]
+              },
+              {
+                "matched_bits": [
+                  67,
+                  84,
+                  97,
+                  105
+                ],
+                "observations": 4,
+                "output_bit": 63,
+                "point_index": 127,
+                "signature": [
+                  67,
+                  84,
+                  97,
+                  105
+                ]
+              }
+            ],
+            "familiarity": 268.6501109584096,
+            "observation_id": "new-arrangement",
+            "output_bits": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              7,
+              9,
+              11,
+              12,
+              16,
+              17,
+              21,
+              23,
+              24,
+              25,
+              28,
+              30,
+              32,
+              33,
+              34,
+              36,
+              37,
+              38,
+              42,
+              43,
+              44,
+              49,
+              52,
+              54,
+              55,
+              57,
+              59,
+              63
+            ],
+            "quality": 6,
+            "source_positions": [
+              3,
+              4
+            ]
+          },
+          {
+            "active_points": 36,
+            "candidate_id": "w0:c2",
+            "claims": [],
+            "content_key": "77d80475fe8f818295b4febd9affd3ec998c8ddb6c73deb2396fda0200cebfff",
+            "context_id": "2",
+            "evidence": [
+              {
+                "matched_bits": [
+                  0,
+                  18,
+                  102,
+                  103,
+                  127
+                ],
+                "observations": 4,
+                "output_bit": 3,
+                "point_index": 3,
+                "signature": [
+                  0,
+                  18,
+                  102,
+                  103,
+                  127
+                ]
+              },
+              {
+                "matched_bits": [
+                  18,
+                  38,
+                  59,
+                  72,
+                  103
+                ],
+                "observations": 4,
+                "output_bit": 30,
+                "point_index": 5,
+                "signature": [
+                  18,
+                  38,
+                  59,
+                  72,
+                  103
+                ]
+              },
+              {
+                "matched_bits": [
+                  50,
+                  95,
+                  102,
+                  127
+                ],
+                "observations": 4,
+                "output_bit": 3,
+                "point_index": 6,
+                "signature": [
+                  50,
+                  95,
+                  102,
+                  127
+                ]
+              },
+              {
+                "matched_bits": [
+                  18,
+                  114,
+                  121,
+                  127
+                ],
+                "observations": 4,
+                "output_bit": 30,
+                "point_index": 12,
+                "signature": [
+                  18,
+                  114,
+                  121,
+                  127
+                ]
+              },
+              {
+                "matched_bits": [
+                  59,
+                  72,
+                  75,
+                  95,
+                  113
+                ],
+                "observations": 4,
+                "output_bit": 7,
+                "point_index": 16,
+                "signature": [
+                  59,
+                  72,
+                  75,
+                  95,
+                  113
+                ]
+              },
+              {
+                "matched_bits": [
+                  38,
+                  75,
+                  103,
+                  127
+                ],
+                "observations": 4,
+                "output_bit": 37,
+                "point_index": 17,
+                "signature": [
+                  38,
+                  75,
+                  103,
+                  127
+                ]
+              },
+              {
+                "matched_bits": [
+                  50,
+                  95,
+                  117,
+                  121
+                ],
+                "observations": 4,
+                "output_bit": 13,
+                "point_index": 23,
+                "signature": [
+                  50,
+                  95,
+                  117,
+                  121
+                ]
+              },
+              {
+                "matched_bits": [
+                  38,
+                  95,
+                  103,
+                  114
+                ],
+                "observations": 4,
+                "output_bit": 54,
+                "point_index": 27,
+                "signature": [
+                  38,
+                  95,
+                  103,
+                  114
+                ]
+              },
+              {
+                "matched_bits": [
+                  59,
+                  72,
+                  113,
+                  114
+                ],
+                "observations": 4,
+                "output_bit": 55,
+                "point_index": 28,
+                "signature": [
+                  59,
+                  72,
+                  113,
+                  114
+                ]
+              },
+              {
+                "matched_bits": [
+                  0,
+                  103,
+                  114,
+                  117
+                ],
+                "observations": 4,
+                "output_bit": 25,
+                "point_index": 35,
+                "signature": [
+                  0,
+                  103,
+                  114,
+                  117
+                ]
+              },
+              {
+                "matched_bits": [
+                  0,
+                  59,
+                  95,
+                  113,
+                  117,
+                  121,
+                  127
+                ],
+                "observations": 4,
+                "output_bit": 40,
+                "point_index": 38,
+                "signature": [
+                  0,
+                  59,
+                  95,
+                  113,
+                  117,
+                  121,
+                  127
+                ]
+              },
+              {
+                "matched_bits": [
+                  0,
+                  50,
+                  59,
+                  114
+                ],
+                "observations": 4,
+                "output_bit": 7,
+                "point_index": 42,
+                "signature": [
+                  0,
+                  50,
+                  59,
+                  114
+                ]
+              },
+              {
+                "matched_bits": [
+                  0,
+                  72,
+                  102,
+                  114
+                ],
+                "observations": 8,
+                "output_bit": 43,
+                "point_index": 49,
+                "signature": [
+                  0,
+                  72,
+                  102,
+                  114
+                ]
+              },
+              {
+                "matched_bits": [
+                  0,
+                  75,
+                  102,
+                  114
+                ],
+                "observations": 8,
+                "output_bit": 12,
+                "point_index": 57,
+                "signature": [
+                  0,
+                  75,
+                  102,
+                  114
+                ]
+              },
+              {
+                "matched_bits": [
+                  38,
+                  50,
+                  117,
+                  121
+                ],
+                "observations": 4,
+                "output_bit": 59,
+                "point_index": 59,
+                "signature": [
+                  38,
+                  50,
+                  117,
+                  121
+                ]
+              },
+              {
+                "matched_bits": [
+                  18,
+                  103,
+                  113,
+                  121
+                ],
+                "observations": 4,
+                "output_bit": 33,
+                "point_index": 68,
+                "signature": [
+                  18,
+                  103,
+                  113,
+                  121
+                ]
+              },
+              {
+                "matched_bits": [
+                  0,
+                  18,
+                  72,
+                  102,
+                  117
+                ],
+                "observations": 4,
+                "output_bit": 38,
+                "point_index": 70,
+                "signature": [
+                  0,
+                  18,
+                  72,
+                  102,
+                  117
+                ]
+              },
+              {
+                "matched_bits": [
+                  18,
+                  38,
+                  59,
+                  114,
+                  117
+                ],
+                "observations": 4,
+                "output_bit": 53,
+                "point_index": 79,
+                "signature": [
+                  18,
+                  38,
+                  59,
+                  114,
+                  117
+                ]
+              },
+              {
+                "matched_bits": [
+                  0,
+                  75,
+                  102,
+                  113,
+                  127
+                ],
+                "observations": 4,
+                "output_bit": 14,
+                "point_index": 80,
+                "signature": [
+                  0,
+                  75,
+                  102,
+                  113,
+                  127
+                ]
+              },
+              {
+                "matched_bits": [
+                  50,
+                  59,
+                  103,
+                  117
+                ],
+                "observations": 4,
+                "output_bit": 56,
+                "point_index": 81,
+                "signature": [
+                  50,
+                  59,
+                  103,
+                  117
+                ]
+              },
+              {
+                "matched_bits": [
+                  0,
+                  18,
+                  50,
+                  59,
+                  113
+                ],
+                "observations": 4,
+                "output_bit": 0,
+                "point_index": 83,
+                "signature": [
+                  0,
+                  18,
+                  50,
+                  59,
+                  113
+                ]
+              },
+              {
+                "matched_bits": [
+                  59,
+                  75,
+                  102,
+                  117
+                ],
+                "observations": 4,
+                "output_bit": 16,
+                "point_index": 84,
+                "signature": [
+                  59,
+                  75,
+                  102,
+                  117
+                ]
+              },
+              {
+                "matched_bits": [
+                  38,
+                  59,
+                  75,
+                  114,
+                  117,
+                  121
+                ],
+                "observations": 4,
+                "output_bit": 32,
+                "point_index": 85,
+                "signature": [
+                  38,
+                  59,
+                  75,
+                  114,
+                  117,
+                  121
+                ]
+              },
+              {
+                "matched_bits": [
+                  50,
+                  59,
+                  95,
+                  127
+                ],
+                "observations": 4,
+                "output_bit": 21,
+                "point_index": 86,
+                "signature": [
+                  50,
+                  59,
+                  95,
+                  127
+                ]
+              },
+              {
+                "matched_bits": [
+                  50,
+                  95,
+                  113,
+                  127
+                ],
+                "observations": 4,
+                "output_bit": 0,
+                "point_index": 89,
+                "signature": [
+                  50,
+                  95,
+                  113,
+                  127
+                ]
+              },
+              {
+                "matched_bits": [
+                  0,
+                  72,
+                  102,
+                  117
+                ],
+                "observations": 4,
+                "output_bit": 63,
+                "point_index": 96,
+                "signature": [
+                  0,
+                  72,
+                  102,
+                  117
+                ]
+              },
+              {
+                "matched_bits": [
+                  95,
+                  114,
+                  117,
+                  121
+                ],
+                "observations": 4,
+                "output_bit": 49,
+                "point_index": 100,
+                "signature": [
+                  95,
+                  114,
+                  117,
+                  121
+                ]
+              },
+              {
+                "matched_bits": [
+                  50,
+                  59,
+                  114,
+                  117
+                ],
+                "observations": 4,
+                "output_bit": 17,
+                "point_index": 104,
+                "signature": [
+                  50,
+                  59,
+                  114,
+                  117
+                ]
+              },
+              {
+                "matched_bits": [
+                  18,
+                  72,
+                  75,
+                  127
+                ],
+                "observations": 4,
+                "output_bit": 8,
+                "point_index": 110,
+                "signature": [
+                  18,
+                  72,
+                  75,
+                  127
+                ]
+              },
+              {
+                "matched_bits": [
+                  18,
+                  59,
+                  72,
+                  113,
+                  127
+                ],
+                "observations": 4,
+                "output_bit": 36,
+                "point_index": 116,
+                "signature": [
+                  18,
+                  59,
+                  72,
+                  113,
+                  127
+                ]
+              },
+              {
+                "matched_bits": [
+                  0,
+                  59,
+                  72,
+                  102
+                ],
+                "observations": 4,
+                "output_bit": 17,
+                "point_index": 117,
+                "signature": [
+                  0,
+                  59,
+                  72,
+                  102
+                ]
+              },
+              {
+                "matched_bits": [
+                  0,
+                  18,
+                  50,
+                  103,
+                  113,
+                  121
+                ],
+                "observations": 4,
+                "output_bit": 31,
+                "point_index": 118,
+                "signature": [
+                  0,
+                  18,
+                  50,
+                  103,
+                  113,
+                  121
+                ]
+              },
+              {
+                "matched_bits": [
+                  18,
+                  75,
+                  95,
+                  103
+                ],
+                "observations": 4,
+                "output_bit": 0,
+                "point_index": 119,
+                "signature": [
+                  18,
+                  75,
+                  95,
+                  103
+                ]
+              },
+              {
+                "matched_bits": [
+                  50,
+                  72,
+                  75,
+                  102
+                ],
+                "observations": 4,
+                "output_bit": 23,
+                "point_index": 121,
+                "signature": [
+                  50,
+                  72,
+                  75,
+                  102
+                ]
+              },
+              {
+                "matched_bits": [
+                  50,
+                  102,
+                  113,
+                  114
+                ],
+                "observations": 4,
+                "output_bit": 9,
+                "point_index": 122,
+                "signature": [
+                  50,
+                  102,
+                  113,
+                  114
+                ]
+              },
+              {
+                "matched_bits": [
+                  0,
+                  59,
+                  95,
+                  113
+                ],
+                "observations": 4,
+                "output_bit": 59,
+                "point_index": 123,
+                "signature": [
+                  0,
+                  59,
+                  95,
+                  113
+                ]
+              }
+            ],
+            "familiarity": 236.46135270972755,
+            "observation_id": "new-arrangement",
+            "output_bits": [
+              0,
+              3,
+              7,
+              8,
+              9,
+              12,
+              13,
+              14,
+              16,
+              17,
+              21,
+              23,
+              25,
+              30,
+              31,
+              32,
+              33,
+              36,
+              37,
+              38,
+              40,
+              43,
+              49,
+              53,
+              54,
+              55,
+              56,
+              59,
+              63
+            ],
+            "quality": 7,
+            "source_positions": [
+              0,
+              1
+            ]
+          }
+        ],
+        "complete": true,
+        "encoding_id": "01fc4523c26eea310ee25099a6b235ba32a5f22db69001c2f43fe57c261494b0",
+        "examined_views": 8,
+        "memory_step": 8,
+        "relations": [
+          {
+            "kind": "compatible",
+            "left": "w3:c1",
+            "reason": "disjoint contributions to one observation, with no declared contradiction",
+            "right": "w0:c2"
+          }
+        ],
+        "stop_reason": null,
+        "suppressed": [],
+        "total_views": 8
+      },
+      "reply": {
+        "candidate_ids": [
+          "w3:c1",
+          "w0:c2"
+        ],
+        "kind": "description",
+        "reference_id": "new-arrangement",
+        "support_event_ids": [
+          0,
+          1
+        ],
+        "text": "Вижу: куб и шар."
+      },
+      "show": [
+        "cd",
+        "ab"
+      ]
+    },
+    {
+      "message": "что значит куб",
+      "reply": {
+        "candidate_ids": [
+          "w3:c1"
+        ],
+        "kind": "definition",
+        "reference_id": "new-arrangement",
+        "support_event_ids": [
+          0
+        ],
+        "text": "«куб» — подтверждённое вами название узнанного содержания."
+      }
+    },
+    {
+      "recognition": {
+        "candidates": [],
+        "complete": true,
+        "encoding_id": "01fc4523c26eea310ee25099a6b235ba32a5f22db69001c2f43fe57c261494b0",
+        "examined_views": 4,
+        "memory_step": 8,
+        "relations": [],
+        "stop_reason": null,
+        "suppressed": [],
+        "total_views": 4
+      },
+      "reply": {
+        "candidate_ids": [],
+        "kind": "clarification",
+        "reference_id": "unseen-content",
+        "support_event_ids": [],
+        "text": "Пока не узнаю содержание этого наблюдения."
+      },
+      "show": [
+        "zz"
+      ]
+    },
+    {
+      "restored_reply": {
+        "candidate_ids": [
+          "w3:c1",
+          "w0:c2"
+        ],
+        "kind": "description",
+        "reference_id": "new-arrangement",
+        "support_event_ids": [
+          0,
+          1
+        ],
+        "text": "Вижу: куб и шар."
+      }
+    }
+  ]
+}
