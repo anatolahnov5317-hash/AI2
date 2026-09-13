@@ -1,4 +1,5 @@
 import unittest
+from typing import Any, cast
 
 from text_factors import ModelConfig
 
@@ -20,6 +21,22 @@ class ModelConfigTests(unittest.TestCase):
     def test_round_trip_dict(self) -> None:
         config = ModelConfig(point_count=123, seed=9)
         self.assertEqual(ModelConfig.from_dict(config.to_dict()), config)
+
+    def test_integer_fields_and_seed_are_validated(self) -> None:
+        for values in (
+            {"point_count": 1.5},
+            {"positions": True},
+            {"seed": -1},
+            {"seed": True},
+            {"input_bits": 2**31},
+        ):
+            with self.subTest(values=values), self.assertRaises(ValueError):
+                ModelConfig(**cast(dict[str, Any], values))
+
+    def test_nonfinite_and_boolean_ratios_rejected(self) -> None:
+        for value in (float("nan"), float("inf"), True):
+            with self.subTest(value=value), self.assertRaises(ValueError):
+                ModelConfig(prune_keep_ratio=value)
 
 
 if __name__ == "__main__":

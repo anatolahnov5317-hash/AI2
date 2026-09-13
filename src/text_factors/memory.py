@@ -95,15 +95,19 @@ class CombinatorialMemory:
             ]
             self.receptors = np.asarray(generated, dtype=np.int32)
         else:
-            converted = np.asarray(receptors, dtype=np.int32)
+            converted = np.asarray(receptors)
             expected = (config.point_count, config.receptive_bits)
             if converted.shape != expected:
                 raise ValueError(
                     f"receptors shape must be {expected}, got {converted.shape}"
                 )
+            if not np.issubdtype(converted.dtype, np.integer):
+                raise ValueError("receptors must contain integer bit indices")
             if np.any(converted < 0) or np.any(converted >= config.input_bits):
                 raise ValueError("receptors contain an out-of-range bit index")
-            self.receptors = converted.copy()
+            if np.any(np.diff(np.sort(converted, axis=1), axis=1) == 0):
+                raise ValueError("each receptor must contain unique bit indices")
+            self.receptors = converted.astype(np.int32, copy=True)
 
         if output_map is None:
             self.output_map = rng.integers(
@@ -113,15 +117,19 @@ class CombinatorialMemory:
                 dtype=np.int32,
             )
         else:
-            converted = np.asarray(output_map, dtype=np.int32)
+            converted = np.asarray(output_map)
             if converted.shape != (config.point_count,):
                 raise ValueError(
                     "output_map shape must be "
                     f"{(config.point_count,)}, got {converted.shape}"
                 )
+            if not np.issubdtype(converted.dtype, np.integer):
+                raise ValueError("output_map must contain integer bit indices")
             if np.any(converted < 0) or np.any(converted >= config.output_bits):
                 raise ValueError("output_map contains an out-of-range bit index")
-            self.output_map = converted.copy()
+            if np.any(converted > np.iinfo(np.int32).max):
+                raise ValueError("output_map contains an index too large for int32")
+            self.output_map = converted.astype(np.int32, copy=True)
 
         self.clusters: list[list[Cluster]] = [[] for _ in range(config.point_count)]
         self._signatures: list[set[tuple[int, ...]]] = [
@@ -149,11 +157,11 @@ class CombinatorialMemory:
     def _match_count(cluster: Cluster, active: NDArray[np.bool_]) -> int:
         return int(np.count_nonzero(active[cluster.bits]))
 
-    def overlap_counts(self, active: NDArray[np.bool_]) -> NDArray[np.int16]:
+    def overlap_counts(self, active: NDArray[np.bool_]) -> NDArray[np.int32]:
         checked = self._validate_bits(active)
-        # The maximum is receptive_bits, so int16 is ample and avoids the
-        # original index-32 boundary problem entirely.
-        return np.count_nonzero(checked[self.receptors], axis=1).astype(np.int16)
+        # ModelConfig limits bit indices to int32, so int32 also safely holds
+        # every possible receptive-field overlap.
+        return np.count_nonzero(checked[self.receptors], axis=1).astype(np.int32)
 
     def familiarity(self, active: NDArray[np.bool_]) -> float:
         """Return prior-memory evidence without mutating the model."""
@@ -242,7 +250,7 @@ class CombinatorialMemory:
                 continue
 
             receptor = self.receptors[point_index]
-            bits = receptor[active[receptor]].astype(np.int32, copy=True)
+            bits = np.sort(receptor[active[receptor]]).astype(np.int32, copy=True)
             signature = tuple(int(bit) for bit in bits)
             if signature in self._signatures[output_bit]:
                 continue
@@ -329,7 +337,7 @@ class CombinatorialMemory:
         """Produce a sparse factor code from matching local clusters."""
 
         checked = self._validate_bits(active)
-        quality = np.zeros(self.config.point_count, dtype=np.int16)
+        quality = np.zeros(self.config.point_count, dtype=np.int32)
         support = np.zeros(self.config.point_count, dtype=np.float64)
 
         for point_index in self._nonempty_points:
@@ -447,24 +455,91 @@ class CombinatorialMemory:
     def add_loaded_cluster(self, point_index: int, cluster: Cluster) -> None:
         """Restore a validated cluster from a persisted model."""
 
+        if isinstance(point_index, (bool, np.bool_)) or not isinstance(
+            point_index, (int, np.integer)
+        ):
+            raise ValueError("loaded cluster point index must be an integer")
         if not 0 <= point_index < self.config.point_count:
             raise ValueError("loaded cluster has an invalid point index")
+        bits = np.asarray(cluster.bits)
+        bit_hits = np.asarray(cluster.bit_hits)
+        if bits.ndim != 1 or bit_hits.ndim != 1:
+            raise ValueError("loaded cluster bits and bit_hits must be one-dimensional")
+        if not np.issubdtype(bits.dtype, np.integer):
+            raise ValueError("loaded cluster bits must contain integer indices")
+        if not np.issubdtype(bit_hits.dtype, np.integer):
+            raise ValueError("loaded cluster bit_hits must contain integers")
         if len(cluster.bits) < self.config.activation_threshold:
             raise ValueError("loaded cluster is shorter than activation_threshold")
-        if np.any(cluster.bits < 0) or np.any(cluster.bits >= self.config.input_bits):
+        if len(cluster.bits) > self.config.receptive_bits:
+            raise ValueError("loaded cluster is longer than its receptor")
+        if np.any(bits < 0) or np.any(bits >= self.config.input_bits):
             raise ValueError("loaded cluster contains an out-of-range bit")
-        if cluster.bits.shape != cluster.bit_hits.shape:
+        if bits.shape != bit_hits.shape:
             raise ValueError("loaded cluster bits and bit_hits shapes differ")
+        if len(bits) > 1 and np.any(bits[1:] <= bits[:-1]):
+            raise ValueError("loaded cluster bits must be sorted and unique")
+        if not np.all(np.isin(bits, self.receptors[int(point_index)])):
+            raise ValueError("loaded cluster contains a bit outside its receptor")
 
-        output_bit = int(self.output_map[point_index])
+        counter_names = (
+            "partial_hits",
+            "exact_hits",
+            "partial_errors",
+            "complete_errors",
+            "created_at",
+            "last_seen",
+        )
+        counters: dict[str, int] = {}
+        for name in counter_names:
+            value = getattr(cluster, name)
+            if isinstance(value, (bool, np.bool_)) or not isinstance(
+                value, (int, np.integer)
+            ):
+                raise ValueError(f"loaded cluster {name} must be an integer")
+            counters[name] = int(value)
+
+        if (
+            counters["exact_hits"] < 1
+            or counters["partial_hits"] < counters["exact_hits"]
+        ):
+            raise ValueError(
+                "loaded cluster hits must satisfy partial_hits >= exact_hits >= 1"
+            )
+        if counters["partial_errors"] < 0 or counters["complete_errors"] < 0:
+            raise ValueError("loaded cluster error counters cannot be negative")
+        if counters["partial_errors"] > counters["partial_hits"]:
+            raise ValueError("loaded cluster partial_errors exceed partial_hits")
+        if counters["complete_errors"] > counters["exact_hits"]:
+            raise ValueError("loaded cluster complete_errors exceed exact_hits")
+        if counters["complete_errors"] > counters["partial_errors"]:
+            raise ValueError("loaded cluster complete_errors exceed partial_errors")
+        if np.any(bit_hits < 1) or np.any(bit_hits > counters["partial_hits"]):
+            raise ValueError(
+                "loaded cluster bit_hits must be between 1 and partial_hits"
+            )
+        if not (0 <= counters["created_at"] <= counters["last_seen"] <= self.step):
+            raise ValueError(
+                "loaded cluster timestamps must satisfy "
+                "0 <= created_at <= last_seen <= memory.step"
+            )
+        if not isinstance(cluster.status, ClusterStatus):
+            raise ValueError("loaded cluster has an invalid status")
+
+        cluster.bits = bits.astype(np.int32, copy=True)
+        cluster.bit_hits = bit_hits.astype(np.int64, copy=True)
+        for name, value in counters.items():
+            setattr(cluster, name, value)
+
+        output_bit = int(self.output_map[int(point_index)])
         if cluster.signature in self._signatures[output_bit]:
             raise ValueError("persisted model contains a duplicate cluster")
-        if len(self.clusters[point_index]) >= self.config.max_clusters_per_point:
+        if len(self.clusters[int(point_index)]) >= self.config.max_clusters_per_point:
             raise ValueError("persisted model exceeds max_clusters_per_point")
 
-        self.clusters[point_index].append(cluster)
+        self.clusters[int(point_index)].append(cluster)
         self._signatures[output_bit].add(cluster.signature)
-        self._nonempty_points.add(point_index)
+        self._nonempty_points.add(int(point_index))
 
     def stats(self) -> dict[str, int]:
         status_counts = {status: 0 for status in ClusterStatus}

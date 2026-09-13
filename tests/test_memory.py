@@ -1,10 +1,10 @@
 import unittest
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 
 from text_factors import ClusterStatus, ModelConfig
-from text_factors.memory import CombinatorialMemory
+from text_factors.memory import Cluster, CombinatorialMemory
 
 
 def memory_config(**overrides: Any) -> ModelConfig:
@@ -49,6 +49,32 @@ def controlled_memory(config: ModelConfig) -> CombinatorialMemory:
 
 
 class CombinatorialMemoryTests(unittest.TestCase):
+    def test_supplied_index_arrays_must_be_integral_and_receptors_unique(self) -> None:
+        config = memory_config()
+        receptors = controlled_memory(config).receptors
+        output_map = np.asarray([0, 1, 0, 1], dtype=np.int32)
+
+        with self.assertRaisesRegex(ValueError, "integer"):
+            CombinatorialMemory(
+                config,
+                receptors=cast(Any, receptors.astype(np.float64)),
+                output_map=output_map,
+            )
+        with self.assertRaisesRegex(ValueError, "integer"):
+            CombinatorialMemory(
+                config,
+                receptors=receptors,
+                output_map=cast(Any, output_map.astype(np.float64)),
+            )
+        duplicate = receptors.copy()
+        duplicate[0, 1] = duplicate[0, 0]
+        with self.assertRaisesRegex(ValueError, "unique"):
+            CombinatorialMemory(
+                config,
+                receptors=duplicate,
+                output_map=output_map,
+            )
+
     def test_cluster_requires_repeated_evidence_before_stabilizing(self) -> None:
         memory = controlled_memory(memory_config())
         active = np.zeros(16, dtype=np.bool_)
@@ -119,6 +145,50 @@ class CombinatorialMemoryTests(unittest.TestCase):
         self.assertEqual(len(memory.clusters[0]), 1)
         memory.observe(active, target=negative)
         self.assertEqual(len(memory.clusters[0]), 0)
+
+    def test_loaded_cluster_requires_valid_structure_and_counters(self) -> None:
+        def cluster(**overrides: Any) -> Cluster:
+            values: dict[str, Any] = {
+                "bits": np.asarray([0, 1], dtype=np.int32),
+                "bit_hits": np.asarray([2, 1], dtype=np.int64),
+                "created_at": 0,
+                "last_seen": 1,
+                "status": ClusterStatus.TEMPORARY,
+                "partial_hits": 2,
+                "exact_hits": 1,
+                "partial_errors": 1,
+                "complete_errors": 0,
+            }
+            values.update(overrides)
+            return Cluster(**values)
+
+        invalid_clusters = [
+            cluster(bits=np.asarray([1, 0], dtype=np.int32)),
+            cluster(bits=np.asarray([0, 0], dtype=np.int32)),
+            cluster(bits=np.asarray([0, 6], dtype=np.int32)),
+            cluster(bits=np.asarray([0.0, 1.0])),
+            cluster(bit_hits=np.asarray([1.0, 1.0])),
+            cluster(partial_hits=0),
+            cluster(exact_hits=3),
+            cluster(partial_errors=-1),
+            cluster(partial_errors=3),
+            cluster(complete_errors=2),
+            cluster(bit_hits=np.asarray([3, 1], dtype=np.int64)),
+            cluster(created_at=2),
+            cluster(last_seen=2),
+            cluster(status=3),
+        ]
+        for invalid in invalid_clusters:
+            with self.subTest(cluster=invalid):
+                memory = controlled_memory(memory_config())
+                memory.step = 1
+                with self.assertRaises(ValueError):
+                    memory.add_loaded_cluster(0, invalid)
+
+        memory = controlled_memory(memory_config())
+        memory.step = 1
+        memory.add_loaded_cluster(0, cluster())
+        self.assertEqual(len(memory.clusters[0]), 1)
 
 
 if __name__ == "__main__":

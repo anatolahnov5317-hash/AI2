@@ -1,11 +1,12 @@
 import tempfile
 import unittest
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 
 from text_factors import ModelConfig, TextFactorModel
+from text_factors.memory import CombinatorialMemory
 
 
 def model_config(**overrides: Any) -> ModelConfig:
@@ -31,6 +32,22 @@ def model_config(**overrides: Any) -> ModelConfig:
 
 
 class TextFactorModelTests(unittest.TestCase):
+    def test_invalid_text_and_epochs_do_not_change_model(self) -> None:
+        model = TextFactorModel(model_config(), alphabet="abc")
+        before = model.summary()
+        for value in (None, [], b"", 0, False):
+            with self.assertRaises(ValueError):
+                model.fit_text(cast(Any, value))
+            with self.assertRaises(ValueError):
+                model.transform_text(cast(Any, value))
+            with self.assertRaises(ValueError):
+                model.partial_fit_window(cast(Any, value))
+            self.assertEqual(model.summary(), before)
+        for epochs in (True, 1.5, 0, -1):
+            with self.assertRaises(ValueError):
+                model.fit_text("abc", epochs=cast(Any, epochs))
+            self.assertEqual(model.summary(), before)
+
     def test_repeated_window_produces_stable_explainable_factors(self) -> None:
         model = TextFactorModel(model_config(), alphabet="abc")
         for _ in range(3):
@@ -97,6 +114,52 @@ class TextFactorModelTests(unittest.TestCase):
         target = model.encoder.encode_window("ab", context=1)
         self.assertGreater(int(np.count_nonzero(prediction.output)), 0)
         self.assertTrue(np.all(np.logical_not(prediction.output) | target))
+
+    def test_training_modes_and_context_operator_cannot_be_mixed(self) -> None:
+        config = model_config(input_bits=64, output_bits=64)
+        unsupervised = TextFactorModel(config, alphabet="abc")
+        unsupervised.partial_fit_window("abc")
+        self.assertEqual(unsupervised.training_mode, "unsupervised")
+        with self.assertRaisesRegex(ValueError, "incompatible"):
+            unsupervised.predict_context_transform("abc")
+        with self.assertRaisesRegex(ValueError, "cannot mix"):
+            unsupervised.learn_context_transform("abc")
+
+        supervised = TextFactorModel(config, alphabet="abc")
+        supervised.learn_context_transform("abc", source_context=0, target_context=1)
+        self.assertEqual(supervised.training_mode, "supervised")
+        self.assertEqual(supervised.context_pair, (0, 1))
+        with self.assertRaisesRegex(ValueError, "operators"):
+            supervised.learn_context_transform(
+                "abc", source_context=1, target_context=2
+            )
+        with self.assertRaisesRegex(ValueError, "does not match"):
+            supervised.predict_context_transform("abc", source_context=1)
+        with self.assertRaisesRegex(ValueError, "cannot mix"):
+            supervised.partial_fit_window("abc")
+
+    def test_populated_injected_memory_requires_explicit_mode(self) -> None:
+        config = model_config()
+        original = TextFactorModel(config, alphabet="abc")
+        original.partial_fit_window("abc")
+        injected = TextFactorModel(
+            config,
+            alphabet="abc",
+            memory=original.memory,
+        )
+
+        self.assertEqual(injected.training_mode, "unknown")
+        with self.assertRaisesRegex(ValueError, "assume_training_mode"):
+            injected.partial_fit_window("abc")
+        injected.assume_training_mode("unsupervised")
+        injected.partial_fit_window("abc")
+
+        empty = TextFactorModel(
+            config,
+            alphabet="abc",
+            memory=CombinatorialMemory(config),
+        )
+        self.assertEqual(empty.training_mode, "untrained")
 
 
 if __name__ == "__main__":

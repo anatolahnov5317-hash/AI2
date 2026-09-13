@@ -28,3 +28,7 @@ jobs:
       - run: pyright --pythonpath "$(command -v python)"
       - run: python -m unittest discover -s tests -v
       - run: python -m compileall -q src tests
+      - name: Exercise experiment CLI
+        run: |
+          text-factors evaluate --seeds 7 --points 8 --epochs 3 --train-size 8 --dev-size 16 --test-size 16 --noise-size 16 --bootstrap-resamples 20 --output artifacts/evaluation-smoke.json
+          text-factors microworld --seed 7 --episodes 4 --output artifacts/microworld-smoke.json
