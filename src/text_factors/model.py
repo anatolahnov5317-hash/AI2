@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import tempfile
 import zipfile
-from collections.abc import Mapping
+from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from math import prod
 from pathlib import Path
@@ -23,19 +24,27 @@ from .memory import (
     FactorSummary,
     MemoryReadout,
 )
+from .recognition import (
+    ContextView,
+    RecognitionLimits,
+    RecognitionResult,
+    memory_encoding_id,
+    recognize_views,
+)
 
-MODEL_FORMAT_VERSION = 2
+MODEL_FORMAT_VERSION = 3
 
 # These defaults accommodate the theoretical maximum persistence payload of
-# the shipped 20,000-point/150-cluster configuration (about 1.4 GiB before
-# compression), while still putting finite bounds on hostile archives. Callers
-# loading intentionally larger custom models can raise all three limits.
+# historical frequency models using the shipped 20,000-point/150-cluster
+# configuration (about 1.4 GiB before compression), while still putting finite
+# bounds on hostile archives. Coactivation histories can be larger; callers
+# loading such models can raise all three limits explicitly.
 DEFAULT_MAX_MODEL_FILE_BYTES = 2 * 1024**3
 DEFAULT_MAX_UNCOMPRESSED_BYTES = 4 * 1024**3
 DEFAULT_MAX_ARRAY_BYTES = 1 * 1024**3
 MAX_METADATA_BYTES = 1024**2
 
-_ARRAY_DTYPES = {
+_LEGACY_ARRAY_DTYPES = {
     "codebook": np.dtype(np.int32),
     "receptors": np.dtype(np.int32),
     "output_map": np.dtype(np.int32),
@@ -51,7 +60,14 @@ _ARRAY_DTYPES = {
     "cluster_partial_errors": np.dtype(np.int64),
     "cluster_complete_errors": np.dtype(np.int64),
 }
+_HISTORY_ARRAY_DTYPES = {
+    "cluster_history_counts": np.dtype(np.int32),
+    "cluster_history_offsets": np.dtype(np.int64),
+    "cluster_history_values": np.dtype(np.bool_),
+}
+_ARRAY_DTYPES = {**_LEGACY_ARRAY_DTYPES, **_HISTORY_ARRAY_DTYPES}
 _ARCHIVE_NAMES = frozenset({"metadata", *_ARRAY_DTYPES})
+_LEGACY_ARCHIVE_NAMES = frozenset({"metadata", *_LEGACY_ARRAY_DTYPES})
 _TRAINING_MODES = frozenset({"untrained", "unsupervised", "supervised", "unknown"})
 
 
@@ -93,16 +109,20 @@ def _inspect_archive(
     with zipfile.ZipFile(stream) as archive:
         infos = archive.infolist()
         expected_members = {f"{name}.npy" for name in _ARCHIVE_NAMES}
+        legacy_members = {f"{name}.npy" for name in _LEGACY_ARCHIVE_NAMES}
         names = [info.filename for info in infos]
         if len(names) != len(set(names)):
             raise ValueError("model archive contains duplicate members")
-        missing = expected_members.difference(names)
-        unexpected = set(names).difference(expected_members)
-        if missing:
-            raise ValueError(
-                "model archive is missing data: " + ", ".join(sorted(missing))
-            )
-        if unexpected:
+        name_set = set(names)
+        if name_set not in (expected_members, legacy_members):
+            # Report the most useful failure against the new schema, except
+            # that a complete legacy schema remains valid for v1/v2 metadata.
+            missing = expected_members.difference(name_set)
+            unexpected = name_set.difference(expected_members)
+            if missing:
+                raise ValueError(
+                    "model archive is missing data: " + ", ".join(sorted(missing))
+                )
             raise ValueError(
                 "model archive contains unexpected data: "
                 + ", ".join(sorted(unexpected))
@@ -149,7 +169,7 @@ def _require_metadata(value: Any) -> Mapping[str, Any]:
     version = value["format_version"]
     if isinstance(version, bool) or not isinstance(version, int):
         raise ValueError("metadata format_version must be an integer")
-    if version not in (1, MODEL_FORMAT_VERSION):
+    if version not in (1, 2, MODEL_FORMAT_VERSION):
         raise ValueError(f"unsupported model format version: {version}")
     if not isinstance(value["config"], dict):
         raise ValueError("metadata config must be an object")
@@ -247,7 +267,7 @@ class TextFactorModel:
 
         This is an opt-in escape hatch for v1 files, which did not record
         whether observations were supervised. It cannot change a mode already
-        known from v2 metadata or prior learning.
+        known from persisted metadata or prior learning.
         """
 
         if self._training_mode != "unknown":
@@ -376,6 +396,166 @@ class TextFactorModel:
         context, scores, active = self._select_context(window, offset=offset)
         readout = self.memory.read(active)
         return self._result(window, offset, context, scores, readout)
+
+    @property
+    def recognition_encoding_id(self) -> str:
+        """Local coordinate identity, preserved by an unchanged model archive."""
+
+        digest = hashlib.sha256(memory_encoding_id(self.memory).encode())
+        digest.update(self.encoder.codebook.astype("<i4", copy=False).tobytes())
+        return digest.hexdigest()
+
+    def _recognize_windows(
+        self,
+        windows: Iterable[tuple[str, int]],
+        *,
+        total_windows: int,
+        observation_id: str,
+        limits: RecognitionLimits | None,
+        progress: Callable[[str], None] | None,
+        cancelled: Callable[[], bool] | None,
+    ) -> RecognitionResult:
+        if self.training_mode == "supervised":
+            raise ValueError(
+                "context recognition requires an unsupervised factor memory"
+            )
+        if (
+            type(observation_id) is not str
+            or not observation_id
+            or len(observation_id) > 256
+        ):
+            raise ValueError(
+                "observation_id must be a nonempty string of at most 256 characters"
+            )
+
+        def views() -> Iterator[ContextView]:
+            for window, start in windows:
+                for context in range(self.config.context_count):
+                    bits = self.encoder.encode_window(
+                        window, offset=start, context=context
+                    )
+                    sources = tuple(
+                        (
+                            start + local,
+                            tuple(
+                                int(bit)
+                                for bit in self.encoder.concept_bits(
+                                    character,
+                                    (start + local + context) % self.config.positions,
+                                )
+                            ),
+                        )
+                        for local, character in enumerate(window)
+                    )
+                    yield ContextView(
+                        view_id=f"w{start}:c{context}",
+                        context_id=str(context),
+                        bits=bits,
+                        source_positions=tuple(range(start, start + len(window))),
+                        observation_id=observation_id,
+                        bit_sources=sources,
+                    )
+
+        return recognize_views(
+            self.memory,
+            views(),
+            total_views=total_windows * self.config.context_count,
+            limits=limits,
+            encoding_id=self.recognition_encoding_id,
+            progress=progress,
+            cancelled=cancelled,
+        )
+
+    def recognize_window(
+        self,
+        window: str,
+        *,
+        offset: int = 0,
+        observation_id: str = "input",
+        limits: RecognitionLimits | None = None,
+        progress: Callable[[str], None] | None = None,
+        cancelled: Callable[[], bool] | None = None,
+    ) -> RecognitionResult:
+        """Return multiple located stable readouts; leave the legacy API intact."""
+
+        self.encoder.encode_window(window, offset=offset)
+        return self._recognize_windows(
+            ((window, offset),),
+            total_windows=1,
+            observation_id=observation_id,
+            limits=limits,
+            progress=progress,
+            cancelled=cancelled,
+        )
+
+    def recognize_text(
+        self,
+        text: str,
+        *,
+        stride: int = 1,
+        observation_id: str = "input",
+        limits: RecognitionLimits | None = None,
+        progress: Callable[[str], None] | None = None,
+        cancelled: Callable[[], bool] | None = None,
+    ) -> RecognitionResult:
+        """Scan finite fixed windows, preserving absolute source positions.
+
+        Window boundaries are the existing explicit observation adapter, not
+        learned object segmentation. Overlapping evidence may stay undetermined.
+        """
+
+        if type(text) is not str or len(text) > 16384:
+            raise ValueError("text must be a string of at most 16384 characters")
+        if type(stride) is not int or stride < 1:
+            raise ValueError("stride must be a positive integer")
+        size = self.config.frame_size
+        starts = range(0, max(1, len(text) - size + 1), stride) if text else range(0)
+        windows = ((text[start : start + size], start) for start in starts)
+        return self._recognize_windows(
+            windows,
+            total_windows=len(starts),
+            observation_id=observation_id,
+            limits=limits,
+            progress=progress,
+            cancelled=cancelled,
+        )
+
+    def recognize_parts(
+        self,
+        parts: Sequence[str],
+        *,
+        observation_id: str = "input",
+        limits: RecognitionLimits | None = None,
+        progress: Callable[[str], None] | None = None,
+        cancelled: Callable[[], bool] | None = None,
+    ) -> RecognitionResult:
+        """Read explicitly separated sensor parts as one observation.
+
+        Part boundaries are given by the caller. This adapter avoids treating
+        every overlapping text fragment as a newly discovered object.
+        """
+
+        if (
+            isinstance(parts, (str, bytes))
+            or not isinstance(parts, Sequence)
+            or len(parts) > 64
+        ):
+            raise ValueError("parts must be a sequence of at most 64 strings")
+        windows: list[tuple[str, int]] = []
+        start = 0
+        for part in parts:
+            if type(part) is not str or not part or len(part) > self.config.frame_size:
+                raise ValueError("each part must be nonempty and fit frame_size")
+            windows.append((part, start))
+            start += len(part) + 1
+        return self._recognize_windows(
+            windows,
+            total_windows=len(windows),
+            observation_id=observation_id,
+            limits=limits,
+            progress=progress,
+            cancelled=cancelled,
+        )
 
     def fit_text(
         self,
@@ -530,6 +710,9 @@ class TextFactorModel:
         exact_hits: list[int] = []
         partial_errors: list[int] = []
         complete_errors: list[int] = []
+        history_counts: list[int] = []
+        history_offsets = [0]
+        flat_history: list[bool] = []
 
         for point_index, cluster in clusters:
             point_indices.append(point_index)
@@ -543,6 +726,37 @@ class TextFactorModel:
             exact_hits.append(cluster.exact_hits)
             partial_errors.append(cluster.partial_errors)
             complete_errors.append(cluster.complete_errors)
+            history = cluster.activation_history
+            if not isinstance(history, list):
+                raise ValueError("cluster activation_history must be a list")
+            history_count = len(history)
+            if self.config.consolidation_method == "frequency":
+                if history_count:
+                    raise ValueError(
+                        "frequency clusters cannot contain activation history"
+                    )
+            elif history_count != min(
+                cluster.partial_hits, self.config.coactivation_history_size
+            ):
+                raise ValueError(
+                    "coactivation cluster history count must equal "
+                    "min(partial_hits, coactivation_history_size)"
+                )
+            history_counts.append(history_count)
+            history_sums = np.zeros(len(cluster.bits), dtype=np.int64)
+            for row in history:
+                converted = np.asarray(row)
+                if converted.dtype != np.dtype(np.bool_):
+                    raise ValueError("cluster activation history rows must be boolean")
+                if converted.shape != (len(cluster.bits),):
+                    raise ValueError(
+                        "cluster activation history rows must match cluster bits"
+                    )
+                history_sums += converted
+                flat_history.extend(bool(value) for value in converted)
+            if history_count and np.any(history_sums > cluster.bit_hits):
+                raise ValueError("cluster activation history exceeds bit_hits")
+            history_offsets.append(len(flat_history))
 
         metadata = json.dumps(
             {
@@ -596,6 +810,9 @@ class TextFactorModel:
                     cluster_exact_hits=np.asarray(exact_hits, dtype=np.int64),
                     cluster_partial_errors=np.asarray(partial_errors, dtype=np.int64),
                     cluster_complete_errors=np.asarray(complete_errors, dtype=np.int64),
+                    cluster_history_counts=np.asarray(history_counts, dtype=np.int32),
+                    cluster_history_offsets=np.asarray(history_offsets, dtype=np.int64),
+                    cluster_history_values=np.asarray(flat_history, dtype=np.bool_),
                 )
                 stream.flush()
                 os.fsync(stream.fileno())
@@ -615,7 +832,7 @@ class TextFactorModel:
         max_uncompressed_bytes: int = DEFAULT_MAX_UNCOMPRESSED_BYTES,
         max_array_bytes: int = DEFAULT_MAX_ARRAY_BYTES,
     ) -> TextFactorModel:
-        """Load a validated v1/v2 archive within explicit resource bounds."""
+        """Load a validated v1/v2/v3 archive within explicit resource bounds."""
 
         max_file_bytes = _positive_limit("max_file_bytes", max_file_bytes)
         max_uncompressed_bytes = _positive_limit(
@@ -667,10 +884,20 @@ class TextFactorModel:
                 if not isinstance(raw_metadata, str):
                     raise ValueError("metadata must contain JSON text")
                 metadata = _require_metadata(json.loads(raw_metadata))
+                version = int(metadata["format_version"])
                 config = ModelConfig.from_dict(dict(metadata["config"]))
+                if version < 3 and config.consolidation_method == "coactivation":
+                    raise ValueError(
+                        "v1/v2 archives cannot restore coactivation history"
+                    )
 
-                cls._validate_array_headers(headers, config)
-                arrays = {name: state[name] for name in _ARRAY_DTYPES}
+                cls._validate_array_headers(headers, config, version=version)
+                array_dtypes = (
+                    _ARRAY_DTYPES
+                    if version == MODEL_FORMAT_VERSION
+                    else _LEGACY_ARRAY_DTYPES
+                )
+                arrays = {name: state[name] for name in array_dtypes}
                 encoder = SparseSymbolEncoder(
                     config,
                     metadata["alphabet"],
@@ -693,6 +920,15 @@ class TextFactorModel:
                 exact_hits = arrays["cluster_exact_hits"]
                 partial_errors = arrays["cluster_partial_errors"]
                 complete_errors = arrays["cluster_complete_errors"]
+                history_counts = (
+                    arrays["cluster_history_counts"] if version == 3 else None
+                )
+                history_offsets = (
+                    arrays["cluster_history_offsets"] if version == 3 else None
+                )
+                history_values = (
+                    arrays["cluster_history_values"] if version == 3 else None
+                )
 
                 if offsets[0] != 0 or np.any(offsets < 0):
                     raise ValueError("cluster offsets must start at zero")
@@ -705,11 +941,61 @@ class TextFactorModel:
                     | (statuses > int(ClusterStatus.STABLE))
                 ):
                     raise ValueError("cluster_statuses contains an invalid status")
+                if version == 3:
+                    assert history_counts is not None
+                    assert history_offsets is not None
+                    assert history_values is not None
+                    if history_offsets[0] != 0 or np.any(history_offsets < 0):
+                        raise ValueError("cluster history offsets must start at zero")
+                    if np.any(history_offsets[1:] < history_offsets[:-1]):
+                        raise ValueError(
+                            "cluster history offsets must be nondecreasing"
+                        )
+                    if int(history_offsets[-1]) != len(history_values):
+                        raise ValueError(
+                            "cluster history offsets do not span history values"
+                        )
+                    if np.any(history_counts < 0):
+                        raise ValueError("cluster history counts cannot be negative")
 
                 memory.step = int(metadata["step"])
                 for index in range(len(point_indices)):
                     start = int(offsets[index])
                     end = int(offsets[index + 1])
+                    activation_history: list[np.ndarray[Any, Any]] = []
+                    if version == 3:
+                        assert history_counts is not None
+                        assert history_offsets is not None
+                        assert history_values is not None
+                        history_count = int(history_counts[index])
+                        history_start = int(history_offsets[index])
+                        history_end = int(history_offsets[index + 1])
+                        expected_history_values = history_count * (end - start)
+                        if history_end - history_start != expected_history_values:
+                            raise ValueError(
+                                "cluster history offsets do not match counts and "
+                                "cluster lengths"
+                            )
+                        expected_history_count = min(
+                            int(partial_hits[index]),
+                            config.coactivation_history_size,
+                        )
+                        if config.consolidation_method == "frequency":
+                            if history_count:
+                                raise ValueError(
+                                    "frequency clusters cannot contain activation "
+                                    "history"
+                                )
+                        elif history_count != expected_history_count:
+                            raise ValueError(
+                                "coactivation cluster history count must equal "
+                                "min(partial_hits, coactivation_history_size)"
+                            )
+                        if history_count:
+                            rows = history_values[history_start:history_end].reshape(
+                                history_count, end - start
+                            )
+                            activation_history = [row.copy() for row in rows]
                     cluster = Cluster(
                         bits=bits[start:end].copy(),
                         bit_hits=bit_hits[start:end].copy(),
@@ -720,6 +1006,7 @@ class TextFactorModel:
                         exact_hits=int(exact_hits[index]),
                         partial_errors=int(partial_errors[index]),
                         complete_errors=int(complete_errors[index]),
+                        activation_history=activation_history,
                     )
                     memory.add_loaded_cluster(int(point_indices[index]), cluster)
 
@@ -731,8 +1018,17 @@ class TextFactorModel:
     def _validate_array_headers(
         headers: Mapping[str, tuple[tuple[int, ...], np.dtype[Any]]],
         config: ModelConfig,
+        *,
+        version: int,
     ) -> None:
-        for name, expected_dtype in _ARRAY_DTYPES.items():
+        expected_dtypes = (
+            _ARRAY_DTYPES if version == MODEL_FORMAT_VERSION else _LEGACY_ARRAY_DTYPES
+        )
+        if set(headers) != {"metadata", *expected_dtypes}:
+            raise ValueError(
+                f"archive members do not match model format version {version}"
+            )
+        for name, expected_dtype in expected_dtypes.items():
             shape, dtype = headers[name]
             if dtype != expected_dtype:
                 raise ValueError(
@@ -786,6 +1082,18 @@ class TextFactorModel:
             raise ValueError("persisted model exceeds its maximum cluster bit count")
         if headers["cluster_bit_hits"][0] != (bit_count,):
             raise ValueError("cluster_bits and cluster_bit_hits shapes differ")
+        if version == MODEL_FORMAT_VERSION:
+            if headers["cluster_history_counts"][0] != (cluster_count,):
+                raise ValueError("cluster_history_counts has an inconsistent shape")
+            if headers["cluster_history_offsets"][0] != (cluster_count + 1,):
+                raise ValueError("cluster_history_offsets has an inconsistent shape")
+            history_shape = headers["cluster_history_values"][0]
+            if len(history_shape) != 1:
+                raise ValueError("cluster_history_values must be one-dimensional")
+            if history_shape[0] > bit_count * config.coactivation_history_size:
+                raise ValueError(
+                    "persisted model exceeds its maximum activation history size"
+                )
 
     def _restore_training_metadata(
         self,
@@ -800,12 +1108,12 @@ class TextFactorModel:
 
         training = metadata.get("training")
         if not isinstance(training, dict):
-            raise ValueError("v2 metadata training must be an object")
+            raise ValueError(f"v{version} metadata training must be an object")
         if set(training) != {"mode", "source_context", "target_context"}:
-            raise ValueError("v2 metadata training fields are malformed")
+            raise ValueError(f"v{version} metadata training fields are malformed")
         mode = training["mode"]
         if not isinstance(mode, str) or mode not in _TRAINING_MODES:
-            raise ValueError("v2 metadata has an invalid training mode")
+            raise ValueError(f"v{version} metadata has an invalid training mode")
         source_context = training["source_context"]
         target_context = training["target_context"]
         if mode == "supervised":
@@ -816,11 +1124,13 @@ class TextFactorModel:
             )
         else:
             if source_context is not None or target_context is not None:
-                raise ValueError(f"v2 {mode} training mode cannot have a context pair")
+                raise ValueError(
+                    f"v{version} {mode} training mode cannot have a context pair"
+                )
             pair = None
         if mode == "untrained" and cluster_count:
-            raise ValueError("populated v2 memory cannot be marked untrained")
+            raise ValueError(f"populated v{version} memory cannot be marked untrained")
         if mode == "unknown" and not cluster_count:
-            raise ValueError("empty v2 memory cannot be marked unknown")
+            raise ValueError(f"empty v{version} memory cannot be marked unknown")
         self._training_mode = mode
         self._context_pair = pair

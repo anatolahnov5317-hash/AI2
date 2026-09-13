@@ -10,6 +10,7 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     strategy:
       fail-fast: false
       matrix:
@@ -32,3 +33,11 @@ jobs:
         run: |
           text-factors evaluate --seeds 7 --points 8 --epochs 3 --train-size 8 --dev-size 16 --test-size 16 --noise-size 16 --bootstrap-resamples 20 --output artifacts/evaluation-smoke.json
           text-factors microworld --seed 7 --episodes 4 --output artifacts/microworld-smoke.json
+          text-factors factor-recovery --seeds 7 --points 8 --train-samples 32 --test-samples 16 --output artifacts/factor-smoke.json
+          text-factors context-transfer --seeds 7 --points 16 --epochs 1 --train-size 8 --dev-size 4 --test-size 4 --seconds-per-seed 30 --output artifacts/context-smoke.json
+          text-factors experience-demo --seed 7 --output artifacts/experience-smoke.json
+          text-factors transform-learning --seeds 7 --points 32 --epochs 1 --seconds 30 --output artifacts/transform-learning-smoke.json
+          text-factors dialogue-demo --seed 7 --output artifacts/dialogue-smoke.json
+          text-factors coactivation-structure --seconds 30 --output artifacts/coactivation-structure-smoke.json
+          text-factors context-integration --seeds 11 --points 32 --epochs 1 --seconds 60 --output artifacts/context-integration-smoke.json
+          text-factors scene-integration --seeds 59 --points 32 --epochs 1 --seconds 90 --output artifacts/scene-integration-smoke.json

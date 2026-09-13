@@ -60,6 +60,30 @@ def rewrite_metadata(path: Path, update: Any) -> None:
     np.savez_compressed(path, **cast(dict[str, Any], arrays))
 
 
+def rewrite_as_legacy(path: Path, version: int) -> None:
+    """Rewrite a v3 frequency archive using the actual v1/v2 member schema."""
+
+    arrays = archive_arrays(path)
+    metadata = json.loads(str(arrays["metadata"].item()))
+    metadata["format_version"] = version
+    for name in (
+        "consolidation_method",
+        "coactivation_history_size",
+        "coactivation_passes",
+    ):
+        metadata["config"].pop(name, None)
+    if version == 1:
+        metadata.pop("training")
+    arrays["metadata"] = np.asarray(json.dumps(metadata, sort_keys=True))
+    for name in (
+        "cluster_history_counts",
+        "cluster_history_offsets",
+        "cluster_history_values",
+    ):
+        arrays.pop(name)
+    np.savez_compressed(path, **cast(dict[str, Any], arrays))
+
+
 def state_snapshot(model: TextFactorModel) -> tuple[Any, ...]:
     arrays = (
         model.encoder.codebook,
@@ -81,6 +105,10 @@ def state_snapshot(model: TextFactorModel) -> tuple[Any, ...]:
             cluster.exact_hits,
             cluster.partial_errors,
             cluster.complete_errors,
+            tuple(
+                (row.dtype.str, row.shape, row.tobytes())
+                for row in cluster.activation_history
+            ),
         )
         for point, cluster in model.memory.iter_clusters()
     )
@@ -96,7 +124,7 @@ def state_snapshot(model: TextFactorModel) -> tuple[Any, ...]:
 
 
 class PersistenceTests(unittest.TestCase):
-    def test_v2_round_trip_preserves_trajectory_and_training_operator(self) -> None:
+    def test_v3_round_trip_preserves_trajectory_and_training_operator(self) -> None:
         first = TextFactorModel(persistence_config(), alphabet="abc")
         resumed_source = TextFactorModel(persistence_config(), alphabet="abc")
         for model in (first, resumed_source):
@@ -128,6 +156,187 @@ class PersistenceTests(unittest.TestCase):
                 )
         self.assertEqual(state_snapshot(resumed), state_snapshot(first))
 
+    def test_v3_coactivation_round_trip_preserves_continued_training(self) -> None:
+        config = persistence_config(
+            consolidation_method="coactivation",
+            coactivation_history_size=4,
+            coactivation_passes=2,
+        )
+        uninterrupted = TextFactorModel(config, alphabet="abc")
+        saved_source = TextFactorModel(config, alphabet="abc")
+        initial = ("abc", "bca", "abc", "cab")
+        for model in (uninterrupted, saved_source):
+            for window in initial:
+                model.partial_fit_window(window)
+
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "coactivation.npz"
+            saved_source.save(path)
+            arrays = archive_arrays(path)
+            self.assertEqual(arrays["cluster_history_counts"].dtype, np.int32)
+            self.assertEqual(arrays["cluster_history_offsets"].dtype, np.int64)
+            self.assertEqual(arrays["cluster_history_values"].dtype, np.bool_)
+            resumed = TextFactorModel.load(path)
+
+        self.assertEqual(state_snapshot(resumed), state_snapshot(saved_source))
+        self.assertTrue(
+            all(
+                cluster.activation_history
+                for _, cluster in resumed.memory.iter_clusters()
+            )
+        )
+        for model in (uninterrupted, resumed):
+            for window in ("bca", "cab", "abc", "abc"):
+                model.partial_fit_window(window)
+        self.assertEqual(state_snapshot(resumed), state_snapshot(uninterrupted))
+
+    def test_frequency_v3_persists_empty_histories(self) -> None:
+        model = TextFactorModel(persistence_config(), alphabet="abc")
+        model.fit_text("abcabc", epochs=2)
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "frequency.npz"
+            model.save(path)
+            arrays = archive_arrays(path)
+            loaded = TextFactorModel.load(path)
+
+        self.assertTrue(np.all(arrays["cluster_history_counts"] == 0))
+        self.assertTrue(np.all(arrays["cluster_history_offsets"] == 0))
+        self.assertEqual(arrays["cluster_history_values"].shape, (0,))
+        self.assertTrue(
+            all(
+                cluster.activation_history == []
+                for _, cluster in loaded.memory.iter_clusters()
+            )
+        )
+
+    def test_actual_v2_schema_loads_with_new_frequency_defaults(self) -> None:
+        model = TextFactorModel(persistence_config(), alphabet="abc")
+        model.fit_text("abcabc", epochs=2)
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "legacy-v2.npz"
+            model.save(path)
+            rewrite_as_legacy(path, 2)
+            self.assertFalse(
+                any(
+                    name.startswith("cluster_history_") for name in archive_arrays(path)
+                )
+            )
+            loaded = TextFactorModel.load(path)
+
+        self.assertEqual(loaded.config.consolidation_method, "frequency")
+        self.assertEqual(state_snapshot(loaded), state_snapshot(model))
+
+    def test_legacy_schema_rejects_coactivation_config_without_history(self) -> None:
+        model = TextFactorModel(persistence_config(), alphabet="abc")
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "legacy-v2.npz"
+            model.save(path)
+            rewrite_as_legacy(path, 2)
+            rewrite_metadata(
+                path,
+                lambda metadata: metadata["config"].update(
+                    {"consolidation_method": "coactivation"}
+                ),
+            )
+            with self.assertRaisesRegex(ValueError, "cannot restore coactivation"):
+                TextFactorModel.load(path)
+
+    def test_malformed_v3_history_payloads_are_rejected(self) -> None:
+        config = persistence_config(
+            consolidation_method="coactivation",
+            coactivation_history_size=4,
+            coactivation_passes=2,
+        )
+        model = TextFactorModel(config, alphabet="abc")
+        model.fit_text("abcabc", epochs=2)
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            original = root / "coactivation.npz"
+            model.save(original)
+            arrays = archive_arrays(original)
+            self.assertGreater(len(arrays["cluster_history_values"]), 0)
+
+            bad_count = arrays["cluster_history_counts"].copy()
+            bad_count[0] = arrays["cluster_partial_hits"][0] + 1
+            multirow_indices = np.flatnonzero(arrays["cluster_history_counts"] > 1)
+            self.assertGreater(len(multirow_indices), 0)
+            dropped_index = int(multirow_indices[0])
+            dropped_width = int(
+                arrays["cluster_offsets"][dropped_index + 1]
+                - arrays["cluster_offsets"][dropped_index]
+            )
+            dropped_start = int(arrays["cluster_history_offsets"][dropped_index])
+            dropped_counts = arrays["cluster_history_counts"].copy()
+            dropped_counts[dropped_index] -= 1
+            dropped_offsets = arrays["cluster_history_offsets"].copy()
+            dropped_offsets[dropped_index + 1 :] -= dropped_width
+            dropped_values = np.concatenate(
+                (
+                    arrays["cluster_history_values"][:dropped_start],
+                    arrays["cluster_history_values"][dropped_start + dropped_width :],
+                )
+            )
+            cases = {
+                "dtype": {
+                    "cluster_history_values": arrays["cluster_history_values"].astype(
+                        np.int8
+                    )
+                },
+                "count": {"cluster_history_counts": bad_count},
+                "offset": {
+                    "cluster_history_offsets": np.concatenate(
+                        (
+                            arrays["cluster_history_offsets"][:-1],
+                            arrays["cluster_history_offsets"][-1:] + 1,
+                        )
+                    )
+                },
+                "logical-bound": {
+                    "cluster_history_values": np.zeros(
+                        len(arrays["cluster_bits"]) * config.coactivation_history_size
+                        + 1,
+                        dtype=np.bool_,
+                    )
+                },
+                "missing-row": {
+                    "cluster_history_counts": dropped_counts,
+                    "cluster_history_offsets": dropped_offsets,
+                    "cluster_history_values": dropped_values,
+                },
+            }
+            for name, changes in cases.items():
+                with self.subTest(name=name):
+                    path = root / f"bad-{name}.npz"
+                    rewrite_archive(original, changes=changes)
+                    original.replace(path)
+                    with self.assertRaises(ValueError):
+                        TextFactorModel.load(path)
+                    model.save(original)
+
+            frequency_metadata = root / "frequency-metadata.npz"
+            model.save(frequency_metadata)
+            rewrite_metadata(
+                frequency_metadata,
+                lambda metadata: metadata["config"].update(
+                    {"consolidation_method": "frequency"}
+                ),
+            )
+            with self.assertRaisesRegex(ValueError, "frequency clusters"):
+                TextFactorModel.load(frequency_metadata)
+
+            missing_history = root / "missing-history.npz"
+            frequency = TextFactorModel(persistence_config(), alphabet="abc")
+            frequency.fit_text("abc", epochs=1)
+            frequency.save(missing_history)
+            rewrite_metadata(
+                missing_history,
+                lambda metadata: metadata["config"].update(
+                    {"consolidation_method": "coactivation"}
+                ),
+            )
+            with self.assertRaisesRegex(ValueError, "history count must equal"):
+                TextFactorModel.load(missing_history)
+
     def test_transform_does_not_change_any_internal_state(self) -> None:
         model = TextFactorModel(persistence_config(), alphabet="abc")
         model.fit_text("abcabcabc", epochs=3)
@@ -143,11 +352,7 @@ class PersistenceTests(unittest.TestCase):
             path = Path(directory) / "legacy.npz"
             model.save(path)
 
-            def make_v1(metadata: dict[str, Any]) -> None:
-                metadata["format_version"] = 1
-                metadata.pop("training")
-
-            rewrite_metadata(path, make_v1)
+            rewrite_as_legacy(path, 1)
             loaded = TextFactorModel.load(path)
 
         self.assertEqual(loaded.training_mode, "unknown")
@@ -164,14 +369,10 @@ class PersistenceTests(unittest.TestCase):
             path = Path(directory) / "empty-legacy.npz"
             model.save(path)
 
-            def make_v1(metadata: dict[str, Any]) -> None:
-                metadata["format_version"] = 1
-                metadata.pop("training")
-
-            rewrite_metadata(path, make_v1)
+            rewrite_as_legacy(path, 1)
             loaded = TextFactorModel.load(path)
 
-            resaved = Path(directory) / "resaved-v2.npz"
+            resaved = Path(directory) / "resaved-v3.npz"
             loaded.save(resaved)
             reloaded = TextFactorModel.load(resaved)
 

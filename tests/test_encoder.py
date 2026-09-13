@@ -6,8 +6,8 @@ import numpy as np
 from text_factors import ModelConfig, SparseSymbolEncoder
 
 
-def encoder_config(**overrides: int) -> ModelConfig:
-    values = {
+def encoder_config(**overrides: Any) -> ModelConfig:
+    values: dict[str, Any] = {
         "input_bits": 64,
         "active_bits_per_symbol": 4,
         "positions": 5,

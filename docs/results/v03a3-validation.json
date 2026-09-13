@@ -1,0 +1,445 @@
+{
+  "checks": {
+    "coactivation_marginals_and_metrics_recounted": true,
+    "compileall": true,
+    "fixed_labels_and_read_mutation_guards": true,
+    "github_ci": {
+      "conclusion": "success",
+      "pull_request_run": "https://github.com/anatolahnov5317-hash/AI2/actions/runs/34751355472",
+      "push_run": "https://github.com/anatolahnov5317-hash/AI2/actions/runs/34751353321",
+      "python_versions": [
+        "3.10",
+        "3.11",
+        "3.12"
+      ],
+      "source_commit": "4f1ff16ea9b0187d7fb18719dad8aa1e6dc97584"
+    },
+    "independent_review": "pipeline, affinity, grounding and evaluation boundaries; findings corrected",
+    "pyright": {
+      "errors": 0
+    },
+    "ruff": true,
+    "ruff_format": true,
+    "unittest": {
+      "count": 230,
+      "passed": true,
+      "seconds": 4.01
+    }
+  },
+  "clean_source_snapshots": true,
+  "recounted": {
+    "after/test": {
+      "names": {
+        "ideal": {
+          "exact": {
+            "confident": 105,
+            "correct": 105,
+            "queries": 135
+          },
+          "factor": {
+            "confident": 135,
+            "correct": 135,
+            "queries": 135
+          }
+        },
+        "learned": {
+          "exact": {
+            "confident": 2,
+            "correct": 2,
+            "queries": 135
+          },
+          "factor": {
+            "confident": 8,
+            "correct": 8,
+            "queries": 135
+          }
+        },
+        "shuffled": {
+          "exact": {
+            "confident": 0,
+            "correct": 0,
+            "queries": 135
+          },
+          "factor": {
+            "confident": 0,
+            "correct": 0,
+            "queries": 135
+          }
+        },
+        "untrained": {
+          "exact": {
+            "confident": 0,
+            "correct": 0,
+            "queries": 135
+          },
+          "factor": {
+            "confident": 0,
+            "correct": 0,
+            "queries": 135
+          }
+        }
+      },
+      "part": {
+        "learned": {
+          "F1": 0.5783333333333334,
+          "FN": 463,
+          "FP": 43,
+          "TP": 347,
+          "empty": 11,
+          "exact": 2,
+          "precision": 0.8897435897435897,
+          "queries": 135,
+          "recall": 0.4283950617283951
+        },
+        "shuffled": {
+          "F1": 0.0581270182992465,
+          "FN": 783,
+          "FP": 92,
+          "TP": 27,
+          "empty": 62,
+          "exact": 0,
+          "precision": 0.226890756302521,
+          "queries": 135,
+          "recall": 0.03333333333333333
+        },
+        "untrained": {
+          "F1": 0.0,
+          "FN": 810,
+          "FP": 0,
+          "TP": 0,
+          "empty": 135,
+          "exact": 0,
+          "precision": 0.0,
+          "queries": 135,
+          "recall": 0.0
+        }
+      },
+      "whole": {
+        "learned": {
+          "F1": 0.8348688873139617,
+          "FN": 221,
+          "FP": 12,
+          "TP": 589,
+          "empty": 0,
+          "exact": 0,
+          "precision": 0.9800332778702163,
+          "queries": 45,
+          "recall": 0.7271604938271605
+        },
+        "shuffled": {
+          "F1": 0.26639757820383453,
+          "FN": 678,
+          "FP": 49,
+          "TP": 132,
+          "empty": 0,
+          "exact": 0,
+          "precision": 0.7292817679558011,
+          "queries": 45,
+          "recall": 0.16296296296296298
+        },
+        "untrained": {
+          "F1": 0.0,
+          "FN": 810,
+          "FP": 0,
+          "TP": 0,
+          "empty": 45,
+          "exact": 0,
+          "precision": 0.0,
+          "queries": 45,
+          "recall": 0.0
+        }
+      }
+    },
+    "before/dev": {
+      "names": {
+        "ideal": {
+          "exact": {
+            "confident": 108,
+            "correct": 108,
+            "queries": 108
+          },
+          "factor": {
+            "confident": 108,
+            "correct": 108,
+            "queries": 108
+          }
+        },
+        "learned": {
+          "exact": {
+            "confident": 1,
+            "correct": 1,
+            "queries": 108
+          },
+          "factor": {
+            "confident": 4,
+            "correct": 4,
+            "queries": 108
+          }
+        },
+        "shuffled": {
+          "exact": {
+            "confident": 0,
+            "correct": 0,
+            "queries": 108
+          },
+          "factor": {
+            "confident": 0,
+            "correct": 0,
+            "queries": 108
+          }
+        },
+        "untrained": {
+          "exact": {
+            "confident": 0,
+            "correct": 0,
+            "queries": 108
+          },
+          "factor": {
+            "confident": 0,
+            "correct": 0,
+            "queries": 108
+          }
+        }
+      },
+      "part": {
+        "learned": {
+          "F1": 0.5440860215053763,
+          "FN": 395,
+          "FP": 29,
+          "TP": 253,
+          "empty": 16,
+          "exact": 1,
+          "precision": 0.8971631205673759,
+          "queries": 108,
+          "recall": 0.3904320987654321
+        },
+        "shuffled": {
+          "F1": 0.049315068493150684,
+          "FN": 630,
+          "FP": 64,
+          "TP": 18,
+          "empty": 55,
+          "exact": 0,
+          "precision": 0.21951219512195122,
+          "queries": 108,
+          "recall": 0.027777777777777776
+        },
+        "untrained": {
+          "F1": 0.0,
+          "FN": 648,
+          "FP": 0,
+          "TP": 0,
+          "empty": 108,
+          "exact": 0,
+          "precision": 0.0,
+          "queries": 108,
+          "recall": 0.0
+        }
+      },
+      "whole": {
+        "learned": {
+          "F1": 0.7996323529411765,
+          "FN": 213,
+          "FP": 5,
+          "TP": 435,
+          "empty": 0,
+          "exact": 1,
+          "precision": 0.9886363636363636,
+          "queries": 36,
+          "recall": 0.6712962962962963
+        },
+        "shuffled": {
+          "F1": 0.2262210796915167,
+          "FN": 560,
+          "FP": 42,
+          "TP": 88,
+          "empty": 0,
+          "exact": 0,
+          "precision": 0.676923076923077,
+          "queries": 36,
+          "recall": 0.13580246913580246
+        },
+        "untrained": {
+          "F1": 0.0,
+          "FN": 648,
+          "FP": 0,
+          "TP": 0,
+          "empty": 36,
+          "exact": 0,
+          "precision": 0.0,
+          "queries": 36,
+          "recall": 0.0
+        }
+      }
+    },
+    "before/test": {
+      "names": {
+        "ideal": {
+          "exact": {
+            "confident": 135,
+            "correct": 135,
+            "queries": 135
+          },
+          "factor": {
+            "confident": 135,
+            "correct": 135,
+            "queries": 135
+          }
+        },
+        "learned": {
+          "exact": {
+            "confident": 2,
+            "correct": 2,
+            "queries": 135
+          },
+          "factor": {
+            "confident": 8,
+            "correct": 8,
+            "queries": 135
+          }
+        },
+        "shuffled": {
+          "exact": {
+            "confident": 0,
+            "correct": 0,
+            "queries": 135
+          },
+          "factor": {
+            "confident": 0,
+            "correct": 0,
+            "queries": 135
+          }
+        },
+        "untrained": {
+          "exact": {
+            "confident": 0,
+            "correct": 0,
+            "queries": 135
+          },
+          "factor": {
+            "confident": 0,
+            "correct": 0,
+            "queries": 135
+          }
+        }
+      },
+      "part": {
+        "learned": {
+          "F1": 0.5783333333333334,
+          "FN": 463,
+          "FP": 43,
+          "TP": 347,
+          "empty": 11,
+          "exact": 2,
+          "precision": 0.8897435897435897,
+          "queries": 135,
+          "recall": 0.4283950617283951
+        },
+        "shuffled": {
+          "F1": 0.0581270182992465,
+          "FN": 783,
+          "FP": 92,
+          "TP": 27,
+          "empty": 62,
+          "exact": 0,
+          "precision": 0.226890756302521,
+          "queries": 135,
+          "recall": 0.03333333333333333
+        },
+        "untrained": {
+          "F1": 0.0,
+          "FN": 810,
+          "FP": 0,
+          "TP": 0,
+          "empty": 135,
+          "exact": 0,
+          "precision": 0.0,
+          "queries": 135,
+          "recall": 0.0
+        }
+      },
+      "whole": {
+        "learned": {
+          "F1": 0.8348688873139617,
+          "FN": 221,
+          "FP": 12,
+          "TP": 589,
+          "empty": 0,
+          "exact": 0,
+          "precision": 0.9800332778702163,
+          "queries": 45,
+          "recall": 0.7271604938271605
+        },
+        "shuffled": {
+          "F1": 0.26639757820383453,
+          "FN": 678,
+          "FP": 49,
+          "TP": 132,
+          "empty": 0,
+          "exact": 0,
+          "precision": 0.7292817679558011,
+          "queries": 45,
+          "recall": 0.16296296296296298
+        },
+        "untrained": {
+          "F1": 0.0,
+          "FN": 810,
+          "FP": 0,
+          "TP": 0,
+          "empty": 45,
+          "exact": 0,
+          "precision": 0.0,
+          "queries": 45,
+          "recall": 0.0
+        }
+      }
+    }
+  },
+  "report_sha256": {
+    "v03a3-coactivation-structure.json": "a606113358276e3f0e8acc5a011b2d80c3f723f3fdb33b8a8d2855f5be4b8623",
+    "v03a3-context-integration.json": "13f962078e5d720a0a770e8dcab7894e92aa35bf588338b2e3ffdf1988596508"
+  },
+  "reproduction": {
+    "coactivation_runs_equal_first_preview": true,
+    "integration_runs_equal_first_preview": true,
+    "integration_seconds": 7.3089335129989195
+  },
+  "scope_limits": [
+    "Part queries repeat familiar elementary contents across scenes and contexts.",
+    "Ideal mapping is a separate gold-transform control, not a proven semantic upper bound.",
+    "Post-update name retention on ideal inputs does not describe the accuracy of learned transforms.",
+    "Names returned on additional unmapped SDRs are diagnostic responses, not a calibrated unknown detector."
+  ],
+  "source_commit": "4f1ff16ea9b0187d7fb18719dad8aa1e6dc97584",
+  "source_sha256": {
+    "__init__.py": "ff51a02a20197e87cc62a928fce90bc0161cc6a4e72a4a6e31b57a8214bc4a95",
+    "__main__.py": "307299fda7b77d22c64cb51430ec75e5f59d78e9c948786afb3b2544fe45e4b7",
+    "chat_lab.py": "17db167b7cd388d7d63a66a49e09513acdf2201eede2848653be71836387cba4",
+    "cli.py": "1b093cf01810eaeb081e643d79c65b322ae36488e3898210d515e3871afbe01c",
+    "config.py": "9e8c301ad2e177561b5ec429d3545814e99e16656d2c358c6c3a5a33931292d1",
+    "consolidation.py": "c1699ac87fd4c4bcaf34caf0bf00551807779b3c8070ee7fbec5d22aea1c1410",
+    "context_affinity.py": "8e7df03236c7d17da8e0ea391caafa773ba29c0962be1b7b1c834838cfdc2d1a",
+    "context_pipeline.py": "c09073c8a95b52bcb187cc7c7b7f1db3d7872b33f9c1d0bab261010f8cb0dc19",
+    "dialogue.py": "840da23158b1559af0172aa75a34aefa25d7d9e67fed8e9334f376b7bdd95989",
+    "encoder.py": "855dc6df9b138be1d47efa5d15cb7842465f68c888d4396768050dae223908aa",
+    "evaluation/__init__.py": "3356432ca22ad7f6fe4037f2010ebbb891c767665ca4c1c86d59ae51ccedc0c4",
+    "evaluation/baselines.py": "4a6a440138a65cf4ff02927ef87acb876c012023691df6be7da4d4f3c4e4a3ca",
+    "evaluation/coactivation_structure.py": "947699fda91ac5720d022fb0ba89872105424c2be6b0eb509b60867b3ebc2089",
+    "evaluation/context_integration.py": "7e8f432613ad431d8fc2c12092161c3b00accda3310a8b70e900fd40cc3dd38f",
+    "evaluation/context_transfer.py": "e5c7defd42bab8d9dfb21216189dab49186581f25318545936a88f24731002c3",
+    "evaluation/data.py": "d87eb7f162528aab08e6163d9d334a3817fb127703d4a34ea975bd0b1525e4b2",
+    "evaluation/factor_recovery.py": "eeec0b9ce64f5448fda39f5e8940f64c61776fa7b2e1fb35cce78844cf64d7df",
+    "evaluation/runner.py": "2226b22788effbc5f1446280ac7e2e1b8869ee6ec1da518f7adab67147c1d7e0",
+    "evaluation/statistics.py": "37da915bc366af7ee90bd7d052e2851b5328de2e575d97d4cad84666c877dc11",
+    "evaluation/transform_learning.py": "f21da5e1f1bc02cdf366f856c6ac3c3dc1822b186e6d27cc3be972d6ff3f9e8d",
+    "experience.py": "fd3beaf63a940144bd4281953d52e08ce8515127e640542d621334b0da734548",
+    "grounding.py": "ec149b1a20481a79f05805f4f347acfd8dc17204f4f6294d8386c6ac3e2aa50a",
+    "memory.py": "85e91a7bf030edbd1ba7f48f429af84d62e2e02eeba099bc74c1994ad600c0d4",
+    "metrics.py": "bc3b8a7eac335c91620103649c1ec9c83e68c1b2079a1d5197846f5169edeb50",
+    "microworld.py": "4b9e37b988112c6dd960033e50e3c7acdb75e7befc0fef7e4ff793dced755021",
+    "model.py": "23dac0d18e2564ee4ade8068fd5cfa9cdb32d03a6708d9fd9a4a7855c851c8d9",
+    "recognition.py": "d54ab4b78b267ca8b3e279e9bba1b8f8542e0a0ba7d96ffc984e56b162d916fc",
+    "transforms.py": "bb9924838adfd1993c9e3c1548c98d53141711546d24b5dde6187ac6bf6aec85"
+  },
+  "source_tree": "8e7feead08374de46f7faf936d031807da58e435"
+}

@@ -32,6 +32,9 @@ class ModelConfig:
     probation_after: int = 3
     stable_after: int = 6
     prune_keep_ratio: float = 0.75
+    consolidation_method: str = "frequency"
+    coactivation_history_size: int = 32
+    coactivation_passes: int = 3
     max_clusters_per_point: int = 150
 
     max_complete_error_rate: float = 0.05
@@ -59,6 +62,8 @@ class ModelConfig:
             "max_clusters_per_point": self.max_clusters_per_point,
             "min_error_observations": self.min_error_observations,
             "prediction_vote_threshold": self.prediction_vote_threshold,
+            "coactivation_history_size": self.coactivation_history_size,
+            "coactivation_passes": self.coactivation_passes,
         }
         for name, value in positive_fields.items():
             if type(value) is not int or value <= 0:
@@ -66,6 +71,19 @@ class ModelConfig:
 
         if type(self.seed) is not int or self.seed < 0:
             raise ValueError("seed must be a non-negative integer")
+        if type(
+            self.consolidation_method
+        ) is not str or self.consolidation_method not in (
+            "frequency",
+            "coactivation",
+        ):
+            raise ValueError("consolidation_method must be frequency or coactivation")
+        if self.coactivation_history_size > 256:
+            raise ValueError("coactivation_history_size cannot exceed 256")
+        if self.coactivation_passes > 16:
+            raise ValueError("coactivation_passes cannot exceed 16")
+        if self.consolidation_method == "coactivation" and self.prune_keep_ratio == 1:
+            raise ValueError("coactivation uses a strict threshold below 1")
         if self.input_bits > 2**31 - 1:
             raise ValueError("input_bits must fit signed 32-bit indices")
         for name, value in {
