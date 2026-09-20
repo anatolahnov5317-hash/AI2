@@ -53,6 +53,24 @@ class UncertaintyIndex:
                 self._items[key] = replace(item, affected_claim_ids=remaining)
         return tuple(changed)
 
+    def to_dict(self) -> dict[str, object]:
+        return {"items": [item.to_dict() for item in self.items]}
+
+    @classmethod
+    def from_dict(cls, value: dict[str, object]) -> "UncertaintyIndex":
+        if (
+            type(value) is not dict
+            or set(value) != {"items"}
+            or type(value["items"]) is not list
+        ):
+            raise ValueError("invalid uncertainty index")
+        index = cls()
+        for raw in value["items"]:
+            if type(raw) is not dict:
+                raise ValueError("invalid uncertainty entry")
+            index.add(UncertaintyScope.from_dict(raw))
+        return index
+
     def resolve_instance(
         self, instance_id: str, *, relation_id: str | None = None
     ) -> tuple[str, ...]:
