@@ -5,6 +5,7 @@ existing observations and mention-learning layers without replacing them.
 """
 
 from .archive_bridge import evidence_root, source_slice
+from .attention import AttentionCandidate, AttentionExample, HashedAttentionRanker
 from .budget import BudgetExceeded, BudgetSnapshot, BudgetTracker, ResourceBudget
 from .composition import (
     CompositionalEncoder,
@@ -31,6 +32,8 @@ from .uncertainty import UncertaintyIndex
 
 __all__ = [
     "AnswerReceipt",
+    "AttentionCandidate",
+    "AttentionExample",
     "BudgetExceeded",
     "BudgetSnapshot",
     "BudgetTracker",
@@ -43,6 +46,7 @@ __all__ = [
     "DependencyGraph",
     "EvidenceLedger",
     "EvidenceRoot",
+    "HashedAttentionRanker",
     "Interpretation",
     "LearningEpisode",
     "PilotGateConfig",
