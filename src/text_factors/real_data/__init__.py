@@ -4,6 +4,7 @@ This package is intentionally isolated on the test branch. It composes with the
 existing observations and mention-learning layers without replacing them.
 """
 
+from .archive_bridge import evidence_root, source_slice
 from .budget import BudgetExceeded, BudgetSnapshot, BudgetTracker, ResourceBudget
 from .composition import (
     CompositionalEncoder,
@@ -22,7 +23,9 @@ from .contracts import (
     UncertaintyScope,
 )
 from .dependencies import DependencyGraph, RevisionCheckpoint, RevisionResult
+from .engine import RealDataEngine
 from .evidence import EvidenceLedger, EvidenceRoot
+from .pilot import PilotGateConfig, PilotSample, evaluate_pilot
 from .uncertainty import UncertaintyIndex
 
 __all__ = [
@@ -41,6 +44,9 @@ __all__ = [
     "EvidenceRoot",
     "Interpretation",
     "LearningEpisode",
+    "PilotGateConfig",
+    "PilotSample",
+    "RealDataEngine",
     "ResourceBudget",
     "RevisionCheckpoint",
     "RevisionResult",
@@ -50,5 +56,8 @@ __all__ = [
     "SparseTransform",
     "UncertaintyIndex",
     "UncertaintyScope",
+    "evaluate_pilot",
+    "evidence_root",
     "jaccard",
+    "source_slice",
 ]
