@@ -17,6 +17,7 @@ POLICY_SCHEMA = "ai2-open-candidate-policy-v1"
 MENTION_THRESHOLDS = (0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.95)
 LINK_THRESHOLDS = (0.5, 0.6, 0.7, 0.8, 0.9, 0.95)
 LINK_MARGINS = (0.05, 0.1, 0.2, 0.3)
+LINK_ENDPOINT_THRESHOLDS = (0.5, 0.6, 0.7, 0.8, 0.9, 0.95)
 MIN_LINK_DECISIONS = 10
 MIN_LINK_PRECISION = 0.9
 
@@ -177,17 +178,24 @@ def _apply_gate(
     rows: list[dict[str, Any]], gate: dict[str, Any]
 ) -> list[dict[str, Any]]:
     result = []
+    by_id = {row["mention_id"]: row for row in rows}
+    endpoint_threshold = float(gate.get("mention_score_threshold") or 0.0)
     for row in rows:
         candidates = row["candidates"]
         selected = None
+        top = candidates[0] if candidates else None
+        antecedent = by_id.get(top["mention_id"]) if top is not None else None
         if (
             gate["enabled"]
-            and candidates
-            and candidates[0]["score"] >= gate["score_threshold"]
+            and top is not None
+            and antecedent is not None
+            and row["score"] >= endpoint_threshold
+            and antecedent["score"] >= endpoint_threshold
+            and top["score"] >= gate["score_threshold"]
             and row["margin"] >= gate["margin_threshold"]
             and row["margin"] > 0
         ):
-            selected = candidates[0]["mention_id"]
+            selected = top["mention_id"]
         result.append(
             {
                 **row,
@@ -286,14 +294,29 @@ def calibrate_model(
     )
     threshold = operating_point["threshold"]
     ranked_cache = []
+    oracle_ranked_cache = []
     for index, (document, spans) in enumerate(cache, 1):
+        gold = _gold(document)
         ranked_cache.append(
             (
-                _gold(document),
+                gold,
                 _ranked(
                     model,
                     document["text"],
                     [span for span in spans if span["score"] >= threshold],
+                ),
+            )
+        )
+        oracle_ranked_cache.append(
+            (
+                gold,
+                _ranked(
+                    model,
+                    document["text"],
+                    [
+                        {"start": start, "end": end, "score": 1.0}
+                        for start, end in sorted(gold)
+                    ],
                 ),
             )
         )
@@ -311,24 +334,47 @@ def calibrate_model(
         "enabled": False,
         "score_threshold": None,
         "margin_threshold": None,
+        "mention_score_threshold": None,
         "reason": "no_supported_validation_operating_point",
         "min_evaluable_decisions": MIN_LINK_DECISIONS,
         "min_empirical_precision": MIN_LINK_PRECISION,
         "statistical_guarantee": False,
     }
     link_grid = []
+    oracle_link_grid = []
     if pair_enabled:
+        endpoint_thresholds = tuple(
+            value for value in LINK_ENDPOINT_THRESHOLDS if value >= threshold
+        )
+        if not endpoint_thresholds:
+            endpoint_thresholds = (threshold,)
         for score_threshold in LINK_THRESHOLDS:
             for margin_threshold in LINK_MARGINS:
-                trial = {
+                oracle_trial = {
                     "enabled": True,
                     "score_threshold": score_threshold,
                     "margin_threshold": margin_threshold,
+                    "mention_score_threshold": 0.0,
                 }
-                counts = Counter()
-                for gold, rows in ranked_cache:
-                    counts.update(_accepted_counts(_apply_gate(rows, trial), gold))
-                link_grid.append({**trial, **_accepted_metrics(counts)})
+                oracle_counts = Counter()
+                for gold, rows in oracle_ranked_cache:
+                    oracle_counts.update(
+                        _accepted_counts(_apply_gate(rows, oracle_trial), gold)
+                    )
+                oracle_link_grid.append(
+                    {**oracle_trial, **_accepted_metrics(oracle_counts)}
+                )
+                for mention_score_threshold in endpoint_thresholds:
+                    trial = {
+                        "enabled": True,
+                        "score_threshold": score_threshold,
+                        "margin_threshold": margin_threshold,
+                        "mention_score_threshold": mention_score_threshold,
+                    }
+                    counts = Counter()
+                    for gold, rows in ranked_cache:
+                        counts.update(_accepted_counts(_apply_gate(rows, trial), gold))
+                    link_grid.append({**trial, **_accepted_metrics(counts)})
         eligible = [
             row
             for row in link_grid
@@ -341,6 +387,7 @@ def calibrate_model(
                 key=lambda row: (
                     row["evaluable_accepted_count"],
                     row["precision"],
+                    row["mention_score_threshold"],
                     row["score_threshold"],
                     row["margin_threshold"],
                 ),
@@ -349,6 +396,7 @@ def calibrate_model(
                 enabled=True,
                 score_threshold=best["score_threshold"],
                 margin_threshold=best["margin_threshold"],
+                mention_score_threshold=best["mention_score_threshold"],
                 reason="validation_empirical_operating_point",
                 validation_evaluable_decisions=best["evaluable_accepted_count"],
                 validation_correct_decisions=best["correct_count"],
@@ -368,8 +416,11 @@ def calibrate_model(
         "validation_data_sha256": _digest(documents),
         "mention_grid": mention_grid,
         "link_grid": link_grid,
+        "oracle_link_grid": oracle_link_grid,
         "mention_tie_break": "highest_f1_then_precision_then_threshold",
-        "link_tie_break": "most_evaluable_decisions_then_precision_then_thresholds",
+        "link_tie_break": (
+            "most_evaluable_decisions_then_precision_then_endpoint_and_pair_thresholds"
+        ),
         "score_semantics": "uncalibrated_sigmoid_response",
         "calibration_scope": "predicted_validation_spans",
         "archive_mutation": False,
