@@ -87,7 +87,7 @@ class SparseTransform:
         }
 
     @classmethod
-    def from_dict(cls, value: dict[str, Any]) -> "SparseTransform":
+    def from_dict(cls, value: dict[str, Any]) -> SparseTransform:
         if type(value) is not dict or set(value) != {"width", "episodes", "counts"}:
             raise ValueError("invalid sparse transform")
         transform = cls(value["width"])
@@ -320,7 +320,7 @@ class ContextRegistry:
         }
 
     @classmethod
-    def from_dict(cls, value: dict[str, Any]) -> "ContextRegistry":
+    def from_dict(cls, value: dict[str, Any]) -> ContextRegistry:
         expected = {
             "width",
             "max_contexts",
