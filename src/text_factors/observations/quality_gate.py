@@ -271,7 +271,9 @@ def _failure_reasons(
     precision = accepted["precision"]
     if evaluable < requirements["min_accepted_link_decisions"]:
         failures.append("accepted_link_decision_count")
-    elif precision is None or precision < requirements["min_accepted_link_precision"]:
+    elif evaluable > 0 and (
+        precision is None or precision < requirements["min_accepted_link_precision"]
+    ):
         failures.append("accepted_link_precision")
     comparison = metrics["comparison"]
     if (
