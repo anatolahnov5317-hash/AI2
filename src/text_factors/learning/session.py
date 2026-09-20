@@ -10,7 +10,13 @@ from typing import Any
 
 from ..conversation.persistence import encode_json
 from ..conversation.schema import Budget, BudgetExceeded, ConversationLimits
-from .attention import AttentionState, ReviewCue, memory_token, validate_attention_trace
+from .attention import (
+    AttentionLimits,
+    AttentionState,
+    ReviewCue,
+    memory_token,
+    validate_attention_trace,
+)
 from .candidate_search import SearchLimits
 from .candidate_selection import select, validate_trace
 from .hypotheses import Observation, digest
@@ -83,7 +89,7 @@ class LearnedSession:
         encode_json(self._snapshot(), max_bytes=self.limits.max_state_bytes)
 
     def _snapshot(self) -> dict[str, Any]:
-        return {
+        value = {
             "schema": SCHEMA,
             "model_fingerprint": self.model_fingerprint,
             "limits": self.limits.to_dict(),
@@ -93,8 +99,12 @@ class LearnedSession:
             "previous_action": self._previous_action,
             "last_assertions": deepcopy(self._last_assertions),
             "history": deepcopy(self._history),
-            "attention": self.attention.to_dict(),
         }
+        # An empty default archive carries no observations or learned updates.
+        # Keep the legacy compact empty session usable under small byte budgets.
+        if self.attention.generation or self.attention.limits != AttentionLimits():
+            value["attention"] = self.attention.to_dict()
+        return value
 
     def to_dict(self) -> dict[str, Any]:
         if not self._lock.acquire(blocking=False):

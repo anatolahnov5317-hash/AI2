@@ -1,0 +1,274 @@
+{
+  "first_run_totals": {
+    "conflicting_cues": {
+      "passed": 2,
+      "total": 2
+    },
+    "distant_retrieval": {
+      "passed": 1,
+      "total": 1
+    },
+    "language_candidates_structured_cue": {
+      "passed": 1,
+      "total": 2
+    },
+    "live_dialogue": {
+      "passed": 2,
+      "total": 2
+    },
+    "structured_confirm": {
+      "passed": 4,
+      "total": 4
+    },
+    "structured_distract": {
+      "passed": 4,
+      "total": 4
+    },
+    "structured_recover": {
+      "passed": 4,
+      "total": 4
+    }
+  },
+  "failed_cases": [
+    {
+      "group": "language_candidates_structured_cue",
+      "name": "петя",
+      "passed": false,
+      "candidate_count": 2,
+      "seconds": 0.00665004999973462,
+      "trace": {
+        "target": "turn:1",
+        "cue_id": "turn:100",
+        "snapshot_id": "c05088eb5ac26038c820c5c3379b370c032d5f37a701b0b2e2c5d323f3af66cc",
+        "model_fingerprint": "885c07a4d8514355b5459f06fd442a60b77b8d7f4f76d6469c0a0c03df0ef2c5",
+        "memory_version": [
+          "144cdc61fc95aca061e7fad396bcdb8c056ce70eb598d34381fb1f27f7d47481",
+          352
+        ],
+        "before_digest": "99bcfca61a865fe7ac5bb675250de956e8e0fb175d59adac80bb2fb177154a2c",
+        "previous_id": "h-698304534739435d9566b613d7033e85b13338349b4b2b59b53ef94cdaa7c76d",
+        "selected_id": null,
+        "changed": true,
+        "regenerated": false,
+        "reason": "ambiguous_no_supported_candidate",
+        "evidence": {
+          "turn:1": {
+            "language": 1.0,
+            "memory": 1.0
+          },
+          "turn:100": {
+            "clarification": 1.0
+          }
+        },
+        "agreement": {
+          "complete": true,
+          "rounds": 1,
+          "roots": {
+            "turn:100": [
+              "turn:100"
+            ]
+          },
+          "reason": ""
+        },
+        "comparison": {
+          "batch": {
+            "candidates": [
+              {
+                "bindings": [
+                  [
+                    "actor",
+                    0,
+                    "миша"
+                  ],
+                  [
+                    "object",
+                    2,
+                    "книга"
+                  ],
+                  [
+                    "recipient",
+                    3,
+                    "маша"
+                  ]
+                ],
+                "hypothesis_id": "h-698304534739435d9566b613d7033e85b13338349b4b2b59b53ef94cdaa7c76d",
+                "language_regret": 0.0,
+                "meaning": {
+                  "act": "inform",
+                  "entities": [
+                    {
+                      "gender": "male",
+                      "kind": "person",
+                      "name": "миша"
+                    },
+                    {
+                      "gender": "female",
+                      "kind": "thing",
+                      "name": "книга"
+                    },
+                    {
+                      "gender": "female",
+                      "kind": "person",
+                      "name": "маша"
+                    }
+                  ],
+                  "event": {
+                    "actor": "миша",
+                    "condition": null,
+                    "content": null,
+                    "modality": "actual",
+                    "negated": false,
+                    "object": "книга",
+                    "place": "",
+                    "predicate": "give",
+                    "recipient": "маша",
+                    "spatial": "in",
+                    "time": "past"
+                  },
+                  "query": null
+                },
+                "missing": [],
+                "observation_id": "turn:1",
+                "version": 1
+              },
+              {
+                "bindings": [
+                  [
+                    "object",
+                    2,
+                    "книга"
+                  ],
+                  [
+                    "recipient",
+                    3,
+                    "маша"
+                  ]
+                ],
+                "hypothesis_id": "h-c35cdbd8e2075f7d675493d07f714e67aa9ce23cd45cb2de9f0ffc9944fc3c27",
+                "language_regret": 0.1016484587821281,
+                "meaning": {
+                  "act": "inform",
+                  "entities": [
+                    {
+                      "gender": "female",
+                      "kind": "thing",
+                      "name": "книга"
+                    },
+                    {
+                      "gender": "female",
+                      "kind": "person",
+                      "name": "маша"
+                    }
+                  ],
+                  "event": {
+                    "actor": "",
+                    "condition": null,
+                    "content": null,
+                    "modality": "actual",
+                    "negated": false,
+                    "object": "книга",
+                    "place": "",
+                    "predicate": "give",
+                    "recipient": "маша",
+                    "spatial": "in",
+                    "time": "past"
+                  },
+                  "query": null
+                },
+                "missing": [
+                  "actor",
+                  "unconsumed_span:0"
+                ],
+                "observation_id": "turn:1",
+                "version": 1
+              }
+            ],
+            "complete": true,
+            "context_digest": "25bd0188f116cb5e617792c208fc69d925e7c280f785874da357c964df64d9e5",
+            "expansions": 23,
+            "observation": {
+              "observation_id": "turn:1",
+              "source": "input",
+              "text": "Он передал книгу Маше",
+              "turn_id": 1
+            },
+            "schema": "ai2-hypotheses-v1",
+            "stop_reason": ""
+          },
+          "reads": [
+            {
+              "contexts": [
+                {
+                  "complete": true,
+                  "context": "event_roles",
+                  "input_sha256": "65c66a35f9771376e7a9b140f26a014a29ae85c14e9e80f67cf5d4dcdca1195c",
+                  "kind": "fixed role-coordinate transform; shared factor experience",
+                  "matches": 1,
+                  "memory_namespace": "144cdc61fc95aca061e7fad396bcdb8c056ce70eb598d34381fb1f27f7d47481",
+                  "memory_step": 352,
+                  "observation_id": "turn:1",
+                  "portraits": [
+                    {
+                      "coverage": 1.0,
+                      "portrait_id": "54",
+                      "support": 80
+                    }
+                  ],
+                  "response_count": 1,
+                  "score": 1.0,
+                  "source_positions": [
+                    0,
+                    1,
+                    2,
+                    3
+                  ]
+                },
+                {
+                  "complete": true,
+                  "context": "actor_recipient_exchange",
+                  "input_sha256": "65c66a35f9771376e7a9b140f26a014a29ae85c14e9e80f67cf5d4dcdca1195c",
+                  "kind": "fixed role-coordinate transform; shared factor experience",
+                  "matches": 1,
+                  "memory_namespace": "144cdc61fc95aca061e7fad396bcdb8c056ce70eb598d34381fb1f27f7d47481",
+                  "memory_step": 352,
+                  "observation_id": "turn:1",
+                  "portraits": [
+                    {
+                      "coverage": 1.0,
+                      "portrait_id": "54",
+                      "support": 80
+                    }
+                  ],
+                  "response_count": 1,
+                  "score": 1.0,
+                  "source_positions": [
+                    0,
+                    1,
+                    2,
+                    3
+                  ]
+                }
+              ],
+              "hypothesis_id": "h-698304534739435d9566b613d7033e85b13338349b4b2b59b53ef94cdaa7c76d",
+              "reason": "shared_experience_comparison",
+              "score": 1.0,
+              "supported": true
+            }
+          ],
+          "reason": "single_complete_candidate",
+          "score_is_probability": false,
+          "selected_id": "h-698304534739435d9566b613d7033e85b13338349b4b2b59b53ef94cdaa7c76d",
+          "snapshot": {
+            "before_digest": "99bcfca61a865fe7ac5bb675250de956e8e0fb175d59adac80bb2fb177154a2c",
+            "context_digest": "25bd0188f116cb5e617792c208fc69d925e7c280f785874da357c964df64d9e5",
+            "dependency_event_ids": [],
+            "model_fingerprint": "885c07a4d8514355b5459f06fd442a60b77b8d7f4f76d6469c0a0c03df0ef2c5",
+            "observation_digest": "7083fbcd0924ed730730dbcfb4a716d693755eefd72af34cd61a69174f4e91ef"
+          },
+          "snapshot_id": "c4c87ad2f23dad2ede6c4f1d45c689d87966c3de9b804d375132d7c597885f2f"
+        }
+      }
+    }
+  ],
+  "disclosure": "Initial failure retained; later output is a development rerun after a code fix, not held-out evaluation."
+}

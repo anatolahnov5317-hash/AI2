@@ -342,6 +342,76 @@ class AttentionTests(unittest.TestCase):
         self.assertIsNone(proposal["record"])
         self.assertEqual(state.evicted_sources, 1)
 
+    def test_missing_alternative_rebuilt_from_source_with_new_cue_context(self):
+        state = self.state()
+        names = ("книга", "ключ", "петя", "миша", "маша", "стол")
+        ctx = DialogueContext(
+            entities=tuple(ENTITY_BY_NAME[n].entity for n in names), focus=names
+        )
+        observed = Observation("turn:1", "Он передал книгу Маше", 1)
+        batch = self.bundle.understanding.propose(
+            observed.text, ctx, observation=observed
+        )
+        self.assertFalse(
+            any(
+                c.meaning and c.meaning.event and c.meaning.event.actor == "петя"
+                for c in batch.candidates
+            )
+        )
+        result = select(
+            batch,
+            Interpretation(None),
+            self.bundle.dynamics,
+            [],
+            model_fingerprint=self.fingerprint,
+            seconds=1,
+        )
+        assert result.diagnostics is not None
+        state.remember(result.diagnostics["hypotheses"], ctx, [])
+        proposal = self.review(state, cue(actor="петя"))
+        self.assertTrue(proposal["complete"])
+        self.assertTrue(proposal["summary"]["regenerated"])
+        self.commit(state, proposal)
+        self.assertEqual(state.records[0]["selected_meaning"]["event"]["actor"], "петя")
+        AttentionState.from_dict(state.to_dict(), self.fingerprint)
+
+    def test_explicit_reference_hint_changes_snapshot_but_not_observation(self):
+        observed = Observation("turn:1", "Он передал книгу Маше", 1)
+        first = self.bundle.understanding.propose(
+            observed.text, context(), observation=observed
+        )
+        second = self.bundle.understanding.propose(
+            observed.text,
+            context(),
+            observation=observed,
+            reference_hints={"actor": "петя"},
+        )
+        self.assertEqual(first.observation, second.observation)
+        self.assertNotEqual(first.context_digest, second.context_digest)
+        self.assertTrue(
+            any(
+                c.meaning and c.meaning.event and c.meaning.event.actor == "петя"
+                for c in second.candidates
+            )
+        )
+
+    def test_reference_hint_cannot_overwrite_an_explicit_name(self):
+        batch = self.bundle.understanding.propose(
+            "Миша передал книгу Маше", context(), reference_hints={"actor": "петя"}
+        )
+        self.assertFalse(
+            any(
+                c.meaning and c.meaning.event and c.meaning.event.actor == "петя"
+                for c in batch.candidates
+            )
+        )
+        with self.assertRaises(ValueError):
+            self.bundle.understanding.propose(
+                "Он передал книгу Маше",
+                context(),
+                reference_hints={"invented_role": "петя"},
+            )
+
     def test_stale_archive_result_rejected_atomically(self):
         state = self.state()
         self.add(state)

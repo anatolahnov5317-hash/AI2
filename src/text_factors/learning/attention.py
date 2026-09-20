@@ -16,7 +16,7 @@ from typing import Any
 
 from .agreement import Claim, EvidenceLedger, Scope, exchange, relation
 from .attention_ranker import AttentionRanker
-from .candidate_search import SearchLimits
+from .candidate_search import SearchLimits, input_digest
 from .candidate_selection import choose, select, validate_trace
 from .hypotheses import CandidateSet, Hypothesis, Observation, digest
 from .schema import (
@@ -253,6 +253,8 @@ def validate_attention_trace(value: Any, batch: CandidateSet) -> None:
                 "reason",
                 "evidence",
                 "agreement",
+                "review_context",
+                "reference_hints",
             },
             "attention review summary",
         )
@@ -470,13 +472,41 @@ class AttentionState:
                 proposal.update(complete=True, reason="inapplicable_scope")
                 return proposal
             record = deepcopy(source)
-            regenerated = record["batch"] is None
+            prior_batch = (
+                CandidateSet.from_dict(record["batch"])
+                if record["batch"] is not None
+                else None
+            )
+            regenerated = (
+                prior_batch is None
+                or not prior_batch.complete
+                or not any(
+                    c.complete and c.meaning and c.meaning.event == event
+                    for c in prior_batch.candidates
+                )
+            )
+            review_context = (
+                record["review"]["review_context"]
+                if record["review"] is not None and prior_batch is not None
+                else record["context"]
+            )
+            reference_hints = (
+                record["review"]["reference_hints"]
+                if record["review"] is not None and prior_batch is not None
+                else {}
+            )
             if regenerated:
                 ctx = DialogueContext.from_dict(record["context"])
                 entities = {e.name: e for e in (*ctx.entities, *cue.meaning.entities)}
                 ctx = DialogueContext(
                     ctx.turns, tuple(entities.values())[-64:], ctx.focus, ctx.pending
                 )
+                review_context = ctx.to_dict()
+                reference_hints = {
+                    role: getattr(event, role)
+                    for role in ("actor", "recipient", "object", "place")
+                    if getattr(event, role)
+                }
                 batch = understanding.propose(
                     record["observation"]["text"],
                     ctx,
@@ -485,10 +515,12 @@ class AttentionState:
                         max_expansions=self.limits.max_expansions,
                         seconds=work.remaining(),
                     ),
+                    reference_hints=reference_hints,
                 )
                 work.take("expansions", batch.expansions)
             else:
-                batch = CandidateSet.from_dict(record["batch"])
+                assert prior_batch is not None
+                batch = prior_batch
             if not batch.complete:
                 proposal["reason"] = "incomplete_candidate_reconstruction"
                 return proposal
@@ -580,6 +612,8 @@ class AttentionState:
                 "evidence": ledger.to_dict(),
                 "agreement": agreed,
                 "comparison": comparison,
+                "review_context": review_context,
+                "reference_hints": reference_hints,
             }
             record.update(
                 batch=batch.to_dict(),
@@ -880,6 +914,18 @@ class AttentionState:
                 expected, reason, _ = constrained_choice(
                     comparison_batch, r["cues"], compared["reads"]
                 )
+                replay_context = DialogueContext.from_dict(review["review_context"])
+                hints = review["reference_hints"]
+                if hints and not any(
+                    hints
+                    == {
+                        role: raw["meaning"]["event"][role]
+                        for role in ("actor", "recipient", "object", "place")
+                        if raw["meaning"]["event"][role]
+                    }
+                    for raw in r["cues"]
+                ):
+                    raise ValueError("reference constraints lack observed provenance")
                 if (
                     comparison_batch.observation != observation
                     or compared["snapshot"]["before_digest"]
@@ -894,6 +940,8 @@ class AttentionState:
                     != (review["previous_id"] != review["selected_id"])
                     or not r["revision"]
                     or not r["cues"]
+                    or comparison_batch.context_digest
+                    != input_digest(replay_context, review["reference_hints"])
                 ):
                     raise ValueError("invalid archived review snapshot")
             elif (

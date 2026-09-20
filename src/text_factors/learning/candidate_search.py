@@ -24,9 +24,17 @@ from .hypotheses import (
     digest,
 )
 from .language_data import PRONOUN_FORMS, tokenize
-from .schema import DialogueContext, Interpretation
+from .schema import DialogueContext, Interpretation, bounded_text
 
 WINDOW = 0.12  # Uncalibrated score difference, fixed before the development run.
+
+
+def input_digest(
+    context: DialogueContext, reference_hints: dict[str, str] | None = None
+) -> str:
+    if not reference_hints:
+        return digest(context.to_dict())
+    return digest({"context": context.to_dict(), "reference_hints": reference_hints})
 
 
 @dataclass(frozen=True)
@@ -56,6 +64,7 @@ def propose(
     context: DialogueContext,
     initial: Interpretation,
     limits: SearchLimits | None = None,
+    reference_hints: dict[str, str] | None = None,
 ) -> CandidateSet:
     from .understanding import (
         _HEAD_OPTIONS,
@@ -71,7 +80,17 @@ def propose(
     expansions = 0
     stop_reason = ""
     candidates: dict[str, Hypothesis] = {}
-    context_digest = digest(context.to_dict())
+    if reference_hints is not None:
+        if (
+            type(reference_hints) is not dict
+            or len(reference_hints) > 8
+            or not set(reference_hints)
+            <= {"actor", "recipient", "object", "place", "outer_actor", "inner_actor"}
+        ):
+            raise ValueError("invalid explicit reference constraints")
+        for name in reference_hints.values():
+            bounded_text(name, "reference constraint", empty=False)
+    context_digest = input_digest(context, reference_hints)
 
     def check(*, expand: bool = False) -> None:
         nonlocal expansions
@@ -197,6 +216,11 @@ def propose(
                         and (not kind or entity.kind in {kind, "unknown"})
                         and (
                             gender == "unknown" or entity.gender in {gender, "unknown"}
+                        )
+                        and (
+                            not reference_hints
+                            or role not in reference_hints
+                            or entity.name == reference_hints[role]
                         )
                     ]
                     if not valid:
