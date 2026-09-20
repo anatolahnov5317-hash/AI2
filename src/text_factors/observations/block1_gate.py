@@ -73,9 +73,7 @@ def evaluate_block1_gate(
     oracle_baseline = baseline["coreference_oracle_mentions"]
 
     gold_count = _integer(mentions["gold_count"], "mention gold_count")
-    unsupported = _integer(
-        mentions["unsupported_gold_spans"], "unsupported_gold_spans"
-    )
+    unsupported = _integer(mentions["unsupported_gold_spans"], "unsupported_gold_spans")
     unsupported_rate = unsupported / gold_count if gold_count else 1.0
     mention_delta = float(metrics["comparison"]["mention_f1_delta_from_baseline"])
     oracle_delta = float(oracle["f1"]) - float(oracle_baseline["f1"])
@@ -106,8 +104,7 @@ def evaluate_block1_gate(
                     or link_gate.get("enabled") is True
                 )
                 and validation_precision is not None
-                and float(validation_precision)
-                >= config.min_validation_link_precision
+                and float(validation_precision) >= config.min_validation_link_precision
                 and _integer(validation_evaluable, "validation evaluable links")
                 >= config.min_validation_evaluable_links
             ),
