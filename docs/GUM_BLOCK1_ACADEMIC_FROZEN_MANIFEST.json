@@ -1,0 +1,234 @@
+{
+  "schema": "ai2-gum-pilot-manifest-v1",
+  "repository": "https://github.com/amir-zeldes/gum",
+  "revision": "22fdf87f9c71c96bcc771461d06e689b1f90020d",
+  "source_commit_url": "https://github.com/amir-zeldes/gum/commit/22fdf87f9c71c96bcc771461d06e689b1f90020d",
+  "licenses": {
+    "texts": {
+      "id": "CC-BY-2.5",
+      "url": "https://creativecommons.org/licenses/by/2.5/"
+    },
+    "annotations": {
+      "id": "CC-BY-4.0",
+      "url": "https://creativecommons.org/licenses/by/4.0/"
+    }
+  },
+  "selection_policy": "PRE-FROZEN BEFORE ANY MODEL PREDICTIONS: academic genre only. Use the first six documents in the published GUM train split order; use both academic documents in published dev as validation; use both academic documents in published test as the held-out test. Selection is based only on official split order and genre, not model scores or outputs.",
+  "freeze_note": "Committed before running Block-1 model evaluation on these test documents. The two held-out test documents were not part of the earlier news/interview GUM pilot manifest.",
+  "official_splits": {
+    "path": "splits.md",
+    "sha256": "7a1b51ab332ae84d9693824ef067ec1dbfad4275111608231eb5e409437ea6d7"
+  },
+  "documents": [
+    {
+      "document_id": "GUM_academic_art",
+      "group_id": "GUM_academic_art",
+      "split": "train",
+      "language": "en",
+      "license": "Texts: CC-BY-2.5; annotations: CC-BY-4.0",
+      "files": {
+        "conll": {
+          "path": "coref/gum/conll/GUM_academic_art.conll",
+          "git_blob_sha1": "b48892f9d9271cd0e23475708f24c18424125ba1"
+        },
+        "tsv": {
+          "path": "coref/gum/tsv/GUM_academic_art.tsv",
+          "git_blob_sha1": "35238aeda0d819c6a5977a4172c3616a1248ff2d"
+        },
+        "xml": {
+          "path": "xml/GUM_academic_art.xml",
+          "git_blob_sha1": "25953ba015e8ca20578f4707d8dbff8a6798114f"
+        }
+      }
+    },
+    {
+      "document_id": "GUM_academic_census",
+      "group_id": "GUM_academic_census",
+      "split": "train",
+      "language": "en",
+      "license": "Texts: CC-BY-2.5; annotations: CC-BY-4.0",
+      "files": {
+        "conll": {
+          "path": "coref/gum/conll/GUM_academic_census.conll",
+          "git_blob_sha1": "c581b3635209c12643f87249aa67a482c8090226"
+        },
+        "tsv": {
+          "path": "coref/gum/tsv/GUM_academic_census.tsv",
+          "git_blob_sha1": "98db015e841067f520e82b85d1f175c93917aa38"
+        },
+        "xml": {
+          "path": "xml/GUM_academic_census.xml",
+          "git_blob_sha1": "069b9dbf22b712af4a30377374d1429a0603ea15"
+        }
+      }
+    },
+    {
+      "document_id": "GUM_academic_economics",
+      "group_id": "GUM_academic_economics",
+      "split": "train",
+      "language": "en",
+      "license": "Texts: CC-BY-2.5; annotations: CC-BY-4.0",
+      "files": {
+        "conll": {
+          "path": "coref/gum/conll/GUM_academic_economics.conll",
+          "git_blob_sha1": "f51f6ce5a083be0d626a52cfd5933b0ece00cb4e"
+        },
+        "tsv": {
+          "path": "coref/gum/tsv/GUM_academic_economics.tsv",
+          "git_blob_sha1": "ac0e75359913b6013ee68dbc3d44eb6885c01899"
+        },
+        "xml": {
+          "path": "xml/GUM_academic_economics.xml",
+          "git_blob_sha1": "747ca3dfaa227701fa26b987b5ad5f527030eaa7"
+        }
+      }
+    },
+    {
+      "document_id": "GUM_academic_enjambment",
+      "group_id": "GUM_academic_enjambment",
+      "split": "train",
+      "language": "en",
+      "license": "Texts: CC-BY-2.5; annotations: CC-BY-4.0",
+      "files": {
+        "conll": {
+          "path": "coref/gum/conll/GUM_academic_enjambment.conll",
+          "git_blob_sha1": "ed5c78254271051e6d4c3f0fd1a7dc1c0a1cd606"
+        },
+        "tsv": {
+          "path": "coref/gum/tsv/GUM_academic_enjambment.tsv",
+          "git_blob_sha1": "68f901f4d46cf8e3dd085dc20ef4271a7fc71b32"
+        },
+        "xml": {
+          "path": "xml/GUM_academic_enjambment.xml",
+          "git_blob_sha1": "cc07f73441ed41dc3a3ee04617f39cdbd61dac43"
+        }
+      }
+    },
+    {
+      "document_id": "GUM_academic_epistemic",
+      "group_id": "GUM_academic_epistemic",
+      "split": "train",
+      "language": "en",
+      "license": "Texts: CC-BY-2.5; annotations: CC-BY-4.0",
+      "files": {
+        "conll": {
+          "path": "coref/gum/conll/GUM_academic_epistemic.conll",
+          "git_blob_sha1": "5205ee3c6fcd79b3e85fdeb77eb4487800507a37"
+        },
+        "tsv": {
+          "path": "coref/gum/tsv/GUM_academic_epistemic.tsv",
+          "git_blob_sha1": "4cbd98701f10d507f06f289c537cc2c1a01c5dbc"
+        },
+        "xml": {
+          "path": "xml/GUM_academic_epistemic.xml",
+          "git_blob_sha1": "f3ab3e61fef5cd2dd0a794a3642ca13a9eb5ffc8"
+        }
+      }
+    },
+    {
+      "document_id": "GUM_academic_games",
+      "group_id": "GUM_academic_games",
+      "split": "train",
+      "language": "en",
+      "license": "Texts: CC-BY-2.5; annotations: CC-BY-4.0",
+      "files": {
+        "conll": {
+          "path": "coref/gum/conll/GUM_academic_games.conll",
+          "git_blob_sha1": "8949aa4256842f088a8d8ddbfee76d195814cb30"
+        },
+        "tsv": {
+          "path": "coref/gum/tsv/GUM_academic_games.tsv",
+          "git_blob_sha1": "d4c179f727c51b3f13eb181a54a3c1ca0f8c2bda"
+        },
+        "xml": {
+          "path": "xml/GUM_academic_games.xml",
+          "git_blob_sha1": "660fc0365b049589fc556a69bfa5feba328c5a50"
+        }
+      }
+    },
+    {
+      "document_id": "GUM_academic_exposure",
+      "group_id": "GUM_academic_exposure",
+      "split": "validation",
+      "language": "en",
+      "license": "Texts: CC-BY-2.5; annotations: CC-BY-4.0",
+      "files": {
+        "conll": {
+          "path": "coref/gum/conll/GUM_academic_exposure.conll",
+          "git_blob_sha1": "cc689895dede99bcc7802c4636690015f2bba596"
+        },
+        "tsv": {
+          "path": "coref/gum/tsv/GUM_academic_exposure.tsv",
+          "git_blob_sha1": "77175292a22fc6d9dcd995d0bde5e9d8f149f686"
+        },
+        "xml": {
+          "path": "xml/GUM_academic_exposure.xml",
+          "git_blob_sha1": "96c95e3bae4edaa5cd1fa1a57284c62e42a4058b"
+        }
+      }
+    },
+    {
+      "document_id": "GUM_academic_librarians",
+      "group_id": "GUM_academic_librarians",
+      "split": "validation",
+      "language": "en",
+      "license": "Texts: CC-BY-2.5; annotations: CC-BY-4.0",
+      "files": {
+        "conll": {
+          "path": "coref/gum/conll/GUM_academic_librarians.conll",
+          "git_blob_sha1": "4d23726c78cbd23a385b793df092aa6046f1cb9f"
+        },
+        "tsv": {
+          "path": "coref/gum/tsv/GUM_academic_librarians.tsv",
+          "git_blob_sha1": "6589556fe03a6ba2fab6ccca2d6717541e7696b8"
+        },
+        "xml": {
+          "path": "xml/GUM_academic_librarians.xml",
+          "git_blob_sha1": "f1210c94d84afa805e24518555e6885cde89beb3"
+        }
+      }
+    },
+    {
+      "document_id": "GUM_academic_discrimination",
+      "group_id": "GUM_academic_discrimination",
+      "split": "test",
+      "language": "en",
+      "license": "Texts: CC-BY-2.5; annotations: CC-BY-4.0",
+      "files": {
+        "conll": {
+          "path": "coref/gum/conll/GUM_academic_discrimination.conll",
+          "git_blob_sha1": "29406d264c72884d1dc6ff3f05d5c256166f00dd"
+        },
+        "tsv": {
+          "path": "coref/gum/tsv/GUM_academic_discrimination.tsv",
+          "git_blob_sha1": "4374aab9b78457e6b687c9ec8b41f0235ca440d3"
+        },
+        "xml": {
+          "path": "xml/GUM_academic_discrimination.xml",
+          "git_blob_sha1": "3565d4554f6696e5cd886b2e19255d8ef6af4e97"
+        }
+      }
+    },
+    {
+      "document_id": "GUM_academic_eegimaa",
+      "group_id": "GUM_academic_eegimaa",
+      "split": "test",
+      "language": "en",
+      "license": "Texts: CC-BY-2.5; annotations: CC-BY-4.0",
+      "files": {
+        "conll": {
+          "path": "coref/gum/conll/GUM_academic_eegimaa.conll",
+          "git_blob_sha1": "d0b637369fb4e85892154edc801d186a263e68c3"
+        },
+        "tsv": {
+          "path": "coref/gum/tsv/GUM_academic_eegimaa.tsv",
+          "git_blob_sha1": "557a00e38775885e39c4145d1faf4603a83254de"
+        },
+        "xml": {
+          "path": "xml/GUM_academic_eegimaa.xml",
+          "git_blob_sha1": "9a0a88508cee3a6bd52cf5a86d8ee4f84ffa1bac"
+        }
+      }
+    }
+  ]
+}
