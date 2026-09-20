@@ -29,20 +29,14 @@ class Block1QualityGateTests(unittest.TestCase):
             {"train": 12, "validation": 4, "test": 4},
         )
         selected = {
-            document_id
-            for values in split_ids.values()
-            for document_id in values
+            document_id for values in split_ids.values() for document_id in values
         }
         self.assertEqual(len(selected), 20)
         self.assertFalse(
-            selected
-            & {document["document_id"] for document in pilot["documents"]}
+            selected & {document["document_id"] for document in pilot["documents"]}
         )
         self.assertTrue(
-            all(
-                value.startswith(("GUM_academic_", "GUM_bio_"))
-                for value in selected
-            )
+            all(value.startswith(("GUM_academic_", "GUM_bio_")) for value in selected)
         )
 
     def test_gate_passes_only_when_all_predeclared_criteria_pass(self):
@@ -72,9 +66,7 @@ class Block1QualityGateTests(unittest.TestCase):
         }
         report = evaluate_block1_gate(policy, metrics)
         self.assertTrue(report["passed"])
-        self.assertTrue(
-            all(item["passed"] for item in report["criteria"].values())
-        )
+        self.assertTrue(all(item["passed"] for item in report["criteria"].values()))
 
         failed = json.loads(json.dumps(metrics))
         failed["accepted_links"]["precision"] = 0.5
