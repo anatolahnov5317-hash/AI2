@@ -1,0 +1,46 @@
+{
+  "schema": "ai2-gum-block1-gate-selection-v1",
+  "repository": "https://github.com/amir-zeldes/gum",
+  "revision": "22fdf87f9c71c96bcc771461d06e689b1f90020d",
+  "frozen_at": "2026-09-20",
+  "selection_policy": "Frozen before Block 1 v2.1 implementation and before opening this test split. Use only GUM letter and textbook genres, disjoint from Gate 1 academic/biography and from the original news/interview pilot. Select the first six published train documents from each genre, both published dev documents from each genre, and both published test documents from each genre. Selection is independent of model predictions, scores, errors and test labels.",
+  "test_label_policy": "Gate 2 test labels must remain unopened until code, model configuration and validation policy for Block 1 v2.1 are frozen. After first evaluation these test documents become regression-only.",
+  "splits": {
+    "train": [
+      "GUM_letter_conference",
+      "GUM_letter_cricket",
+      "GUM_letter_critique",
+      "GUM_letter_flood",
+      "GUM_letter_gorbachev",
+      "GUM_letter_marcie",
+      "GUM_textbook_alamo",
+      "GUM_textbook_anthropology",
+      "GUM_textbook_artwork",
+      "GUM_textbook_cognition",
+      "GUM_textbook_entrepreneurship",
+      "GUM_textbook_evoethics"
+    ],
+    "validation": [
+      "GUM_letter_arendt",
+      "GUM_letter_wiki",
+      "GUM_textbook_governments",
+      "GUM_textbook_labor"
+    ],
+    "test": [
+      "GUM_letter_attorney",
+      "GUM_letter_mandela",
+      "GUM_textbook_chemistry",
+      "GUM_textbook_union"
+    ]
+  },
+  "quality_gate": {
+    "max_unsupported_gold_rate": 0.05,
+    "min_mention_f1_delta_from_surface_baseline": 0.0,
+    "require_validation_link_gate": true,
+    "min_validation_link_precision": 0.90,
+    "min_validation_evaluable_links": 10,
+    "min_test_accepted_link_precision": 0.80,
+    "min_test_evaluable_links": 10,
+    "min_oracle_coreference_f1_delta_from_baseline": 0.0
+  }
+}
