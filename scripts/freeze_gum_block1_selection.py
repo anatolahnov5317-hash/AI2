@@ -83,7 +83,10 @@ def _selection_policy(
     if (
         type(genres) is not list
         or not 1 <= len(genres) <= 8
-        or any(type(genre) is not str or not ALLOWED_GENRE.fullmatch(genre) for genre in genres)
+        or any(
+            type(genre) is not str or not ALLOWED_GENRE.fullmatch(genre)
+            for genre in genres
+        )
         or len(set(genres)) != len(genres)
     ):
         raise ValueError("selection requires unique selected_genres")
