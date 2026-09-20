@@ -57,7 +57,7 @@ class UncertaintyIndex:
         return {"items": [item.to_dict() for item in self.items]}
 
     @classmethod
-    def from_dict(cls, value: dict[str, object]) -> "UncertaintyIndex":
+    def from_dict(cls, value: dict[str, object]) -> UncertaintyIndex:
         if (
             type(value) is not dict
             or set(value) != {"items"}
