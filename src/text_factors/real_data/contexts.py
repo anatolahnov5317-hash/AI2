@@ -1,0 +1,302 @@
+"""Learnable sparse context transforms and local-maxima selection."""
+
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from typing import Any
+
+from .contracts import LearningEpisode
+
+
+def _code(value: tuple[int, ...], width: int, name: str) -> tuple[int, ...]:
+    result = tuple(sorted(set(value)))
+    if any(type(bit) is not int or not 0 <= bit < width for bit in result):
+        raise ValueError(f"{name} contains a bit outside width")
+    return result
+
+
+def jaccard(left: tuple[int, ...], right: tuple[int, ...]) -> float:
+    a, b = set(left), set(right)
+    union = a | b
+    return 1.0 if not union else len(a & b) / len(union)
+
+
+class SparseTransform:
+    """Positive sparse association learned only from observed source/target bits."""
+
+    def __init__(self, width: int):
+        if type(width) is not int or width <= 0:
+            raise ValueError("width must be positive")
+        self.width = width
+        self._counts: dict[int, dict[int, int]] = {}
+        self.episodes = 0
+
+    def fit(
+        self,
+        source_bits: tuple[int, ...],
+        target_bits: tuple[int, ...],
+        *,
+        observed_target_bits: tuple[int, ...] | None = None,
+    ) -> None:
+        source = _code(source_bits, self.width, "source")
+        target = _code(target_bits, self.width, "target")
+        if observed_target_bits is not None:
+            observed = set(_code(observed_target_bits, self.width, "observed target"))
+            target = tuple(bit for bit in target if bit in observed)
+        for source_bit in source:
+            row = self._counts.setdefault(source_bit, {})
+            for target_bit in target:
+                row[target_bit] = row.get(target_bit, 0) + 1
+        self.episodes += 1
+
+    def predict(
+        self, source_bits: tuple[int, ...], *, limit: int
+    ) -> tuple[int, ...]:
+        if type(limit) is not int or limit <= 0:
+            raise ValueError("limit must be positive")
+        source = _code(source_bits, self.width, "source")
+        scores: dict[int, float] = {}
+        for source_bit in source:
+            row = self._counts.get(source_bit)
+            if not row:
+                continue
+            total = sum(row.values())
+            for target_bit, count in row.items():
+                scores[target_bit] = scores.get(target_bit, 0.0) + count / total
+        ranked = sorted(scores, key=lambda bit: (-scores[bit], bit))
+        return tuple(sorted(ranked[:limit]))
+
+    def score(
+        self, source_bits: tuple[int, ...], target_bits: tuple[int, ...]
+    ) -> float:
+        target = _code(target_bits, self.width, "target")
+        prediction = self.predict(source_bits, limit=max(1, len(target)))
+        return jaccard(prediction, target)
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "width": self.width,
+            "episodes": self.episodes,
+            "counts": {
+                str(source): {str(target): count for target, count in sorted(row.items())}
+                for source, row in sorted(self._counts.items())
+            },
+        }
+
+    @classmethod
+    def from_dict(cls, value: dict[str, Any]) -> "SparseTransform":
+        if type(value) is not dict or set(value) != {"width", "episodes", "counts"}:
+            raise ValueError("invalid sparse transform")
+        transform = cls(value["width"])
+        if type(value["episodes"]) is not int or value["episodes"] < 0:
+            raise ValueError("invalid transform episode count")
+        if type(value["counts"]) is not dict:
+            raise ValueError("invalid transform counts")
+        for source, row in value["counts"].items():
+            if type(source) is not str or not source.isdigit() or type(row) is not dict:
+                raise ValueError("invalid transform row")
+            source_bit = int(source)
+            if not 0 <= source_bit < transform.width:
+                raise ValueError("transform source bit outside width")
+            decoded: dict[int, int] = {}
+            for target, count in row.items():
+                if (
+                    type(target) is not str
+                    or not target.isdigit()
+                    or type(count) is not int
+                    or count <= 0
+                ):
+                    raise ValueError("invalid transform count")
+                target_bit = int(target)
+                if not 0 <= target_bit < transform.width:
+                    raise ValueError("transform target bit outside width")
+                decoded[target_bit] = count
+            transform._counts[source_bit] = decoded
+        transform.episodes = value["episodes"]
+        return transform
+
+
+@dataclass(slots=True)
+class ContextCandidate:
+    context_id: str
+    transform: SparseTransform
+    group_ids: set[str] = field(default_factory=set)
+    episode_ids: set[str] = field(default_factory=set)
+
+    @property
+    def independent_support(self) -> int:
+        return len(self.group_ids)
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "context_id": self.context_id,
+            "group_ids": sorted(self.group_ids),
+            "episode_ids": sorted(self.episode_ids),
+            "transform": self.transform.to_dict(),
+        }
+
+
+@dataclass(frozen=True, slots=True)
+class ContextResult:
+    context_id: str
+    predicted_bits: tuple[int, ...]
+    score: float
+    independent_support: int
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "context_id": self.context_id,
+            "predicted_bits": list(self.predicted_bits),
+            "score": self.score,
+            "independent_support": self.independent_support,
+        }
+
+
+class ContextRegistry:
+    """Assign episodes to learned transforms and expose non-duplicate maxima."""
+
+    def __init__(
+        self,
+        *,
+        width: int,
+        max_contexts: int = 128,
+        assignment_threshold: float = 0.35,
+        response_activation_threshold: float = 0.5,
+    ) -> None:
+        if type(width) is not int or width <= 0:
+            raise ValueError("width must be positive")
+        if type(max_contexts) is not int or max_contexts <= 0:
+            raise ValueError("max_contexts must be positive")
+        for name, value in (
+            ("assignment_threshold", assignment_threshold),
+            ("response_activation_threshold", response_activation_threshold),
+        ):
+            if type(value) not in (int, float) or not 0.0 <= float(value) <= 1.0:
+                raise ValueError(f"{name} must be in [0, 1]")
+        self.width = width
+        self.max_contexts = max_contexts
+        self.assignment_threshold = float(assignment_threshold)
+        self.response_activation_threshold = float(response_activation_threshold)
+        self._contexts: dict[str, ContextCandidate] = {}
+        self._active_responses: dict[str, set[str]] = {}
+
+    @property
+    def contexts(self) -> tuple[ContextCandidate, ...]:
+        return tuple(self._contexts[key] for key in sorted(self._contexts))
+
+    def _create(self) -> ContextCandidate:
+        if len(self._contexts) >= self.max_contexts:
+            raise ValueError("context capacity exceeded")
+        context_id = f"ctx_{len(self._contexts) + 1:04d}"
+        candidate = ContextCandidate(context_id, SparseTransform(self.width))
+        self._contexts[context_id] = candidate
+        self._active_responses[context_id] = set()
+        return candidate
+
+    def learn(self, episode: LearningEpisode) -> tuple[str, bool, float]:
+        source = _code(episode.source_code, self.width, "source")
+        target = _code(episode.target_code, self.width, "target")
+        ranked = sorted(
+            (
+                (candidate.transform.score(source, target), candidate.context_id)
+                for candidate in self._contexts.values()
+                if candidate.transform.episodes
+            ),
+            key=lambda item: (-item[0], item[1]),
+        )
+        best_score = ranked[0][0] if ranked else 0.0
+        created = not ranked or best_score < self.assignment_threshold
+        candidate = self._create() if created else self._contexts[ranked[0][1]]
+        candidate.transform.fit(
+            source,
+            target,
+            observed_target_bits=episode.observed_target_bits,
+        )
+        candidate.group_ids.add(episode.group_id)
+        candidate.episode_ids.add(episode.episode_id)
+        return candidate.context_id, created, best_score
+
+    def predict(self, context_id: str, source_bits: tuple[int, ...], *, limit: int):
+        try:
+            context = self._contexts[context_id]
+        except KeyError as exc:
+            raise ValueError("unknown context") from exc
+        return context.transform.predict(source_bits, limit=limit)
+
+    def record_response(self, context_id: str, episode_id: str, score: float) -> None:
+        if context_id not in self._contexts:
+            raise ValueError("unknown context")
+        if type(episode_id) is not str or not episode_id:
+            raise ValueError("episode_id must be nonempty")
+        if type(score) not in (int, float) or not 0.0 <= float(score) <= 1.0:
+            raise ValueError("response score must be in [0, 1]")
+        if float(score) >= self.response_activation_threshold:
+            self._active_responses[context_id].add(episode_id)
+        else:
+            self._active_responses[context_id].discard(episode_id)
+
+    def affinity(self, left: str, right: str) -> float:
+        if left not in self._contexts or right not in self._contexts:
+            raise ValueError("unknown context")
+        if left == right:
+            return 1.0
+        left_active = self._active_responses[left]
+        right_active = self._active_responses[right]
+        union = left_active | right_active
+        # Shared inactivity carries no evidence of similarity.
+        return 0.0 if not union else len(left_active & right_active) / len(union)
+
+    def local_maxima(
+        self,
+        source_bits: tuple[int, ...],
+        *,
+        scorer,
+        output_limit: int = 64,
+        max_results: int = 4,
+        suppression_affinity: float = 0.8,
+    ) -> tuple[ContextResult, ...]:
+        if type(max_results) is not int or max_results <= 0:
+            raise ValueError("max_results must be positive")
+        if (
+            type(suppression_affinity) not in (int, float)
+            or not 0.0 <= float(suppression_affinity) <= 1.0
+        ):
+            raise ValueError("suppression_affinity must be in [0, 1]")
+        ranked: list[ContextResult] = []
+        for context in self.contexts:
+            predicted = context.transform.predict(source_bits, limit=output_limit)
+            score = float(scorer(context.context_id, predicted))
+            if not 0.0 <= score <= 1.0:
+                raise ValueError("scorer must return a value in [0, 1]")
+            ranked.append(
+                ContextResult(
+                    context.context_id,
+                    predicted,
+                    score,
+                    context.independent_support,
+                )
+            )
+        ranked.sort(key=lambda item: (-item.score, item.context_id))
+        selected: list[ContextResult] = []
+        for item in ranked:
+            if item.score <= 0.0:
+                continue
+            if any(
+                self.affinity(item.context_id, prior.context_id)
+                >= float(suppression_affinity)
+                for prior in selected
+            ):
+                continue
+            selected.append(item)
+            if len(selected) >= max_results:
+                break
+        return tuple(selected)
+
+    def reliable_context_ids(self, *, min_independent_groups: int = 2) -> tuple[str, ...]:
+        if type(min_independent_groups) is not int or min_independent_groups <= 0:
+            raise ValueError("min_independent_groups must be positive")
+        return tuple(
+            context.context_id
+            for context in self.contexts
+            if context.independent_support >= min_independent_groups
+        )
