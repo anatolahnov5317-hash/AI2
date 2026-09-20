@@ -40,8 +40,7 @@ def _record(root: Path, relative: str, revision: str) -> dict[str, Any]:
     return {
         "path": relative,
         "url": (
-            "https://raw.githubusercontent.com/amir-zeldes/gum/"
-            f"{revision}/{relative}"
+            f"https://raw.githubusercontent.com/amir-zeldes/gum/{revision}/{relative}"
         ),
         "sha256": hashlib.sha256(data).hexdigest(),
         "bytes": len(data),
