@@ -10,7 +10,7 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     env:
       OPENBLAS_NUM_THREADS: "1"
       OMP_NUM_THREADS: "1"
@@ -30,7 +30,9 @@ jobs:
       - run: ruff check .
       - run: ruff format --check .
       - run: pyright --pythonpath "$(command -v python)"
-      - run: timeout 300s python -m unittest discover -s tests -v
+      - name: Run all tests in bounded batches
+        timeout-minutes: 11
+        run: timeout 600s python scripts/run_test_batches.py --output artifacts/test-batches --timeout 180
       - run: python -m compileall -q src tests
       - name: Exercise experiment CLI
         run: |

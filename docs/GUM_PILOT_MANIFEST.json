@@ -1,0 +1,821 @@
+{
+  "schema": "ai2-gum-pilot-manifest-v1",
+  "repository": "https://github.com/amir-zeldes/gum",
+  "revision": "22fdf87f9c71c96bcc771461d06e689b1f90020d",
+  "source_commit_url": "https://github.com/amir-zeldes/gum/commit/22fdf87f9c71c96bcc771461d06e689b1f90020d",
+  "license_url": "https://github.com/amir-zeldes/gum/blob/22fdf87f9c71c96bcc771461d06e689b1f90020d/LICENSE.md",
+  "licenses": {
+    "texts": {
+      "id": "CC-BY-2.5",
+      "url": "https://creativecommons.org/licenses/by/2.5/"
+    },
+    "annotations": {
+      "id": "CC-BY-4.0",
+      "url": "https://creativecommons.org/licenses/by/4.0/"
+    }
+  },
+  "selection_policy": "Fixed before fitting: native GUM news and interview genres, first ten documents per genre in the published train split order; all two documents per genre in each published dev/test split. Preserve whole document groups. No selection by model predictions or scores.",
+  "official_splits": {
+    "path": "splits.md",
+    "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/splits.md",
+    "sha256": "7a1b51ab332ae84d9693824ef067ec1dbfad4275111608231eb5e409437ea6d7",
+    "bytes": 7378
+  },
+  "annotation_documentation": {
+    "source": "https://gucorpling.org/gum/annotations.html#ref",
+    "native_scheme": {
+      "path": "coref/gum/README.md",
+      "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/coref/gum/README.md",
+      "sha256": "0abf0b271403ee5b193d33972da46320e9ad0e82d645fa8a854531ce045205fe",
+      "bytes": 1197
+    }
+  },
+  "text_representation": "Exact CoNLL tokens joined by one ASCII space, independently checked against WebAnno TSV token offsets; original website bytes/typography not reconstructed.",
+  "excluded": "Summary fields, POS, lemmas, syntax, entity-type features, Wikification features, bridging and split-antecedent membership edges. Native opaque cluster labels are identifiers only.",
+  "documents": [
+    {
+      "document_id": "GUM_news_afghan",
+      "group_id": "GUM_news_afghan",
+      "split": "train",
+      "language": "en",
+      "source_url": "https://en.wikinews.org/wiki/After_visa_snags%2C_all-girl_Afghan_team_honored_for_%27courageous_achievement%27_at_international_robotics_competition",
+      "license": "Texts: CC-BY-2.5; annotations: CC-BY-4.0",
+      "files": {
+        "conll": {
+          "path": "coref/gum/conll/GUM_news_afghan.conll",
+          "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/coref/gum/conll/GUM_news_afghan.conll",
+          "sha256": "2e12c3b32dbedb3f263f5c815a004fc3517c56dd0fd38b86754844c31ddc1861",
+          "bytes": 19302
+        },
+        "tsv": {
+          "path": "coref/gum/tsv/GUM_news_afghan.tsv",
+          "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/coref/gum/tsv/GUM_news_afghan.tsv",
+          "sha256": "bde35a6fb46859fce81268ec93f8067460a7a4a87275961a8992c063e3f3a151",
+          "bytes": 82968
+        },
+        "xml": {
+          "path": "xml/GUM_news_afghan.xml",
+          "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/xml/GUM_news_afghan.xml",
+          "sha256": "5b40a3ec38d00a0718b95dd818f3662f57f66d974314ef3960ad583145fe8b29",
+          "bytes": 37611
+        }
+      }
+    },
+    {
+      "document_id": "GUM_news_asylum",
+      "group_id": "GUM_news_asylum",
+      "split": "train",
+      "language": "en",
+      "source_url": "https://en.wikinews.org/wiki/Over_900_asylum_seekers_rescued_off_Indonesian_coast",
+      "license": "Texts: CC-BY-2.5; annotations: CC-BY-4.0",
+      "files": {
+        "conll": {
+          "path": "coref/gum/conll/GUM_news_asylum.conll",
+          "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/coref/gum/conll/GUM_news_asylum.conll",
+          "sha256": "df7af6ab791e4c10d81ff10c963f37c1ab9c634a5552747bdd1cb0b1f3041f11",
+          "bytes": 6796
+        },
+        "tsv": {
+          "path": "coref/gum/tsv/GUM_news_asylum.tsv",
+          "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/coref/gum/tsv/GUM_news_asylum.tsv",
+          "sha256": "b5c873c809ebd2c3f85c12c6388c3bdc475389595e27680de64a2d34f0a72142",
+          "bytes": 31933
+        },
+        "xml": {
+          "path": "xml/GUM_news_asylum.xml",
+          "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/xml/GUM_news_asylum.xml",
+          "sha256": "a2832c9c7d3ddc1fe045c4e3db66a41ef16fc410c8782278ebd2f98e15b6425a",
+          "bytes": 15353
+        }
+      }
+    },
+    {
+      "document_id": "GUM_news_clock",
+      "group_id": "GUM_news_clock",
+      "split": "train",
+      "language": "en",
+      "source_url": "https://en.wikinews.org/wiki/Texas_student_Ahmed_Mohamed_inspires_social_movement",
+      "license": "Texts: CC-BY-2.5; annotations: CC-BY-4.0",
+      "files": {
+        "conll": {
+          "path": "coref/gum/conll/GUM_news_clock.conll",
+          "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/coref/gum/conll/GUM_news_clock.conll",
+          "sha256": "211c3b10e74b7ca3e2c67c4c8913f692ac936f182791a82ee4cdb01173ca8222",
+          "bytes": 13508
+        },
+        "tsv": {
+          "path": "coref/gum/tsv/GUM_news_clock.tsv",
+          "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/coref/gum/tsv/GUM_news_clock.tsv",
+          "sha256": "2f5d33364bb47406c71934aaf7abf8a96b28ae77dde0563e0cad638ab9aa7bd1",
+          "bytes": 62832
+        },
+        "xml": {
+          "path": "xml/GUM_news_clock.xml",
+          "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/xml/GUM_news_clock.xml",
+          "sha256": "c343e8351651da2c3e1df39d8a5143639168684cfbd1fc65439a086d643f94dc",
+          "bytes": 29414
+        }
+      }
+    },
+    {
+      "document_id": "GUM_news_crane",
+      "group_id": "GUM_news_crane",
+      "split": "train",
+      "language": "en",
+      "source_url": "https://en.wikinews.org/wiki/At_least_107_killed_in_Mecca_crane_collapse",
+      "license": "Texts: CC-BY-2.5; annotations: CC-BY-4.0",
+      "files": {
+        "conll": {
+          "path": "coref/gum/conll/GUM_news_crane.conll",
+          "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/coref/gum/conll/GUM_news_crane.conll",
+          "sha256": "ed1b8ca7313e265d797c13b886518bb1ea3866fd33cd5b9c795909232f909635",
+          "bytes": 4950
+        },
+        "tsv": {
+          "path": "coref/gum/tsv/GUM_news_crane.tsv",
+          "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/coref/gum/tsv/GUM_news_crane.tsv",
+          "sha256": "528c2f38b284a46f6d360a5de8a205a81895f439a4f9d23eb3fc2ebf3a91a346",
+          "bytes": 23890
+        },
+        "xml": {
+          "path": "xml/GUM_news_crane.xml",
+          "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/xml/GUM_news_crane.xml",
+          "sha256": "56d7a52e5de6d104f63492fc845a30aed6f93ecab148790e4d94a66675865d94",
+          "bytes": 11994
+        }
+      }
+    },
+    {
+      "document_id": "GUM_news_defector",
+      "group_id": "GUM_news_defector",
+      "split": "train",
+      "language": "en",
+      "source_url": "https://en.wikinews.org/wiki/Scientology_defector_arrested_after_attempting_to_leave_organization",
+      "license": "Texts: CC-BY-2.5; annotations: CC-BY-4.0",
+      "files": {
+        "conll": {
+          "path": "coref/gum/conll/GUM_news_defector.conll",
+          "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/coref/gum/conll/GUM_news_defector.conll",
+          "sha256": "989476654c76b3438bae78981cf6879c101e65aadf62898d71f946b4fa679351",
+          "bytes": 16488
+        },
+        "tsv": {
+          "path": "coref/gum/tsv/GUM_news_defector.tsv",
+          "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/coref/gum/tsv/GUM_news_defector.tsv",
+          "sha256": "764436d977ec3f4d4dc227dd0be1f09afd9fd730e3cbb3d35fc6ba5d99a56658",
+          "bytes": 79162
+        },
+        "xml": {
+          "path": "xml/GUM_news_defector.xml",
+          "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/xml/GUM_news_defector.xml",
+          "sha256": "8cfe4e7638172da664ab96081a2df7c0678f8da9b2f6543c363aae93b16ad64a",
+          "bytes": 34083
+        }
+      }
+    },
+    {
+      "document_id": "GUM_news_election",
+      "group_id": "GUM_news_election",
+      "split": "train",
+      "language": "en",
+      "source_url": "https://en.wikinews.org/wiki/New_faces_emerge_as_veteran_politicians_step_down_in_Hong_Kong_legislative_election",
+      "license": "Texts: CC-BY-2.5; annotations: CC-BY-4.0",
+      "files": {
+        "conll": {
+          "path": "coref/gum/conll/GUM_news_election.conll",
+          "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/coref/gum/conll/GUM_news_election.conll",
+          "sha256": "b17d751b818579897b3c6f0cf1550e52be2a3adf791adcae6bcdc70b2b5103e4",
+          "bytes": 25195
+        },
+        "tsv": {
+          "path": "coref/gum/tsv/GUM_news_election.tsv",
+          "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/coref/gum/tsv/GUM_news_election.tsv",
+          "sha256": "a4f5e0113289a3bb5df9f1473beb56bc0af59ad04c528f07e250944ed8d02dda",
+          "bytes": 112250
+        },
+        "xml": {
+          "path": "xml/GUM_news_election.xml",
+          "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/xml/GUM_news_election.xml",
+          "sha256": "1da4f10e184f308c2b1f95e41d81056c70f59f05b50616d07c36a283cc49532f",
+          "bytes": 44264
+        }
+      }
+    },
+    {
+      "document_id": "GUM_news_expo",
+      "group_id": "GUM_news_expo",
+      "split": "train",
+      "language": "en",
+      "source_url": "https://en.wikinews.org/wiki/Pop_culture_celebrated_at_Fan_Expo_Canada_2016_in_Toronto",
+      "license": "Texts: CC-BY-2.5; annotations: CC-BY-4.0",
+      "files": {
+        "conll": {
+          "path": "coref/gum/conll/GUM_news_expo.conll",
+          "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/coref/gum/conll/GUM_news_expo.conll",
+          "sha256": "f69fa5efdfc911874cb0908b0928829c3309dbe94712e6e2eef7855fc3014a4e",
+          "bytes": 14644
+        },
+        "tsv": {
+          "path": "coref/gum/tsv/GUM_news_expo.tsv",
+          "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/coref/gum/tsv/GUM_news_expo.tsv",
+          "sha256": "ae2e822050c889778892126a767dc8100a6cf39decaed80a7a71cf7601c7e31f",
+          "bytes": 65900
+        },
+        "xml": {
+          "path": "xml/GUM_news_expo.xml",
+          "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/xml/GUM_news_expo.xml",
+          "sha256": "5f333ad5eeec1997d39bc3f120b46cf1cc07b01abdcee38b9fa6584e86066fd9",
+          "bytes": 31361
+        }
+      }
+    },
+    {
+      "document_id": "GUM_news_flag",
+      "group_id": "GUM_news_flag",
+      "split": "train",
+      "language": "en",
+      "source_url": "https://en.wikinews.org/wiki/New_Zealand_begins_process_to_consider_changing_national_flag_design",
+      "license": "Texts: CC-BY-2.5; annotations: CC-BY-4.0",
+      "files": {
+        "conll": {
+          "path": "coref/gum/conll/GUM_news_flag.conll",
+          "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/coref/gum/conll/GUM_news_flag.conll",
+          "sha256": "cf2e04f72c98d56a2fdcad4ce14e4cb3f5c182b762e9a0ab9b6658fc71161eb9",
+          "bytes": 7149
+        },
+        "tsv": {
+          "path": "coref/gum/tsv/GUM_news_flag.tsv",
+          "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/coref/gum/tsv/GUM_news_flag.tsv",
+          "sha256": "45fa134b4c618b3ea52c99680d052f9277f2da34b913dc525907279bef20325e",
+          "bytes": 34832
+        },
+        "xml": {
+          "path": "xml/GUM_news_flag.xml",
+          "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/xml/GUM_news_flag.xml",
+          "sha256": "d6b05d2e04c7e366527f3564d618ca6219046be863906f9106b4dd8586d8fece",
+          "bytes": 16304
+        }
+      }
+    },
+    {
+      "document_id": "GUM_news_hackers",
+      "group_id": "GUM_news_hackers",
+      "split": "train",
+      "language": "en",
+      "source_url": "https://en.wikinews.org/wiki/Hackers_attack_Church_of_Scientology_website",
+      "license": "Texts: CC-BY-2.5; annotations: CC-BY-4.0",
+      "files": {
+        "conll": {
+          "path": "coref/gum/conll/GUM_news_hackers.conll",
+          "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/coref/gum/conll/GUM_news_hackers.conll",
+          "sha256": "7fd4a7d348479e6b75e7befe441009055cd9030deca865a889801cc7586ee65e",
+          "bytes": 12866
+        },
+        "tsv": {
+          "path": "coref/gum/tsv/GUM_news_hackers.tsv",
+          "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/coref/gum/tsv/GUM_news_hackers.tsv",
+          "sha256": "bc73a8774c884e8892ba5ed4f319277b59a39750ed7c6d3a7bbf349cea717df9",
+          "bytes": 65017
+        },
+        "xml": {
+          "path": "xml/GUM_news_hackers.xml",
+          "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/xml/GUM_news_hackers.xml",
+          "sha256": "d47679ed500cc0e9fcf0d3e0adbc546f50fca6569fc1f54a7a912c2e2e077090",
+          "bytes": 26621
+        }
+      }
+    },
+    {
+      "document_id": "GUM_news_ie9",
+      "group_id": "GUM_news_ie9",
+      "split": "train",
+      "language": "en",
+      "source_url": "https://en.wikinews.org/wiki/Microsoft_waits_for_death_of_Internet_Explorer_6",
+      "license": "Texts: CC-BY-2.5; annotations: CC-BY-4.0",
+      "files": {
+        "conll": {
+          "path": "coref/gum/conll/GUM_news_ie9.conll",
+          "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/coref/gum/conll/GUM_news_ie9.conll",
+          "sha256": "4ba696e9affe0a156008f26a6fbb0600cf1686002cb3d8ce1bba472f28a7e504",
+          "bytes": 8822
+        },
+        "tsv": {
+          "path": "coref/gum/tsv/GUM_news_ie9.tsv",
+          "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/coref/gum/tsv/GUM_news_ie9.tsv",
+          "sha256": "b384c026860fa5172b90c80fe715e09eff586de307a84b5866e4ad43866ae2a8",
+          "bytes": 38545
+        },
+        "xml": {
+          "path": "xml/GUM_news_ie9.xml",
+          "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/xml/GUM_news_ie9.xml",
+          "sha256": "4b61a4475f95023e000bd822bc9aeacadb7f942fec24ed83fe917c8cd0f36c23",
+          "bytes": 19099
+        }
+      }
+    },
+    {
+      "document_id": "GUM_interview_ants",
+      "group_id": "GUM_interview_ants",
+      "split": "train",
+      "language": "en",
+      "source_url": "https://en.wikinews.org/wiki/Biologist_Nick_Bos_tells_Wikinews_about_%27self-medicating%27_ants",
+      "license": "Texts: CC-BY-2.5; annotations: CC-BY-4.0",
+      "files": {
+        "conll": {
+          "path": "coref/gum/conll/GUM_interview_ants.conll",
+          "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/coref/gum/conll/GUM_interview_ants.conll",
+          "sha256": "968ef40177a44033747d409cc5449fe72cd370f736b1d66f1ab11d75d97df6f2",
+          "bytes": 18110
+        },
+        "tsv": {
+          "path": "coref/gum/tsv/GUM_interview_ants.tsv",
+          "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/coref/gum/tsv/GUM_interview_ants.tsv",
+          "sha256": "9dbfc3f7d1dc95015b93687496c3ae98b1d409bdbcec4f0e0bd31f81867190f3",
+          "bytes": 85453
+        },
+        "xml": {
+          "path": "xml/GUM_interview_ants.xml",
+          "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/xml/GUM_interview_ants.xml",
+          "sha256": "1fb2e090edfe61325df9140ccfcdab55298e97de97f70826ccdbf2a55d5d1b1e",
+          "bytes": 39607
+        }
+      }
+    },
+    {
+      "document_id": "GUM_interview_brotherhood",
+      "group_id": "GUM_interview_brotherhood",
+      "split": "train",
+      "language": "en",
+      "source_url": "https://en.wikinews.org/wiki/Wikinews_interviews_President_of_the_International_Brotherhood_of_Magicians",
+      "license": "Texts: CC-BY-2.5; annotations: CC-BY-4.0",
+      "files": {
+        "conll": {
+          "path": "coref/gum/conll/GUM_interview_brotherhood.conll",
+          "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/coref/gum/conll/GUM_interview_brotherhood.conll",
+          "sha256": "73d87574edc496ffe0b984c329679712db7e2d0ba401cf42302545e5e2a159fc",
+          "bytes": 9419
+        },
+        "tsv": {
+          "path": "coref/gum/tsv/GUM_interview_brotherhood.tsv",
+          "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/coref/gum/tsv/GUM_interview_brotherhood.tsv",
+          "sha256": "92622da1c1762fcd59754d3db1dfb5a35fbeb9c50508fc79759f9e6372026462",
+          "bytes": 43134
+        },
+        "xml": {
+          "path": "xml/GUM_interview_brotherhood.xml",
+          "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/xml/GUM_interview_brotherhood.xml",
+          "sha256": "063ae09e218f3f69fdf3f2ddc656f44c3fd5572a3726520273353d9ffabca114",
+          "bytes": 20294
+        }
+      }
+    },
+    {
+      "document_id": "GUM_interview_chomsky",
+      "group_id": "GUM_interview_chomsky",
+      "split": "train",
+      "language": "en",
+      "source_url": "https://en.wikinews.org/wiki/Interview_with_US_political_activist_and_philosopher_Noam_Chomsky",
+      "license": "Texts: CC-BY-2.5; annotations: CC-BY-4.0",
+      "files": {
+        "conll": {
+          "path": "coref/gum/conll/GUM_interview_chomsky.conll",
+          "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/coref/gum/conll/GUM_interview_chomsky.conll",
+          "sha256": "5f5da6d63a4b2007ca468d46a83af6cb3604f7f65cec7b09eb2dcd7d35763464",
+          "bytes": 19503
+        },
+        "tsv": {
+          "path": "coref/gum/tsv/GUM_interview_chomsky.tsv",
+          "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/coref/gum/tsv/GUM_interview_chomsky.tsv",
+          "sha256": "eac1dd171fc9ea51072ff5f0f5b6f1fc457d9fbd679ad8a5b3d2be9de79574fb",
+          "bytes": 87584
+        },
+        "xml": {
+          "path": "xml/GUM_interview_chomsky.xml",
+          "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/xml/GUM_interview_chomsky.xml",
+          "sha256": "1162e9ff7d7f80a5b53e08154bd85a42b9dfd5ac6e80587afba71518565a7dfb",
+          "bytes": 39525
+        }
+      }
+    },
+    {
+      "document_id": "GUM_interview_cocktail",
+      "group_id": "GUM_interview_cocktail",
+      "split": "train",
+      "language": "en",
+      "source_url": "https://en.wikinews.org/wiki/Wikinews_interviews_New_York_bar_owner_on_Santorum_cocktail",
+      "license": "Texts: CC-BY-2.5; annotations: CC-BY-4.0",
+      "files": {
+        "conll": {
+          "path": "coref/gum/conll/GUM_interview_cocktail.conll",
+          "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/coref/gum/conll/GUM_interview_cocktail.conll",
+          "sha256": "827db35e9264150e66215abf2578d3c56f605a887e606a9ce95f0ac3dc16073c",
+          "bytes": 18973
+        },
+        "tsv": {
+          "path": "coref/gum/tsv/GUM_interview_cocktail.tsv",
+          "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/coref/gum/tsv/GUM_interview_cocktail.tsv",
+          "sha256": "445f7820f479a185e89859b9b2905702a1d29482c1b067c878ce5052b826f17d",
+          "bytes": 89315
+        },
+        "xml": {
+          "path": "xml/GUM_interview_cocktail.xml",
+          "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/xml/GUM_interview_cocktail.xml",
+          "sha256": "4b03b31a72e6cf4983055ba58d61db92212982866eaf9a9fb3f9679442454092",
+          "bytes": 39380
+        }
+      }
+    },
+    {
+      "document_id": "GUM_interview_daly",
+      "group_id": "GUM_interview_daly",
+      "split": "train",
+      "language": "en",
+      "source_url": "https://en.wikinews.org/wiki/Cold_as_ice:_Wikinews_interviews_Marymegan_Daly_on_unusual_new_sea_anemone",
+      "license": "Texts: CC-BY-2.5; annotations: CC-BY-4.0",
+      "files": {
+        "conll": {
+          "path": "coref/gum/conll/GUM_interview_daly.conll",
+          "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/coref/gum/conll/GUM_interview_daly.conll",
+          "sha256": "acb369e4f3b1ec5471097b188609785749967e01bd86d13d06c75738409d9503",
+          "bytes": 17921
+        },
+        "tsv": {
+          "path": "coref/gum/tsv/GUM_interview_daly.tsv",
+          "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/coref/gum/tsv/GUM_interview_daly.tsv",
+          "sha256": "e3d80b60c560892ff6fd8a0a07db7b49989b5666c1541546b3eea60a22ca773f",
+          "bytes": 86227
+        },
+        "xml": {
+          "path": "xml/GUM_interview_daly.xml",
+          "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/xml/GUM_interview_daly.xml",
+          "sha256": "06e5b85a2223d3c8d2e2de55ad6e2aa72c396a02bb9e56bcc234d60218129bbc",
+          "bytes": 40753
+        }
+      }
+    },
+    {
+      "document_id": "GUM_interview_dungeon",
+      "group_id": "GUM_interview_dungeon",
+      "split": "train",
+      "language": "en",
+      "source_url": "https://en.wikinews.org/wiki/BDSM_as_business:_An_interview_with_the_owners_of_a_dungeon",
+      "license": "Texts: CC-BY-2.5; annotations: CC-BY-4.0",
+      "files": {
+        "conll": {
+          "path": "coref/gum/conll/GUM_interview_dungeon.conll",
+          "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/coref/gum/conll/GUM_interview_dungeon.conll",
+          "sha256": "3b479b68c15f0250df7c73cad3a82023317b7c3e778bdfa1f95d1a8204e8017e",
+          "bytes": 15400
+        },
+        "tsv": {
+          "path": "coref/gum/tsv/GUM_interview_dungeon.tsv",
+          "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/coref/gum/tsv/GUM_interview_dungeon.tsv",
+          "sha256": "d467bfb1ef2273e291496bfabd5b758fff8212b21160afad02194904c392862a",
+          "bytes": 70222
+        },
+        "xml": {
+          "path": "xml/GUM_interview_dungeon.xml",
+          "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/xml/GUM_interview_dungeon.xml",
+          "sha256": "ded85c84987d337bfd30e05f38b806ff10ac0f67c0acdcdad52d418dfec7c138",
+          "bytes": 39628
+        }
+      }
+    },
+    {
+      "document_id": "GUM_interview_herrick",
+      "group_id": "GUM_interview_herrick",
+      "split": "train",
+      "language": "en",
+      "source_url": "https://en.wikinews.org/wiki/Jack_Herrick,_wikiHow_founder_interviewed_by_Wikinews",
+      "license": "Texts: CC-BY-2.5; annotations: CC-BY-4.0",
+      "files": {
+        "conll": {
+          "path": "coref/gum/conll/GUM_interview_herrick.conll",
+          "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/coref/gum/conll/GUM_interview_herrick.conll",
+          "sha256": "1bbc54c48c27fbccc22f88fbbdcbc3b41803bb55fc01a4b0fa14f30c40377af7",
+          "bytes": 23704
+        },
+        "tsv": {
+          "path": "coref/gum/tsv/GUM_interview_herrick.tsv",
+          "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/coref/gum/tsv/GUM_interview_herrick.tsv",
+          "sha256": "a67478f4c7680952efb632dc7f0d3341cca9d2652609fb2f2336df96d1dec9bb",
+          "bytes": 107778
+        },
+        "xml": {
+          "path": "xml/GUM_interview_herrick.xml",
+          "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/xml/GUM_interview_herrick.xml",
+          "sha256": "86368e03e89567576f523cca8a7292d42d1f116051b39f23733c08ad77955ebd",
+          "bytes": 49240
+        }
+      }
+    },
+    {
+      "document_id": "GUM_interview_licen",
+      "group_id": "GUM_interview_licen",
+      "split": "train",
+      "language": "en",
+      "source_url": "https://en.wikinews.org/wiki/Wikinews_interviews_academic_Simon_Li%C4%8Den_about_attitudes_towards_US_Paralympics",
+      "license": "Texts: CC-BY-2.5; annotations: CC-BY-4.0",
+      "files": {
+        "conll": {
+          "path": "coref/gum/conll/GUM_interview_licen.conll",
+          "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/coref/gum/conll/GUM_interview_licen.conll",
+          "sha256": "c3af0d90e425e38e98e66b1431eb711434d89d9ba3e6f18e821b597a36417f80",
+          "bytes": 12370
+        },
+        "tsv": {
+          "path": "coref/gum/tsv/GUM_interview_licen.tsv",
+          "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/coref/gum/tsv/GUM_interview_licen.tsv",
+          "sha256": "b2adb8024387558844f29f514cb4947a2036f178d08f4f6774b123f58812565e",
+          "bytes": 59799
+        },
+        "xml": {
+          "path": "xml/GUM_interview_licen.xml",
+          "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/xml/GUM_interview_licen.xml",
+          "sha256": "accbc1822d3892b5cb8423b70070bca6e1f48c89a7bfd751108855bbe2c87299",
+          "bytes": 26273
+        }
+      }
+    },
+    {
+      "document_id": "GUM_interview_mcguire",
+      "group_id": "GUM_interview_mcguire",
+      "split": "train",
+      "language": "en",
+      "source_url": "https://en.wikinews.org/wiki/Interview_with_LibriVox_founder_Hugh_McGuire",
+      "license": "Texts: CC-BY-2.5; annotations: CC-BY-4.0",
+      "files": {
+        "conll": {
+          "path": "coref/gum/conll/GUM_interview_mcguire.conll",
+          "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/coref/gum/conll/GUM_interview_mcguire.conll",
+          "sha256": "171b21fe10a0ca38f14d97fa792b31b568bbed6fbbae02931e45e1d698f8be43",
+          "bytes": 15380
+        },
+        "tsv": {
+          "path": "coref/gum/tsv/GUM_interview_mcguire.tsv",
+          "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/coref/gum/tsv/GUM_interview_mcguire.tsv",
+          "sha256": "b8a7cecaa1905d4048709910c51d234ef35046ead6f48f091697d1d8563497b7",
+          "bytes": 72151
+        },
+        "xml": {
+          "path": "xml/GUM_interview_mcguire.xml",
+          "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/xml/GUM_interview_mcguire.xml",
+          "sha256": "d29b18397f583ba15b878ede3efa7e3c0bd791065c1c41c93d7f4551b5b5a5a1",
+          "bytes": 32795
+        }
+      }
+    },
+    {
+      "document_id": "GUM_interview_mckenzie",
+      "group_id": "GUM_interview_mckenzie",
+      "split": "train",
+      "language": "en",
+      "source_url": "https://en.wikinews.org/wiki/Wikinews_interviews_Australian_wheelchair_basketball_player_Tina_McKenzie",
+      "license": "Texts: CC-BY-2.5; annotations: CC-BY-4.0",
+      "files": {
+        "conll": {
+          "path": "coref/gum/conll/GUM_interview_mckenzie.conll",
+          "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/coref/gum/conll/GUM_interview_mckenzie.conll",
+          "sha256": "6f97e9b68fb2bfee98a0f89b212b670999887e80a2d15d9532cd970264b56eac",
+          "bytes": 10878
+        },
+        "tsv": {
+          "path": "coref/gum/tsv/GUM_interview_mckenzie.tsv",
+          "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/coref/gum/tsv/GUM_interview_mckenzie.tsv",
+          "sha256": "f7f1efcfe6beafa95d8f91b4d3538440f087e4937115ef33ad8ad9384f91554d",
+          "bytes": 45272
+        },
+        "xml": {
+          "path": "xml/GUM_interview_mckenzie.xml",
+          "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/xml/GUM_interview_mckenzie.xml",
+          "sha256": "937182e556d804bd46bfdfc49acd654832ee8e017efa2190b68da9c0677854bf",
+          "bytes": 22219
+        }
+      }
+    },
+    {
+      "document_id": "GUM_news_homeopathic",
+      "group_id": "GUM_news_homeopathic",
+      "split": "validation",
+      "language": "en",
+      "source_url": "https://en.wikinews.org/wiki/Parents_prosecuted_after_homeopathic_treatment_leads_to_daughter%27s_death",
+      "license": "Texts: CC-BY-2.5; annotations: CC-BY-4.0",
+      "files": {
+        "conll": {
+          "path": "coref/gum/conll/GUM_news_homeopathic.conll",
+          "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/coref/gum/conll/GUM_news_homeopathic.conll",
+          "sha256": "5443f3eb7bf8ca183a5cf5bca7e77fe6c369a6ed7a91915c937f44e1fe8fa319",
+          "bytes": 10635
+        },
+        "tsv": {
+          "path": "coref/gum/tsv/GUM_news_homeopathic.tsv",
+          "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/coref/gum/tsv/GUM_news_homeopathic.tsv",
+          "sha256": "01b71873ad195be593a7452dd34bfe65ba5e505822900b4c4479d077a361f838",
+          "bytes": 53884
+        },
+        "xml": {
+          "path": "xml/GUM_news_homeopathic.xml",
+          "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/xml/GUM_news_homeopathic.xml",
+          "sha256": "43fb3127729c2bbc8558fe208e86af6ae07ab07a75d2c7a158f9036679b020b7",
+          "bytes": 26192
+        }
+      }
+    },
+    {
+      "document_id": "GUM_news_iodine",
+      "group_id": "GUM_news_iodine",
+      "split": "validation",
+      "language": "en",
+      "source_url": "https://en.wikinews.org/wiki/Australian_children_suffering_from_iodine_deficiency",
+      "license": "Texts: CC-BY-2.5; annotations: CC-BY-4.0",
+      "files": {
+        "conll": {
+          "path": "coref/gum/conll/GUM_news_iodine.conll",
+          "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/coref/gum/conll/GUM_news_iodine.conll",
+          "sha256": "ec602c004f0ff33a929a30d88ce56ed34c0d9b8f992a1f7aa485501dd369b1eb",
+          "bytes": 19310
+        },
+        "tsv": {
+          "path": "coref/gum/tsv/GUM_news_iodine.tsv",
+          "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/coref/gum/tsv/GUM_news_iodine.tsv",
+          "sha256": "024f2457e8f7db53f5c8d818a9bc9f07ba9b0631bc80e204ebb907a37af6527a",
+          "bytes": 92867
+        },
+        "xml": {
+          "path": "xml/GUM_news_iodine.xml",
+          "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/xml/GUM_news_iodine.xml",
+          "sha256": "514d3b9c3cc5f1fd8c42b3040199a670087ef1187d94fe9d0b485a1faa12009d",
+          "bytes": 40956
+        }
+      }
+    },
+    {
+      "document_id": "GUM_interview_cyclone",
+      "group_id": "GUM_interview_cyclone",
+      "split": "validation",
+      "language": "en",
+      "source_url": "https://en.wikinews.org/wiki/Wikinews_interviews_meteorological_experts_on_Cyclone_Phalin",
+      "license": "Texts: CC-BY-2.5; annotations: CC-BY-4.0",
+      "files": {
+        "conll": {
+          "path": "coref/gum/conll/GUM_interview_cyclone.conll",
+          "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/coref/gum/conll/GUM_interview_cyclone.conll",
+          "sha256": "876c18704e321c86c85ffeeb9e0ecd51dfd8a1904772862812293db44abd1748",
+          "bytes": 14219
+        },
+        "tsv": {
+          "path": "coref/gum/tsv/GUM_interview_cyclone.tsv",
+          "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/coref/gum/tsv/GUM_interview_cyclone.tsv",
+          "sha256": "42c62cc3df657ceb9a551dd43addb6bc0426dcb11e48dcf20679d30132e9e6b7",
+          "bytes": 70986
+        },
+        "xml": {
+          "path": "xml/GUM_interview_cyclone.xml",
+          "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/xml/GUM_interview_cyclone.xml",
+          "sha256": "5199c4e458619100c5176e8f752129292672d547d4a119b4bca7041a1deb7c1b",
+          "bytes": 33535
+        }
+      }
+    },
+    {
+      "document_id": "GUM_interview_gaming",
+      "group_id": "GUM_interview_gaming",
+      "split": "validation",
+      "language": "en",
+      "source_url": "https://en.wikinews.org/wiki/Wikinews_interviews_Mario_J._Lucero_and_Isabel_Ruiz_of_Heaven_Sent_Gaming",
+      "license": "Texts: CC-BY-2.5; annotations: CC-BY-4.0",
+      "files": {
+        "conll": {
+          "path": "coref/gum/conll/GUM_interview_gaming.conll",
+          "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/coref/gum/conll/GUM_interview_gaming.conll",
+          "sha256": "55214df177d2c3fc1653004156514cfa72aeb6448714220ab8a41296d86571bf",
+          "bytes": 10569
+        },
+        "tsv": {
+          "path": "coref/gum/tsv/GUM_interview_gaming.tsv",
+          "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/coref/gum/tsv/GUM_interview_gaming.tsv",
+          "sha256": "29d6e966bbe5b72ea96ac8a4b79e201e352e8bebe6837ee80570eea207467297",
+          "bytes": 49313
+        },
+        "xml": {
+          "path": "xml/GUM_interview_gaming.xml",
+          "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/xml/GUM_interview_gaming.xml",
+          "sha256": "e51f1d1df6230e2a93fa70159b0704ba9ec1112ed927d2c9120423e19ae273f5",
+          "bytes": 26882
+        }
+      }
+    },
+    {
+      "document_id": "GUM_news_nasa",
+      "group_id": "GUM_news_nasa",
+      "split": "test",
+      "language": "en",
+      "source_url": "https://en.wikinews.org/wiki/NASA_celebrates_30th_anniversary_of_first_shuttle_launch;_announces_new_homes_for_retired_shuttles",
+      "license": "Texts: CC-BY-2.5; annotations: CC-BY-4.0",
+      "files": {
+        "conll": {
+          "path": "coref/gum/conll/GUM_news_nasa.conll",
+          "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/coref/gum/conll/GUM_news_nasa.conll",
+          "sha256": "0fac91eb3ec8ddbcf73191961a829351964d5eb2bd5e7eb69cdf7387efba3aff",
+          "bytes": 24683
+        },
+        "tsv": {
+          "path": "coref/gum/tsv/GUM_news_nasa.tsv",
+          "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/coref/gum/tsv/GUM_news_nasa.tsv",
+          "sha256": "f95476bb804bcbc7a0ae96b8f1cd9c07415c7221718f13065a27b3554cd519d7",
+          "bytes": 126394
+        },
+        "xml": {
+          "path": "xml/GUM_news_nasa.xml",
+          "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/xml/GUM_news_nasa.xml",
+          "sha256": "2a4bfd516ae99de8e06da3ffc4a39b55ca85a237485086fabed367e192521f44",
+          "bytes": 48276
+        }
+      }
+    },
+    {
+      "document_id": "GUM_news_sensitive",
+      "group_id": "GUM_news_sensitive",
+      "split": "test",
+      "language": "en",
+      "source_url": "https://en.wikinews.org/wiki/Sensitive_Canadian_document_found_on_rainy_streets",
+      "license": "Texts: CC-BY-2.5; annotations: CC-BY-4.0",
+      "files": {
+        "conll": {
+          "path": "coref/gum/conll/GUM_news_sensitive.conll",
+          "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/coref/gum/conll/GUM_news_sensitive.conll",
+          "sha256": "61743df193763241177ccfa247a8c2335118a6f93b3dbe479be1a59c76bb0f22",
+          "bytes": 11415
+        },
+        "tsv": {
+          "path": "coref/gum/tsv/GUM_news_sensitive.tsv",
+          "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/coref/gum/tsv/GUM_news_sensitive.tsv",
+          "sha256": "20dcdec14c6804e235cd324f84ba5718746cafe2f6637273279cd4f5c42ecbd8",
+          "bytes": 58436
+        },
+        "xml": {
+          "path": "xml/GUM_news_sensitive.xml",
+          "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/xml/GUM_news_sensitive.xml",
+          "sha256": "101c1c24e1ae2e36e4a37341de867a1fba1ccaf33c51b4640a3fb13c6e5d23b8",
+          "bytes": 25282
+        }
+      }
+    },
+    {
+      "document_id": "GUM_interview_hill",
+      "group_id": "GUM_interview_hill",
+      "split": "test",
+      "language": "en",
+      "source_url": "https://en.wikinews.org/wiki/Wikinews_interviews_Christopher_Hill,_U.S._Republican_Party_presidential_candidate",
+      "license": "Texts: CC-BY-2.5; annotations: CC-BY-4.0",
+      "files": {
+        "conll": {
+          "path": "coref/gum/conll/GUM_interview_hill.conll",
+          "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/coref/gum/conll/GUM_interview_hill.conll",
+          "sha256": "e4d7494f8282729d0a8c7414986b78050afc0fd9ce974f6597a62604052aacb8",
+          "bytes": 14828
+        },
+        "tsv": {
+          "path": "coref/gum/tsv/GUM_interview_hill.tsv",
+          "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/coref/gum/tsv/GUM_interview_hill.tsv",
+          "sha256": "2d057790950957f41ce74ab8d43f7bf97e0a68355a1a3e63ff40e63161f5f351",
+          "bytes": 66527
+        },
+        "xml": {
+          "path": "xml/GUM_interview_hill.xml",
+          "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/xml/GUM_interview_hill.xml",
+          "sha256": "1c23843f108d4a5348421df91d2c7652f93de96b9c9033a43dde1396ba6ca8f8",
+          "bytes": 31414
+        }
+      }
+    },
+    {
+      "document_id": "GUM_interview_libertarian",
+      "group_id": "GUM_interview_libertarian",
+      "split": "test",
+      "language": "en",
+      "source_url": "https://en.wikinews.org/wiki/Wikinews_interviews_Robert_Sarvis,_Libertarian_Party_nominee_for_Governor_of_Virginia",
+      "license": "Texts: CC-BY-2.5; annotations: CC-BY-4.0",
+      "files": {
+        "conll": {
+          "path": "coref/gum/conll/GUM_interview_libertarian.conll",
+          "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/coref/gum/conll/GUM_interview_libertarian.conll",
+          "sha256": "d8295cd00d67f43c33c96e57b6153a5ea48d83dec1109617961e4d1852d0bd31",
+          "bytes": 16192
+        },
+        "tsv": {
+          "path": "coref/gum/tsv/GUM_interview_libertarian.tsv",
+          "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/coref/gum/tsv/GUM_interview_libertarian.tsv",
+          "sha256": "a44adf4116cc94a14482eaf1f389ec957c9b9d48179b560aa5396bea369830a9",
+          "bytes": 76941
+        },
+        "xml": {
+          "path": "xml/GUM_interview_libertarian.xml",
+          "url": "https://raw.githubusercontent.com/amir-zeldes/gum/22fdf87f9c71c96bcc771461d06e689b1f90020d/xml/GUM_interview_libertarian.xml",
+          "sha256": "bd8af055ff1fa56654feeb24efcdaa54c8f5b6ba6554822cf5c1755b3b227a51",
+          "bytes": 33319
+        }
+      }
+    }
+  ]
+}
