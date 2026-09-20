@@ -897,9 +897,7 @@ def train_model(
                 left for left in previous if left["entity_id"] is not None
             ]
             same = [
-                left
-                for left in known_previous
-                if left["entity_id"] == right_entity
+                left for left in known_previous if left["entity_id"] == right_entity
             ]
             preferred = same[-1] if same else None
             if preferred is not None:
