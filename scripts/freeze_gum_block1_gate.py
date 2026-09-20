@@ -150,6 +150,7 @@ def freeze(input_dir: Path, selection_path: Path) -> dict[str, Any]:
             "cluster labels are identifiers only."
         ),
         "documents": documents,
+        "block1_selection": selection,
     }
 
 
