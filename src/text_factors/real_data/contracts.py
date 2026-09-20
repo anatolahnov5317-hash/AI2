@@ -71,7 +71,7 @@ class SourceSlice:
         }
 
     @classmethod
-    def from_dict(cls, value: dict[str, Any]) -> "SourceSlice":
+    def from_dict(cls, value: dict[str, Any]) -> SourceSlice:
         expected = {
             "source_id",
             "source_version",
@@ -107,7 +107,7 @@ class RoleValue:
         }
 
     @classmethod
-    def from_dict(cls, value: dict[str, Any]) -> "RoleValue":
+    def from_dict(cls, value: dict[str, Any]) -> RoleValue:
         expected = {"role", "value_id", "value_type", "mention_id"}
         if type(value) is not dict or set(value) != expected:
             raise ValueError("invalid role value")
@@ -157,7 +157,7 @@ class Claim:
         }
 
     @classmethod
-    def from_dict(cls, value: dict[str, Any]) -> "Claim":
+    def from_dict(cls, value: dict[str, Any]) -> Claim:
         expected = {
             "claim_id",
             "relation_id",
@@ -266,11 +266,10 @@ class UncertaintyScope:
         if self.relation_id is not None and claim.relation_id != self.relation_id:
             return False
         values = {argument.value_id for argument in claim.arguments}
-        if self.affected_instance_ids and values.intersection(
+        return bool(
             self.affected_instance_ids
-        ):
-            return True
-        return False
+            and values.intersection(self.affected_instance_ids)
+        )
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -286,7 +285,7 @@ class UncertaintyScope:
         }
 
     @classmethod
-    def from_dict(cls, value: dict[str, Any]) -> "UncertaintyScope":
+    def from_dict(cls, value: dict[str, Any]) -> UncertaintyScope:
         expected = {
             "uncertainty_id",
             "reason",
@@ -375,7 +374,7 @@ class AnswerReceipt:
         }
 
     @classmethod
-    def from_dict(cls, value: dict[str, Any]) -> "AnswerReceipt":
+    def from_dict(cls, value: dict[str, Any]) -> AnswerReceipt:
         expected = {
             "question_id",
             "answer_text",
