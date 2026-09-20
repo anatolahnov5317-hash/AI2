@@ -36,7 +36,7 @@ class EvidenceRoot:
         }
 
     @classmethod
-    def from_dict(cls, value: dict[str, Any]) -> "EvidenceRoot":
+    def from_dict(cls, value: dict[str, Any]) -> EvidenceRoot:
         expected = {"root_id", "group_id", "source_id", "source_version"}
         if type(value) is not dict or set(value) != expected:
             raise ValueError("invalid evidence root")
@@ -114,7 +114,7 @@ class EvidenceLedger:
         }
 
     @classmethod
-    def from_dict(cls, value: dict[str, Any]) -> "EvidenceLedger":
+    def from_dict(cls, value: dict[str, Any]) -> EvidenceLedger:
         if (
             type(value) is not dict
             or set(value) != {"roots", "claim_roots"}
