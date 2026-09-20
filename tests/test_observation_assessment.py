@@ -8,6 +8,7 @@ from copy import deepcopy
 from dataclasses import asdict, dataclass
 
 from text_factors.observations.assessment import (
+    _apply_gate,
     calibrate_model,
     evaluate_model,
     propose,
@@ -164,6 +165,73 @@ class ObservationAssessmentTests(unittest.TestCase):
             [(0, 1), (0, 3), (2, 3)],
         )
         self.assertNotIn("entity_id", str(result))
+
+    def test_link_gate_can_require_high_confidence_mention_endpoints(self):
+        rows = [
+            {
+                "mention_id": "m000000",
+                "start": 0,
+                "end": 1,
+                "score": 0.99,
+                "surface": "a",
+                "candidates": [],
+                "considered_antecedents": 0,
+                "margin": None,
+            },
+            {
+                "mention_id": "m000001",
+                "start": 2,
+                "end": 3,
+                "score": 0.70,
+                "surface": "b",
+                "candidates": [
+                    {
+                        "mention_id": "m000000",
+                        "start": 0,
+                        "end": 1,
+                        "score": 0.99,
+                    }
+                ],
+                "considered_antecedents": 1,
+                "margin": 0.99,
+            },
+            {
+                "mention_id": "m000002",
+                "start": 4,
+                "end": 5,
+                "score": 0.99,
+                "surface": "c",
+                "candidates": [
+                    {
+                        "mention_id": "m000000",
+                        "start": 0,
+                        "end": 1,
+                        "score": 0.99,
+                    }
+                ],
+                "considered_antecedents": 2,
+                "margin": 0.99,
+            },
+        ]
+        gated = _apply_gate(
+            rows,
+            {
+                "enabled": True,
+                "score_threshold": 0.9,
+                "margin_threshold": 0.1,
+                "mention_score_threshold": 0.9,
+            },
+        )
+        self.assertIsNone(gated[1]["selected"])
+        self.assertEqual(gated[2]["selected"], "m000000")
+
+    def test_calibration_records_oracle_link_diagnostics(self):
+        model = StubModel()
+        policy = calibrate_model(model, [validation(11)])
+        self.assertIn("oracle_link_grid", policy)
+        self.assertTrue(policy["oracle_link_grid"])
+        if policy["link_gate"]["enabled"]:
+            self.assertIn("mention_score_threshold", policy["link_gate"])
 
     def test_fixed_grid_caches_scores_and_respects_antecedent_budget(self):
         model = StubModel()
