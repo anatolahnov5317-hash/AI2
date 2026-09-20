@@ -766,6 +766,7 @@ class LearnedUnderstanding:
         observation: Observation | None = None,
         initial: Interpretation | None = None,
         limits: SearchLimits | None = None,
+        reference_hints: dict[str, str] | None = None,
     ) -> CandidateSet:
         """Retain bounded alternatives; the caller decides before projecting facts."""
         from .candidate_search import propose
@@ -775,7 +776,12 @@ class LearnedUnderstanding:
         if observation.text != text or not isinstance(context, DialogueContext):
             raise ValueError("candidate input does not match its observation")
         return propose(
-            self, observation, context, initial or self.interpret(text, context), limits
+            self,
+            observation,
+            context,
+            initial or self.interpret(text, context),
+            limits,
+            reference_hints,
         )
 
     @staticmethod

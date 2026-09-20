@@ -130,7 +130,13 @@ def main():
         ):
             groups.append([])
         groups[-1].append(name)
-    files = sorted([*ROOT.glob("src/**/*.py"), *ROOT.glob("tests/**/*.py")])
+    files = sorted(
+        [
+            *ROOT.glob("src/**/*.py"),
+            *ROOT.glob("src/**/*.json"),
+            *ROOT.glob("tests/**/*.py"),
+        ]
+    )
     digest = hashlib.sha256()
     for path in files:
         digest.update(str(path.relative_to(ROOT)).encode() + b"\0" + path.read_bytes())

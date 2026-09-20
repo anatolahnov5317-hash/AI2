@@ -1,0 +1,32 @@
+{
+  "schema": "ai2-attention-ranker-v1",
+  "features": [
+    "bias",
+    "target",
+    "object",
+    "predicate",
+    "participants",
+    "scope",
+    "time"
+  ],
+  "weights": [
+    -3.4802562755440647,
+    5.33470852634766,
+    0.6138288899126711,
+    0.6138288899126711,
+    -1.5660713438002763e-17,
+    0.6138288899126713,
+    0.6138288899126713
+  ],
+  "training": {
+    "examples": 96,
+    "steps": 400,
+    "learning_rate": 0.25,
+    "l2": 0.002,
+    "centering": "Non-bias features; exported weights use original coordinates",
+    "seed": null,
+    "data_sha256": "21656a6e833e58eed1d7ffa23e2d85b6f460c30acd3159a3200e8cef3b8e9446",
+    "task": "Explicit target OR matching object/predicate/scope/time",
+    "disclosure": "Synthetic engineering labels over structured features; no independent language evaluation."
+  }
+}

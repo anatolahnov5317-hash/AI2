@@ -1,0 +1,82 @@
+{
+  "initial_batch": {
+    "batch": 16,
+    "requested": [
+      "test_conversation_commands.ConversationCommandTests.test_does_not_overwrite_an_unrelated_file",
+      "test_conversation_commands.ConversationCommandTests.test_existing_report_is_protected_before_work_starts",
+      "test_conversation_commands.ConversationCommandTests.test_hard_kill_retains_last_completed_evaluation_prefix",
+      "test_conversation_commands.ConversationCommandTests.test_hard_timeout_does_not_create_session_file",
+      "test_conversation_commands.ConversationCommandTests.test_invalid_evaluation_budget_rejected",
+      "test_conversation_commands.ConversationCommandTests.test_real_development_evaluation_cli",
+      "test_conversation_commands.ConversationCommandTests.test_state_survives_separate_cli_invocations"
+    ],
+    "tests": [
+      {
+        "id": "test_conversation_commands.ConversationCommandTests.test_does_not_overwrite_an_unrelated_file",
+        "status": "passed",
+        "seconds": 0.01385470599961991
+      },
+      {
+        "id": "test_conversation_commands.ConversationCommandTests.test_existing_report_is_protected_before_work_starts",
+        "status": "passed",
+        "seconds": 0.00310504000117362
+      },
+      {
+        "id": "test_conversation_commands.ConversationCommandTests.test_hard_kill_retains_last_completed_evaluation_prefix",
+        "status": "passed",
+        "seconds": 0.0031344330000138143
+      },
+      {
+        "id": "test_conversation_commands.ConversationCommandTests.test_hard_timeout_does_not_create_session_file",
+        "status": "passed",
+        "seconds": 0.003206952998880297
+      },
+      {
+        "id": "test_conversation_commands.ConversationCommandTests.test_invalid_evaluation_budget_rejected",
+        "status": "passed",
+        "seconds": 0.002238506998764933
+      }
+    ],
+    "status": "incomplete",
+    "not_completed": [
+      "test_conversation_commands.ConversationCommandTests.test_real_development_evaluation_cli",
+      "test_conversation_commands.ConversationCommandTests.test_state_survives_separate_cli_invocations"
+    ],
+    "returncode": 0,
+    "seconds": 2.3698333849988558,
+    "peak_worker_rss_kib": 40192
+  },
+  "initial_log": "test_does_not_overwrite_an_unrelated_file (test_conversation_commands.ConversationCommandTests.test_does_not_overwrite_an_unrelated_file) ... ok\ntest_existing_report_is_protected_before_work_starts (test_conversation_commands.ConversationCommandTests.test_existing_report_is_protected_before_work_starts) ... ok\ntest_hard_kill_retains_last_completed_evaluation_prefix (test_conversation_commands.ConversationCommandTests.test_hard_kill_retains_last_completed_evaluation_prefix) ... ok\ntest_hard_timeout_does_not_create_session_file (test_conversation_commands.ConversationCommandTests.test_hard_timeout_does_not_create_session_file) ... ok\ntest_invalid_evaluation_budget_rejected (test_conversation_commands.ConversationCommandTests.test_invalid_evaluation_budget_rejected) ... ok\ntest_real_development_evaluation_cli (test_conversation_commands.ConversationCommandTests.test_real_development_evaluation_cli) ... ",
+  "recovery": {
+    "total_tests": 2,
+    "completed_batches": 1,
+    "total_batches": 1,
+    "batches": [
+      {
+        "batch": 1,
+        "requested": [
+          "test_conversation_commands.ConversationCommandTests.test_real_development_evaluation_cli",
+          "test_conversation_commands.ConversationCommandTests.test_state_survives_separate_cli_invocations"
+        ],
+        "tests": [
+          {
+            "id": "test_conversation_commands.ConversationCommandTests.test_real_development_evaluation_cli",
+            "status": "passed",
+            "seconds": 0.1814534929999354
+          },
+          {
+            "id": "test_conversation_commands.ConversationCommandTests.test_state_survives_separate_cli_invocations",
+            "status": "passed",
+            "seconds": 1.9876759399994626
+          }
+        ],
+        "status": "passed",
+        "not_completed": [],
+        "returncode": 0,
+        "seconds": 2.319731044999571,
+        "peak_worker_rss_kib": 32512
+      }
+    ]
+  },
+  "same_source_sha256": "14e8b1d23aa0f515c475569a6924542175b032323f90254ed382b7b4d888fd64"
+}
