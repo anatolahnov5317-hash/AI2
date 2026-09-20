@@ -111,6 +111,59 @@ jobs:
                           sort_keys=True,
                       )
                   )
+
+          corpus = json.loads(
+              Path("artifacts/block1-academic-dev-corpus.json").read_text(
+                  encoding="utf-8"
+              )
+          )
+          max_antecedents = bundle["model"]["config"]["max_antecedents"]
+
+          def agreement_stats(mode):
+              total = correct = 0
+              for document in corpus["documents"]:
+                  if document["split"] != "validation":
+                      continue
+                  mentions = sorted(
+                      document["mentions"],
+                      key=lambda item: (item["start"], item["end"]),
+                  )
+                  text = document["text"]
+                  for index, right in enumerate(mentions):
+                      right_entity = right["entity_id"]
+                      if right_entity is None:
+                          continue
+                      right_surface = text[right["start"]:right["end"]].casefold()
+                      previous = mentions[
+                          max(0, index - max_antecedents):index
+                      ]
+                      matches = []
+                      for left in previous:
+                          if left["entity_id"] is None:
+                              continue
+                          left_surface = text[left["start"]:left["end"]].casefold()
+                          if mode == "surface" and left_surface == right_surface:
+                              matches.append(left)
+                          elif mode == "last-token":
+                              left_last = left_surface.split()[-1:]
+                              right_last = right_surface.split()[-1:]
+                              if left_last and left_last == right_last:
+                                  matches.append(left)
+                      if not matches:
+                          continue
+                      chosen = matches[-1]
+                      total += 1
+                      correct += chosen["entity_id"] == right_entity
+              return {
+                  "mode": mode,
+                  "decisions": total,
+                  "correct": correct,
+                  "precision": correct / total if total else None,
+              }
+
+          print("agreement_diagnostics=")
+          for mode in ("surface", "last-token"):
+              print(json.dumps(agreement_stats(mode), sort_keys=True))
           PY
 
       - name: Upload validation development artifacts
