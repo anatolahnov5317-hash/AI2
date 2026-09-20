@@ -29,6 +29,7 @@ class ResourceBudget:
     max_bytes: int | None = 256 * 1024 * 1024
     max_wall_seconds: float | None = 300.0
     max_artifact_bytes: int | None = 128 * 1024 * 1024
+    max_clusters_total: int | None = 3_000_000
     checkpoint_every_steps: int = 1000
 
     def __post_init__(self) -> None:
@@ -37,6 +38,7 @@ class ResourceBudget:
         _positive_int(self.max_bytes, "max_bytes")
         _positive_float(self.max_wall_seconds, "max_wall_seconds")
         _positive_int(self.max_artifact_bytes, "max_artifact_bytes")
+        _positive_int(self.max_clusters_total, "max_clusters_total")
         _positive_int(self.checkpoint_every_steps, "checkpoint_every_steps")
 
 
@@ -185,6 +187,15 @@ class BudgetTracker:
         self.check()
         self.last_checkpoint_step = self.steps
         return self.snapshot()
+
+    def check_clusters(self, count: int) -> None:
+        if type(count) is not int or count < 0:
+            raise ValueError("cluster count must be a non-negative integer")
+        if (
+            self.budget.max_clusters_total is not None
+            and count > self.budget.max_clusters_total
+        ):
+            self._raise("max_clusters_total")
 
     def check_artifact_size(self, size: int) -> None:
         if type(size) is not int or size < 0:
