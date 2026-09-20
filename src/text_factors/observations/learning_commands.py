@@ -13,6 +13,7 @@ from typing import Any
 from ..conversation.persistence import _atomic_write, encode_json, read_json
 from .archive import ObservationArchive
 from .assessment import calibrate_model, evaluate_model, propose, validate_policy
+from .block1_gate import Block1GateConfig, evaluate_block1_gate
 from .learning import CandidateModel, LearningConfig, train_model
 from .learning_data import (
     MAX_CORPUS_BYTES,
@@ -205,6 +206,15 @@ def evaluate_bundle(bundle_path: Path, corpus: dict[str, Any]) -> dict[str, Any]
         split_documents(corpus, "train"),
         progress=_print,
     )
+    gate_config = Block1GateConfig()
+    source_gate = corpus.get("provenance", {}).get("quality_gate")
+    if type(source_gate) is dict:
+        gate_config = Block1GateConfig(**source_gate)
+    quality_gate = evaluate_block1_gate(
+        payload["policy"],
+        metrics,
+        gate_config,
+    )
     return {
         "schema": REPORT_SCHEMA,
         "model_fingerprint": fingerprint(payload["model"]),
@@ -213,6 +223,7 @@ def evaluate_bundle(bundle_path: Path, corpus: dict[str, Any]) -> dict[str, Any]
         "training_summary": model.training_summary,
         "policy": payload["policy"],
         "metrics": metrics,
+        "quality_gate": quality_gate,
         "evaluation_seconds": time.monotonic() - started,
         "production_ready": False,
         "evaluated_languages": sorted({doc["language"] for doc in test}),
