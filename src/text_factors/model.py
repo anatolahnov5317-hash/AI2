@@ -24,6 +24,7 @@ from .memory import (
     FactorSummary,
     MemoryReadout,
 )
+from .real_data.budget import BudgetTracker, ResourceBudget
 from .recognition import (
     ContextView,
     RecognitionLimits,
@@ -31,7 +32,6 @@ from .recognition import (
     memory_encoding_id,
     recognize_views,
 )
-from .real_data.budget import BudgetTracker, ResourceBudget
 
 MODEL_FORMAT_VERSION = 3
 
