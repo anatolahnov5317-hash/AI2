@@ -7,11 +7,6 @@ on:
       - test/real-data-full-implementation
     paths:
       - ".github/workflows/block1-quality-gate.yml"
-      - "docs/GUM_BLOCK1_GATE_SELECTION.json"
-      - "scripts/freeze_gum_block1_gate.py"
-      - "scripts/prepare_gum_mentions.py"
-      - "scripts/check_block1_quality_gate.py"
-      - "src/text_factors/observations/**"
       - "quality-gate-trigger.txt"
 
 permissions:
