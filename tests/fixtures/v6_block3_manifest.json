@@ -1,0 +1,830 @@
+{
+  "schema": "ai2-v6-block3-frozen-cases-v1",
+  "frozen_before_first_run": true,
+  "disclosure": "New fixed stories created before evaluation. No model/ranker fitting or language-specific repairs are permitted after seeing these results. Familiar lexical scaffolding is not free-language generalization. Failures remain in the denominator.",
+  "model": "docs/results/v05_model_42.json",
+  "model_sha256": "6dbd35ab001aaa005ba3cb31913d7357307f9a9dc1206932614f9f4ab721192a",
+  "ranker_sha256": "d336780cffddb72182eacbcefc65275808833bdb30435925005f0e4c46a8f3e2",
+  "modes": {
+    "full": "Unchanged inference with attention, source archive and revision.",
+    "no_attention": "Evaluation-only replacement of AttentionState.process with a valid zero-work trace; remember, parser, context, world, revision rules and all weights remain unchanged.",
+    "no_archive": "Evaluation-only eviction of all previously archived source records immediately before each process call; normal current-turn remember, parser, context, world and all weights remain unchanged."
+  },
+  "mechanism_observations": {
+    "agreement": "Measure synchronous provenance exchange and ordering invariance separately. Current exchange output is not an input to constrained_choice; no causal language gain is presumed.",
+    "duplicate": "Measure unique provenance roots under copied/re-read features separately. No fictitious vote-counting replacement is presented as an ablation."
+  },
+  "required_invariants": [
+    "No error or limit is excluded.",
+    "Observed source text and original archive fields never change.",
+    "All model and ranker fingerprints remain unchanged.",
+    "Raw-language, mixed and explicit API totals are separate."
+  ],
+  "language_cases": [
+    {
+      "id": "L01",
+      "interface": "raw_language",
+      "title": "Позднее уточнение и исправление прежнего ответа",
+      "turns": [
+        "Иван положил паспорт в рюкзак",
+        "Саша положил телефон в шкаф",
+        "Он на полке",
+        "Где паспорт?",
+        "Нет, паспорт на полке",
+        "Где паспорт?",
+        "Где телефон?"
+      ],
+      "checks": [
+        {
+          "kind": "candidate_contains",
+          "turn": 3,
+          "event": {
+            "predicate": "locate",
+            "object": "паспорт",
+            "place": "полка"
+          }
+        },
+        {
+          "kind": "archive_selection",
+          "turn": 5,
+          "target": "turn:3",
+          "event": {
+            "object": "паспорт",
+            "place": "полка"
+          }
+        },
+        {
+          "kind": "answer_fact",
+          "turn": 6,
+          "fact": {
+            "subject": "паспорт",
+            "relation": "location",
+            "value": "полка",
+            "negated": false,
+            "spatial": "on"
+          }
+        },
+        {
+          "kind": "answer_fact",
+          "turn": 7,
+          "fact": {
+            "subject": "телефон",
+            "relation": "location",
+            "value": "шкаф",
+            "negated": false,
+            "spatial": "in"
+          }
+        },
+        {
+          "kind": "visible_correction",
+          "turn": 5,
+          "prior_answer_turn": 4
+        }
+      ]
+    },
+    {
+      "id": "L02",
+      "interface": "raw_language",
+      "title": "Обычное новое сообщение не меняет старую трактовку",
+      "turns": [
+        "Иван положил паспорт в рюкзак",
+        "Саша положил телефон в шкаф",
+        "Он на полке",
+        "Паспорт на полке",
+        "Где паспорт?",
+        "Где телефон?"
+      ],
+      "checks": [
+        {
+          "kind": "archive_unchanged",
+          "before": 3,
+          "after": 4,
+          "target": "turn:3"
+        },
+        {
+          "kind": "answer_fact",
+          "turn": 5,
+          "fact": {
+            "subject": "паспорт",
+            "relation": "location",
+            "value": "полка",
+            "negated": false,
+            "spatial": "on"
+          }
+        },
+        {
+          "kind": "answer_fact",
+          "turn": 6,
+          "fact": {
+            "subject": "телефон",
+            "relation": "location",
+            "value": "шкаф",
+            "negated": false,
+            "spatial": "in"
+          }
+        }
+      ]
+    },
+    {
+      "id": "L03",
+      "interface": "raw_language",
+      "title": "Подтверждение сохраняет явную исходную трактовку",
+      "turns": [
+        "Иван положил паспорт в рюкзак",
+        "Саша положил телефон в шкаф",
+        "Паспорт на полке",
+        "Где паспорт?",
+        "Нет, паспорт на полке",
+        "Где паспорт?",
+        "Где телефон?"
+      ],
+      "checks": [
+        {
+          "kind": "archive_unchanged",
+          "before": 4,
+          "after": 5,
+          "target": "turn:3"
+        },
+        {
+          "kind": "answer_fact",
+          "turn": 6,
+          "fact": {
+            "subject": "паспорт",
+            "relation": "location",
+            "value": "полка",
+            "negated": false,
+            "spatial": "on"
+          }
+        },
+        {
+          "kind": "answer_fact",
+          "turn": 7,
+          "fact": {
+            "subject": "телефон",
+            "relation": "location",
+            "value": "шкаф",
+            "negated": false,
+            "spatial": "in"
+          }
+        }
+      ]
+    },
+    {
+      "id": "L04",
+      "interface": "raw_language",
+      "title": "Старый эпизод после 48 смешанных отвлечений",
+      "turns": [
+        "Иван положил паспорт в рюкзак",
+        "Саша положил телефон в шкаф",
+        "Он на полке",
+        "Спасибо",
+        "Где телефон?",
+        "Привет",
+        "У кого игрушка?",
+        "Спасибо",
+        "Где письмо?",
+        "Спасибо",
+        "Где телефон?",
+        "Привет",
+        "У кого игрушка?",
+        "Спасибо",
+        "Где письмо?",
+        "Спасибо",
+        "Где телефон?",
+        "Привет",
+        "У кого игрушка?",
+        "Спасибо",
+        "Где письмо?",
+        "Спасибо",
+        "Где телефон?",
+        "Привет",
+        "У кого игрушка?",
+        "Спасибо",
+        "Где письмо?",
+        "Спасибо",
+        "Где телефон?",
+        "Привет",
+        "У кого игрушка?",
+        "Спасибо",
+        "Где письмо?",
+        "Спасибо",
+        "Где телефон?",
+        "Привет",
+        "У кого игрушка?",
+        "Спасибо",
+        "Где письмо?",
+        "Спасибо",
+        "Где телефон?",
+        "Привет",
+        "У кого игрушка?",
+        "Спасибо",
+        "Где письмо?",
+        "Спасибо",
+        "Где телефон?",
+        "Привет",
+        "У кого игрушка?",
+        "Спасибо",
+        "Где письмо?",
+        "Где паспорт?",
+        "Нет, паспорт на полке",
+        "Где паспорт?",
+        "Где телефон?"
+      ],
+      "checks": [
+        {
+          "kind": "archive_batch_evicted",
+          "turn": 51,
+          "target": "turn:3"
+        },
+        {
+          "kind": "archive_selection",
+          "turn": 53,
+          "target": "turn:3",
+          "event": {
+            "object": "паспорт",
+            "place": "полка"
+          }
+        },
+        {
+          "kind": "answer_fact",
+          "turn": 54,
+          "fact": {
+            "subject": "паспорт",
+            "relation": "location",
+            "value": "полка",
+            "negated": false,
+            "spatial": "on"
+          }
+        },
+        {
+          "kind": "answer_fact",
+          "turn": 55,
+          "fact": {
+            "subject": "телефон",
+            "relation": "location",
+            "value": "шкаф",
+            "negated": false,
+            "spatial": "in"
+          }
+        },
+        {
+          "kind": "visible_correction",
+          "turn": 53,
+          "prior_answer_turn": 52
+        }
+      ],
+      "distractor_count": 48
+    },
+    {
+      "id": "L05",
+      "interface": "raw_language",
+      "title": "Пересмотр прошлого сохраняет более позднее ясное перемещение",
+      "turns": [
+        "Иван положил паспорт в рюкзак",
+        "Саша положил телефон в шкаф",
+        "Он на полке",
+        "Иван положил паспорт в сумку",
+        "Где паспорт?",
+        "Нет, паспорт на полке",
+        "Где паспорт?",
+        "Где телефон?"
+      ],
+      "checks": [
+        {
+          "kind": "archive_selection",
+          "turn": 6,
+          "target": "turn:3",
+          "event": {
+            "object": "паспорт",
+            "place": "полка"
+          }
+        },
+        {
+          "kind": "answer_fact",
+          "turn": 5,
+          "fact": {
+            "subject": "паспорт",
+            "relation": "location",
+            "value": "сумка",
+            "negated": false,
+            "spatial": "in"
+          }
+        },
+        {
+          "kind": "answer_fact",
+          "turn": 7,
+          "fact": {
+            "subject": "паспорт",
+            "relation": "location",
+            "value": "сумка",
+            "negated": false,
+            "spatial": "in"
+          }
+        },
+        {
+          "kind": "answer_fact",
+          "turn": 8,
+          "fact": {
+            "subject": "телефон",
+            "relation": "location",
+            "value": "шкаф",
+            "negated": false,
+            "spatial": "in"
+          }
+        }
+      ]
+    },
+    {
+      "id": "L06",
+      "interface": "raw_language",
+      "title": "Непонятое изменение локально ограничивает актуальность",
+      "turns": [
+        "Анна положила письмо на полку",
+        "Иван положил паспорт в рюкзак",
+        "Анна перепрятала письмо",
+        "Где письмо?",
+        "Где паспорт?"
+      ],
+      "checks": [
+        {
+          "kind": "no_assertions",
+          "turn": 3
+        },
+        {
+          "kind": "qualified_or_abstained",
+          "turn": 4
+        },
+        {
+          "kind": "answer_fact",
+          "turn": 5,
+          "fact": {
+            "subject": "паспорт",
+            "relation": "location",
+            "value": "рюкзак",
+            "negated": false,
+            "spatial": "in"
+          }
+        },
+        {
+          "kind": "world_contains",
+          "turn": 5,
+          "fact": {
+            "subject": "письмо",
+            "relation": "location",
+            "value": "полка",
+            "negated": false,
+            "spatial": "on"
+          }
+        }
+      ]
+    },
+    {
+      "id": "L07",
+      "interface": "raw_language",
+      "title": "Неизвестная область непонятого изменения не выдумывается",
+      "turns": [
+        "Анна положила письмо на полку",
+        "Иван положил паспорт в рюкзак",
+        "Они всё перетасовали",
+        "Где письмо?",
+        "Где паспорт?"
+      ],
+      "checks": [
+        {
+          "kind": "no_assertions",
+          "turn": 3
+        },
+        {
+          "kind": "qualified_or_abstained",
+          "turn": 4
+        },
+        {
+          "kind": "qualified_or_abstained",
+          "turn": 5
+        },
+        {
+          "kind": "world_contains",
+          "turn": 5,
+          "fact": {
+            "subject": "письмо",
+            "relation": "location",
+            "value": "полка",
+            "negated": false,
+            "spatial": "on"
+          }
+        },
+        {
+          "kind": "world_contains",
+          "turn": 5,
+          "fact": {
+            "subject": "паспорт",
+            "relation": "location",
+            "value": "рюкзак",
+            "negated": false,
+            "spatial": "in"
+          }
+        }
+      ]
+    },
+    {
+      "id": "L08",
+      "interface": "raw_language",
+      "title": "Ясное обновление снимает локальную неопределённость",
+      "turns": [
+        "Анна положила письмо на полку",
+        "Иван положил паспорт в рюкзак",
+        "Анна перепрятала письмо",
+        "Где письмо?",
+        "Письмо в коробке",
+        "Где письмо?",
+        "Где паспорт?"
+      ],
+      "checks": [
+        {
+          "kind": "qualified_or_abstained",
+          "turn": 4
+        },
+        {
+          "kind": "answer_fact",
+          "turn": 6,
+          "fact": {
+            "subject": "письмо",
+            "relation": "location",
+            "value": "коробка",
+            "negated": false,
+            "spatial": "in"
+          }
+        },
+        {
+          "kind": "answer_fact",
+          "turn": 7,
+          "fact": {
+            "subject": "паспорт",
+            "relation": "location",
+            "value": "рюкзак",
+            "negated": false,
+            "spatial": "in"
+          }
+        }
+      ]
+    },
+    {
+      "id": "L09",
+      "interface": "raw_language",
+      "title": "Чужое сообщение и обещание не становятся свершившимися фактами",
+      "turns": [
+        "Паспорт в рюкзаке",
+        "Саша сказал, что паспорт в шкафу",
+        "Где паспорт?",
+        "Иван обещал положить паспорт в сумку",
+        "Где паспорт?"
+      ],
+      "checks": [
+        {
+          "kind": "answer_fact",
+          "turn": 3,
+          "fact": {
+            "subject": "паспорт",
+            "relation": "location",
+            "value": "рюкзак",
+            "negated": false,
+            "spatial": "in"
+          }
+        },
+        {
+          "kind": "answer_fact",
+          "turn": 5,
+          "fact": {
+            "subject": "паспорт",
+            "relation": "location",
+            "value": "рюкзак",
+            "negated": false,
+            "spatial": "in"
+          }
+        },
+        {
+          "kind": "facts_unchanged",
+          "before": 1,
+          "after": 5
+        }
+      ]
+    },
+    {
+      "id": "L10",
+      "interface": "raw_language",
+      "title": "Два экземпляра ключа в естественном языке",
+      "turns": [
+        "Первый ключ в рюкзаке",
+        "Второй ключ в шкафу",
+        "Где первый ключ?",
+        "Где второй ключ?",
+        "Нет, первый ключ на полке",
+        "Где первый ключ?",
+        "Где второй ключ?"
+      ],
+      "checks": [
+        {
+          "kind": "distinct_instance_answers",
+          "first": 3,
+          "second": 4,
+          "values": [
+            "рюкзак",
+            "шкаф"
+          ]
+        },
+        {
+          "kind": "distinct_instance_answers",
+          "first": 6,
+          "second": 7,
+          "values": [
+            "полка",
+            "шкаф"
+          ]
+        }
+      ],
+      "disclosure": "A language capability challenge; an honest refusal is safe but does not count as successful instance resolution."
+    },
+    {
+      "id": "L11",
+      "interface": "raw_language_prefix",
+      "title": "Один наблюдаемый префикс и два невидимых продолжения",
+      "prefix": "Катя передала",
+      "completions": [
+        "Катя передала письмо Анне",
+        "Катя передала игрушку Оле"
+      ],
+      "expected_events": [
+        {
+          "predicate": "give",
+          "actor": "катя",
+          "object": "письмо",
+          "recipient": "анна"
+        },
+        {
+          "predicate": "give",
+          "actor": "катя",
+          "object": "игрушка",
+          "recipient": "оля"
+        }
+      ],
+      "checks": [
+        {
+          "kind": "identical_prefix_semantics"
+        },
+        {
+          "kind": "no_prefix_future_roles"
+        },
+        {
+          "kind": "no_prefix_facts"
+        },
+        {
+          "kind": "completion_roles"
+        }
+      ],
+      "disclosure": "Fresh sessions receive only the literal prefix, then a whole completed sentence. This is not a claim of streaming token-by-token decoding."
+    },
+    {
+      "id": "L12",
+      "interface": "raw_language",
+      "title": "Несовместимые исправления не дают автоматического приоритета последнему",
+      "turns": [
+        "Иван положил паспорт в рюкзак",
+        "Саша положил телефон в шкаф",
+        "Он на полке",
+        "Нет, паспорт на полке",
+        "Нет, паспорт в шкафу",
+        "Где паспорт?"
+      ],
+      "checks": [
+        {
+          "kind": "qualified_or_abstained",
+          "turn": 5
+        },
+        {
+          "kind": "qualified_or_abstained",
+          "turn": 6
+        },
+        {
+          "kind": "world_not_contains",
+          "turn": 6,
+          "fact": {
+            "subject": "паспорт",
+            "relation": "location",
+            "value": "шкаф",
+            "negated": false,
+            "spatial": "in"
+          }
+        }
+      ]
+    }
+  ],
+  "structured_cases": [
+    {
+      "id": "S01",
+      "interface": "explicit_api",
+      "kind": "dependent_revision",
+      "title": "Адресный пересчёт зависимой ветви",
+      "source_text": "Он на полке",
+      "dependent_text": "Катя передала его Анне",
+      "initial_object": "паспорт",
+      "revised_object": "телефон",
+      "independent_fact": {
+        "subject": "письмо",
+        "relation": "location",
+        "value": "шкаф",
+        "negated": false,
+        "spatial": "in"
+      },
+      "initial_facts": [
+        {
+          "subject": "паспорт",
+          "relation": "location",
+          "value": "рюкзак",
+          "negated": false,
+          "spatial": "in"
+        },
+        {
+          "subject": "телефон",
+          "relation": "location",
+          "value": "сумка",
+          "negated": false,
+          "spatial": "in"
+        },
+        {
+          "subject": "письмо",
+          "relation": "location",
+          "value": "шкаф",
+          "negated": false,
+          "spatial": "in"
+        }
+      ],
+      "expected_final_facts": [
+        {
+          "subject": "паспорт",
+          "relation": "location",
+          "value": "рюкзак",
+          "negated": false,
+          "spatial": "in"
+        },
+        {
+          "subject": "телефон",
+          "relation": "holder",
+          "value": "анна",
+          "negated": false,
+          "spatial": "in"
+        },
+        {
+          "subject": "письмо",
+          "relation": "location",
+          "value": "шкаф",
+          "negated": false,
+          "spatial": "in"
+        }
+      ],
+      "expected": [
+        "Dependent event changes object from passport to phone.",
+        "Independent letter and prior passport location survive.",
+        "Already returned dependent answer is marked for correction."
+      ]
+    },
+    {
+      "id": "S02",
+      "interface": "explicit_api",
+      "kind": "time_scope",
+      "title": "Поздняя реплика о другом времени",
+      "actors": [
+        "саша",
+        "иван"
+      ],
+      "object": "паспорт",
+      "recipient": "оля",
+      "initial_time": "past",
+      "cue_time": "future",
+      "expected": [
+        "Review completes as inapplicable_scope.",
+        "Selected ID, original observation and revision count remain unchanged."
+      ]
+    },
+    {
+      "id": "S03",
+      "interface": "explicit_api",
+      "kind": "source_scope",
+      "title": "Чужой источник и неактуальная область",
+      "actors": [
+        "саша",
+        "иван"
+      ],
+      "object": "паспорт",
+      "recipient": "оля",
+      "archive_speaker": "user",
+      "cue_speaker": "саша",
+      "expected": [
+        "Other speaker cannot rewrite the user observation.",
+        "A reported or promised transfer adds no actual holder fact."
+      ]
+    },
+    {
+      "id": "S04",
+      "interface": "explicit_api",
+      "kind": "instance_identity",
+      "title": "Явные идентификаторы двух экземпляров",
+      "instances": [
+        {
+          "id": "ключ:A",
+          "display_label": "ключ",
+          "place": "рюкзак"
+        },
+        {
+          "id": "ключ:B",
+          "display_label": "ключ",
+          "place": "шкаф"
+        }
+      ],
+      "corrected_id": "ключ:A",
+      "corrected_place": "полка",
+      "expected": [
+        "Only key A changes to shelf.",
+        "Key B remains in closet."
+      ],
+      "disclosure": "Distinct API IDs and supplied licensed effects; identical display labels are metadata, not parsed Russian."
+    },
+    {
+      "id": "S05",
+      "interface": "explicit_api",
+      "kind": "revision_roundtrip",
+      "title": "Неизменный оригинал и сохранённые версии",
+      "actors": [
+        "саша",
+        "иван"
+      ],
+      "object": "паспорт",
+      "recipient": "оля",
+      "expected": [
+        "A new version selects Ivan.",
+        "Original text, original selected meaning and suppression reasons stay immutable.",
+        "Save/load retains the exact committed version and dependency projection."
+      ]
+    },
+    {
+      "id": "S06",
+      "interface": "explicit_api",
+      "kind": "atomic_budget",
+      "title": "Неполный и устаревший пересмотр не фиксируется частично",
+      "actors": [
+        "саша",
+        "иван"
+      ],
+      "object": "паспорт",
+      "recipient": "оля",
+      "expected": [
+        "Expired work returns incomplete.",
+        "An incomplete commit is rejected without archive/world mutation.",
+        "A proposal prepared before a separate archive change is rejected as stale."
+      ]
+    },
+    {
+      "id": "S07",
+      "interface": "mechanism_observation",
+      "kind": "provenance_invariants",
+      "title": "Общее происхождение вместо голосов",
+      "copies": 9,
+      "channels": [
+        "language",
+        "memory",
+        "clarification"
+      ],
+      "expected": [
+        "Nine repeated observations of one root keep one evidence row.",
+        "A support cycle passes one root, never manufactures roots.",
+        "Permuting node/link completion order preserves the final root sets."
+      ],
+      "disclosure": "Exchange and ledger measurements are reported separately; no invented majority-vote ablation."
+    },
+    {
+      "id": "S08",
+      "interface": "mixed_language_and_explicit_cue",
+      "kind": "archive_reconstruction",
+      "title": "Перестроение и граница утраты источника",
+      "source_text": "Он передал паспорт Оле",
+      "actors": [
+        "саша",
+        "иван"
+      ],
+      "object": "паспорт",
+      "recipient": "оля",
+      "context_names": [
+        "паспорт",
+        "саша",
+        "иван",
+        "оля",
+        "шкаф"
+      ],
+      "max_archives": 1,
+      "max_sources": 3,
+      "expected": [
+        "With source retained but candidate batch evicted, the explicit cue causes language reconstruction.",
+        "When the source is also evicted, source_not_retained is explicit and no invented record appears."
+      ]
+    }
+  ]
+}

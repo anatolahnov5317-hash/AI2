@@ -19,8 +19,10 @@ from .attention import (
 )
 from .candidate_search import SearchLimits
 from .candidate_selection import select, validate_trace
+from .dependent_reparse import make_reparser
 from .hypotheses import Observation, digest
 from .model import ModelBundle
+from .revision import commit_revision, prepare_archive_revision
 from .schema import (
     DialogueContext,
     Entity,
@@ -29,6 +31,7 @@ from .schema import (
     bounded_text,
     exact_fields,
 )
+from .uncertainty import UncertaintyState
 from .world import ExperienceWorld, validate_assertion
 
 SCHEMA = "ai2-learned-dialogue-session-v1"
@@ -81,6 +84,7 @@ class LearnedSession:
         )
         self.context = DialogueContext()
         self.attention = AttentionState(self.model_fingerprint)
+        self.uncertainty = UncertaintyState()
         self.turn_count = 0
         self._previous_action = ""
         self._last_assertions: list[dict[str, Any]] = []
@@ -104,6 +108,8 @@ class LearnedSession:
         # Keep the legacy compact empty session usable under small byte budgets.
         if self.attention.generation or self.attention.limits != AttentionLimits():
             value["attention"] = self.attention.to_dict()
+        if self.uncertainty.records:
+            value["uncertainty"] = self.uncertainty.to_dict()
         return value
 
     def to_dict(self) -> dict[str, Any]:
@@ -147,6 +153,102 @@ class LearnedSession:
         self, text: str, meaning: Meaning | None, action: str
     ) -> DialogueContext:
         return self._advance_context(self.context, text, meaning, action)
+
+    def _discard_reviews(
+        self, interpretation: Interpretation, before: list[dict[str, Any]]
+    ) -> AttentionState:
+        archive = self.attention.clone()
+        assert interpretation.diagnostics is not None
+        archive.remember(interpretation.diagnostics["hypotheses"], self.context, before)
+        return archive
+
+    @staticmethod
+    def _restore_archive_revision(
+        archive: AttentionState, revision: dict[str, Any]
+    ) -> AttentionState:
+        """Undo only retained interpretations; eviction never invents an origin."""
+        result = archive.clone()
+        for review in revision["reviews"]:
+            current = result.get(review["target"])
+            if current is None:
+                continue
+            if current["revision"] != review["archive_after_revision"]:
+                raise ValueError("archive changed after the revision being retracted")
+            result.records = [
+                deepcopy(review["archive_before"])
+                if record["observation"]["observation_id"] == review["target"]
+                else record
+                for record in result.records
+            ]
+        result.generation += 1
+        return AttentionState.from_dict(result.to_dict(), result.model_fingerprint)
+
+    @staticmethod
+    def _revision_diagnostic(
+        trace: dict[str, Any] | None,
+        world: ExperienceWorld,
+        history: list[dict[str, Any]],
+    ) -> dict[str, Any]:
+        assert trace is not None
+        ids = set(trace["affected_event_ids"])
+        turns = {int(item.split(":")[1]) for item in trace["target_observation_ids"]}
+        subjects = set()
+        for record in [*world.events, *world.effective_events]:
+            if record["id"] in ids or record["turn_id"] in turns:
+                event = Meaning.from_dict(record["meaning"]).event
+                if event and event.object:
+                    subjects.add(event.object)
+        affected = []
+        for receipt in history:
+            response = receipt["response"]
+            if response["turn_id"] < min(turns, default=trace["turn_id"]):
+                continue
+            dependencies = sorted(
+                {
+                    fact["event_id"]
+                    for fact in response["assertions"]
+                    if fact["event_id"] in ids or fact["subject"] in subjects
+                }
+            )
+            if response["action"] in {"answer", "explain"} and dependencies:
+                affected.append(
+                    {"turn_id": response["turn_id"], "event_ids": dependencies}
+                )
+        return {"plan": deepcopy(trace), "affected_answers": affected}
+
+    @staticmethod
+    def _response_text(
+        segments: list[dict[str, Any]], diagnostics: dict[str, Any]
+    ) -> str:
+        """Attach explicit, deterministic provenance notices to verified LM text."""
+        result = " ".join(segment["text"] for segment in segments)
+        if "revision" in diagnostics:
+            revision = diagnostics["revision"]
+            trace = revision["plan"]
+            targets = ", ".join(
+                item.split(":")[1] for item in trace["target_observation_ids"]
+            )
+            result += (
+                f" Пересмотрены трактовки сообщений {targets}"
+                f" по уточнению из сообщения {trace['turn_id']}."
+            )
+            answers = ", ".join(
+                str(item["turn_id"]) for item in revision["affected_answers"]
+            )
+            if answers:
+                result += f" Ответы в сообщениях {answers} требуют повторной проверки."
+        if "uncertainty" in diagnostics:
+            result += (
+                " Уточнения прежней трактовки противоречат друг другу."
+                if diagnostics["uncertainty"]["reason"]
+                == "historical_interpretation_uncertain"
+                else (
+                    " После непонятого обновления прежние данные"
+                    " могут быть неактуальны."
+                )
+            )
+            result += " Уточните текущее состояние предмета."
+        return result
 
     @staticmethod
     def _advance_context(
@@ -234,6 +336,7 @@ class LearnedSession:
             turn_id = self.turn_count + 1
             candidate_world = self.world.clone()
             candidate_attention = self.attention.clone()
+            candidate_uncertainty = self.uncertainty.clone()
             interpretation = self.bundle.understanding.interpret(
                 text, context=self.context
             )
@@ -270,6 +373,7 @@ class LearnedSession:
                 self.bundle.dynamics,
                 self.bundle.understanding,
                 seconds=self._remaining(budget, candidate_attention.limits.seconds),
+                excluded_observations=tuple(r["cue_id"] for r in self.world.revisions),
             )
             if not attention_trace["complete"]:
                 raise BudgetExceeded(attention_trace["reason"])
@@ -286,6 +390,56 @@ class LearnedSession:
                     "details": interpretation.diagnostics or {},
                 }
             }
+            reparser = (
+                make_reparser(
+                    self.world,
+                    self.attention,
+                    candidate_attention,
+                    self.bundle.understanding,
+                    self.bundle.dynamics,
+                    model_fingerprint=self.model_fingerprint,
+                    budget=budget,
+                )
+                if attention_trace["reviews"]
+                else None
+            )
+            revision = prepare_archive_revision(
+                self.world,
+                self.attention,
+                candidate_attention,
+                self.bundle.dynamics,
+                turn_id=turn_id,
+                source=f"сообщение {turn_id}",
+                budget=budget,
+                reparse=reparser,
+            )
+            if not revision.complete:
+                raise BudgetExceeded(revision.reason)
+            if not revision.applicable and any(
+                review["reason"] == "ambiguous_no_supported_candidate"
+                for review in attention_trace["reviews"]
+            ):
+                # Literal corrections update the present world. They do not
+                # rewrite an incompatible, explicitly worded past observation.
+                candidate_attention = self._discard_reviews(
+                    interpretation, semantic_facts
+                )
+            if revision.applicable:
+                assert revision.world is not None and revision.outcome is not None
+                candidate_world = revision.world
+                diagnostics["revision"] = self._revision_diagnostic(
+                    revision.to_dict(), candidate_world, self._history
+                )
+                if reparser is not None and reparser.trace["attempts"]:
+                    interpretation.diagnostics["dependent_reparse"] = reparser.trace
+            if meaning is None:
+                candidate_uncertainty.observe(
+                    text,
+                    interpretation,
+                    turn_id=turn_id,
+                    known_facts=self.world.facts(),
+                    context=self.context,
+                )
             outcome: dict[str, Any] = {
                 "action": "unknown",
                 "reason": interpretation.reason,
@@ -309,17 +463,25 @@ class LearnedSession:
                 if not prediction.supported and prediction.reason == "time_budget":
                     raise TimeoutError("dynamics time budget")
                 if prediction.supported:
-                    outcome = candidate_world.apply(
-                        meaning,
-                        prediction.effects,
-                        turn_id=turn_id,
-                        source=f"сообщение {turn_id}",
-                        budget=budget,
-                    )
+                    if revision.applicable:
+                        assert revision.outcome is not None
+                        outcome = deepcopy(revision.outcome)
+                    else:
+                        outcome = candidate_world.apply(
+                            meaning,
+                            prediction.effects,
+                            turn_id=turn_id,
+                            source=f"сообщение {turn_id}",
+                            budget=budget,
+                        )
                 else:
                     outcome.update(action="clarify", reason=prediction.reason)
             elif meaning.query is not None:
-                outcome = (
+                outcome = candidate_uncertainty.query(
+                    meaning.query,
+                    known_facts=self.world.facts(),
+                    assertions=self._last_assertions,
+                ) or (
                     self.world.explain(
                         self._last_assertions, subject=meaning.query.subject
                     )
@@ -334,13 +496,41 @@ class LearnedSession:
                     source=f"сообщение {turn_id}",
                     budget=budget,
                 )
+                removed_revision = candidate_world.retracted_revision(turn_id)
+                if removed_revision is not None:
+                    candidate_attention = self._restore_archive_revision(
+                        candidate_attention, removed_revision
+                    )
             elif meaning.act in {"greet", "thanks", "help"}:
                 outcome.update(action=meaning.act, reason="")
             budget.check()
             expected = outcome["action"]
+            # A supported no-op can be an explicit answer to our freshness
+            # clarification. Its known fact is evidence even when the learned
+            # transition correctly emits no new delta.
+            policy_evidence = len(outcome["assertions"])
+            if (
+                meaning is not None
+                and meaning.event is not None
+                and meaning.event.actual
+                and not meaning.event.negated
+                and expected in {"ack", "corrected"}
+                and not revision.applicable
+                and any(
+                    marker["subject"] == meaning.event.object
+                    for marker in candidate_uncertainty.markers
+                )
+            ):
+                policy_evidence = max(
+                    policy_evidence,
+                    sum(
+                        fact["subject"] == meaning.event.object
+                        for fact in candidate_world.facts()
+                    ),
+                )
             features = {
                 "act": meaning.act if meaning else "unknown",
-                "has_answer": bool(outcome["assertions"]),
+                "has_answer": bool(policy_evidence),
                 "ambiguous": expected == "clarify",
                 "unsupported": meaning is None,
                 "nonactual": expected == "nonactual",
@@ -349,7 +539,7 @@ class LearnedSession:
                 "pending": self.context.pending,
                 "task": "facts",
                 "prev_action": self._previous_action,
-                "evidence_count": len(outcome["assertions"]),
+                "evidence_count": policy_evidence,
                 "failed": False,
             }
             decision = self.bundle.policy.choose(features, _SAFE_ACTIONS[expected])
@@ -362,6 +552,11 @@ class LearnedSession:
             self._validate_policy(diagnostics["policy"], _SAFE_ACTIONS[expected])
             if action != expected:
                 candidate_world = self.world.clone()
+                candidate_attention = self._discard_reviews(
+                    interpretation, semantic_facts
+                )
+                diagnostics.pop("revision", None)
+                interpretation.diagnostics.pop("dependent_reparse", None)
                 outcome = {
                     "action": action,
                     "reason": "policy_requested_clarification"
@@ -372,6 +567,12 @@ class LearnedSession:
                 }
             if action not in _MUTATING:
                 candidate_world = self.world.clone()
+                if attention_trace["reviews"]:
+                    candidate_attention = self._discard_reviews(
+                        interpretation, semantic_facts
+                    )
+                    diagnostics.pop("revision", None)
+                    interpretation.diagnostics.pop("dependent_reparse", None)
             assertions = outcome["assertions"]
             if len(assertions) > self.limits.max_candidates:
                 action = "clarify"
@@ -383,45 +584,47 @@ class LearnedSession:
                 }
                 assertions = []
                 candidate_world = self.world.clone()
-            segments: list[dict[str, Any]] = []
-            for fact in assertions or [None]:
-                budget.check()
-                slots = self._slots(fact, outcome.get("truth", ""))
-                evidence = [fact] if fact else []
-                generated = self.bundle.generator.generate(
-                    action,
-                    slots,
-                    evidence,
-                    max_tokens=48,
-                    seconds=self._remaining(budget, 0.5),
+                candidate_attention = self._discard_reviews(
+                    interpretation, semantic_facts
                 )
-                if generated.reason == "generation_deadline":
-                    raise TimeoutError("generation time budget")
-                if (
-                    not generated.grounded
-                    or not self.bundle.generator.verify(
-                        action, slots, evidence, generated
-                    )
-                    or not 1 <= len(generated.tokens) <= 48
-                ):
-                    return self._failure(
-                        "error", "generation_grounding_failed", started=started
-                    )
-                segments.append(
-                    {
-                        "text": generated.text,
-                        "tokens": list(generated.tokens),
-                        "slots": slots,
-                        "assertions": evidence,
-                    }
+                diagnostics.pop("revision", None)
+                interpretation.diagnostics.pop("dependent_reparse", None)
+            if (
+                meaning is not None
+                and meaning.event is not None
+                and action in _MUTATING
+                and not revision.applicable
+            ):
+                candidate_uncertainty.observe(
+                    text,
+                    meaning,
+                    turn_id=turn_id,
+                    known_facts=candidate_world.facts(),
+                    context=self.context,
+                    effects=diagnostics.get("dynamics", {}).get("effects", ()),
+                    accepted=True,
                 )
-            output = " ".join(s["text"] for s in segments)
-            if len(output) > self.limits.max_chars:
-                raise BudgetExceeded("response_capacity")
-            bounded_text(
-                output, "generated response", cap=self.limits.max_chars, empty=False
-            )
-            diagnostics["generation"] = {"segments": segments, "grounded": True}
+            if outcome["reason"] in {
+                "local_actuality_uncertain",
+                "historical_interpretation_uncertain",
+            }:
+                diagnostics["uncertainty"] = {
+                    "reason": outcome["reason"],
+                    "evidence": deepcopy(outcome["evidence"]),
+                }
+            if (
+                candidate_uncertainty.records
+                and candidate_uncertainty.records[-1]["observation"]["turn_id"]
+                == turn_id
+            ):
+                diagnostics["freshness"] = candidate_uncertainty.records[-1][
+                    "record_id"
+                ]
+            output = self._generate_response(action, outcome, diagnostics, budget)
+            if output is None:
+                return self._failure(
+                    "error", "generation_grounding_failed", started=started
+                )
             response = {
                 "turn_id": turn_id,
                 "text": output,
@@ -447,6 +650,10 @@ class LearnedSession:
                     "response": deepcopy(response),
                 },
             ][-self.limits.max_history :]
+            if "revision" in diagnostics:
+                checked_world = self.world.clone()
+                commit_revision(checked_world, revision)
+                candidate_world = checked_world
             snapshot = {
                 "schema": SCHEMA,
                 "model_fingerprint": self.model_fingerprint,
@@ -459,6 +666,8 @@ class LearnedSession:
                 "history": history,
                 "attention": candidate_attention.to_dict(),
             }
+            if candidate_uncertainty.records:
+                snapshot["uncertainty"] = candidate_uncertainty.to_dict()
             try:
                 encode_json(snapshot, max_bytes=self.limits.max_state_bytes)
             except ValueError as exc:
@@ -477,6 +686,7 @@ class LearnedSession:
                 history,
             )
             self.attention = candidate_attention
+            self.uncertainty = candidate_uncertainty
             return deepcopy(response)
         except BudgetExceeded as exc:
             return self._failure("limit", str(exc), started=started)
@@ -492,6 +702,50 @@ class LearnedSession:
             )
         finally:
             self._lock.release()
+
+    def _generate_response(
+        self,
+        action: str,
+        outcome: dict[str, Any],
+        diagnostics: dict[str, Any],
+        budget: Budget,
+    ) -> str | None:
+        segments: list[dict[str, Any]] = []
+        for fact in outcome["assertions"] or [None]:
+            budget.check()
+            slots = self._slots(fact, outcome.get("truth", ""))
+            evidence = [fact] if fact else []
+            generated = self.bundle.generator.generate(
+                action,
+                slots,
+                evidence,
+                max_tokens=48,
+                seconds=self._remaining(budget, 0.5),
+            )
+            if generated.reason == "generation_deadline":
+                raise TimeoutError("generation time budget")
+            if (
+                not generated.grounded
+                or not self.bundle.generator.verify(action, slots, evidence, generated)
+                or not 1 <= len(generated.tokens) <= 48
+            ):
+                return None
+            segments.append(
+                {
+                    "text": generated.text,
+                    "tokens": list(generated.tokens),
+                    "slots": slots,
+                    "assertions": evidence,
+                }
+            )
+        output = self._response_text(segments, diagnostics)
+        if len(output) > self.limits.max_chars:
+            raise BudgetExceeded("response_capacity")
+        bounded_text(
+            output, "generated response", cap=self.limits.max_chars, empty=False
+        )
+        diagnostics["generation"] = {"segments": segments, "grounded": True}
+        return output
 
     @staticmethod
     def _validate_policy(policy: dict[str, Any], eligible: tuple[str, ...]) -> None:
@@ -512,9 +766,63 @@ class LearnedSession:
         diagnostics = response["diagnostics"]
         encode_json(diagnostics, max_bytes=_MAX_DIAGNOSTIC_BYTES)
         expected = {"understanding", "policy", "generation"}
+        expected.update(
+            key
+            for key in ("revision", "uncertainty", "freshness")
+            if key in diagnostics
+        )
         if meaning is not None and meaning.event is not None:
             expected.add("dynamics")
         exact_fields(diagnostics, expected, "response diagnostics")
+        if "revision" in diagnostics:
+            revision = exact_fields(
+                diagnostics["revision"],
+                {"plan", "affected_answers"},
+                "revision receipt",
+            )
+            if (
+                type(revision["plan"]) is not dict
+                or type(revision["affected_answers"]) is not list
+            ):
+                raise ValueError("invalid revision receipt")
+            previous = 0
+            for item in revision["affected_answers"]:
+                exact_fields(item, {"turn_id", "event_ids"}, "dependent answer")
+                if (
+                    type(item["turn_id"]) is not int
+                    or not previous < item["turn_id"] < response["turn_id"]
+                    or type(item["event_ids"]) is not list
+                    or not item["event_ids"]
+                    or any(
+                        type(i) is not int or not 1 <= i < 2**53
+                        for i in item["event_ids"]
+                    )
+                    or item["event_ids"] != sorted(set(item["event_ids"]))
+                ):
+                    raise ValueError("invalid dependent answer reference")
+                previous = item["turn_id"]
+        if "uncertainty" in diagnostics:
+            note = exact_fields(
+                diagnostics["uncertainty"],
+                {"reason", "evidence"},
+                "uncertainty receipt",
+            )
+            if (
+                note["reason"]
+                not in {
+                    "local_actuality_uncertain",
+                    "historical_interpretation_uncertain",
+                }
+                or note["reason"] != response["reason"]
+                or not _same_json(note["evidence"], response["evidence"])
+            ):
+                raise ValueError("uncertainty receipt disagrees with response")
+        if "freshness" in diagnostics and (
+            type(diagnostics["freshness"]) is not str
+            or len(diagnostics["freshness"]) != 67
+            or not diagnostics["freshness"].startswith("ur-")
+        ):
+            raise ValueError("invalid freshness transition reference")
         understanding = exact_fields(
             diagnostics["understanding"],
             {"score", "reason", "alternatives", "details"},
@@ -590,7 +898,11 @@ class LearnedSession:
         meaning: Meaning | None,
         historical: ExperienceWorld,
         previous_answer: list[dict[str, Any]] | None,
+        uncertainty: UncertaintyState | None = None,
+        revision_outcome: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
+        if revision_outcome is not None:
+            return deepcopy(revision_outcome)
         diagnostics = response["diagnostics"]
         reason = diagnostics["understanding"]["reason"]
         outcome: dict[str, Any] = {
@@ -620,6 +932,17 @@ class LearnedSession:
                     source=f"сообщение {response['turn_id']}",
                 )
         elif meaning.query is not None:
+            uncertain = (
+                uncertainty.query(
+                    meaning.query,
+                    known_facts=historical.facts(),
+                    assertions=previous_answer or [],
+                )
+                if uncertainty is not None
+                else None
+            )
+            if uncertain is not None:
+                return uncertain
             if meaning.query.kind == "why":
                 # A truncated window may not include the preceding answer.
                 # Even then its claimed facts must have historical evidence.
@@ -661,6 +984,8 @@ class LearnedSession:
         }
         if type(value) is dict and "attention" in value:
             fields.add("attention")
+        if type(value) is dict and "uncertainty" in value:
+            fields.add("uncertainty")
         value = exact_fields(
             value,
             fields,
@@ -689,11 +1014,17 @@ class LearnedSession:
         ):
             raise ValueError("invalid last answer")
         world = ExperienceWorld.from_dict(value["world"])
+        uncertainty = (
+            UncertaintyState.from_dict(value["uncertainty"])
+            if "uncertainty" in value
+            else UncertaintyState()
+        )
         events = world.events
         if (
             world.max_events != limits.max_events
             or world.max_entities != limits.max_entities
             or (events and events[-1]["turn_id"] > count)
+            or any(revision["turn_id"] > count for revision in world.revisions)
         ):
             raise ValueError("world and session limits/turns disagree")
         if any(
@@ -709,10 +1040,6 @@ class LearnedSession:
             or len(context.turns) != min(count, 16)
         ):
             raise ValueError("invalid saved context references or turn count")
-        historical = ExperienceWorld(
-            max_events=limits.max_events, max_entities=limits.max_entities
-        )
-        cursor = 0
         seen: set[str] = set()
         previous_answer: list[dict[str, Any]] | None = None
         recent_context = DialogueContext()
@@ -782,18 +1109,32 @@ class LearnedSession:
                 or len(response["evidence"]) > limits.max_candidates
             ):
                 raise ValueError("invalid cached evidence")
-            mutation_record = None
-            while cursor < len(events) and events[cursor]["turn_id"] < turn_id:
-                record = events[cursor]
-                historical.apply(
-                    Meaning.from_dict(record["meaning"]),
-                    record["effects"],
-                    turn_id=record["turn_id"],
-                    source=record["source"],
-                )
-                cursor += 1
-            if cursor < len(events) and events[cursor]["turn_id"] == turn_id:
-                mutation_record = events[cursor]
+            historical = world.at_turn(turn_id - 1)
+            mutation_record = next((e for e in events if e["turn_id"] == turn_id), None)
+            revision_outcome = world.revision_outcome(turn_id)
+            revision_trace = world.revision_trace(turn_id)
+            if revision_trace is not None:
+                metadata = diagnostics.get("revision")
+                if metadata is None or not _same_json(metadata["plan"], revision_trace):
+                    raise ValueError("cached revision has no matching world version")
+                retained = {r["response"]["turn_id"] for r in history[:index]}
+                expected_links = cls._revision_diagnostic(
+                    revision_trace, world.at_turn(turn_id), history[:index]
+                )["affected_answers"]
+                if [
+                    item
+                    for item in metadata["affected_answers"]
+                    if item["turn_id"] in retained
+                ] != expected_links:
+                    raise ValueError("cached dependent answers disagree with evidence")
+            elif "revision" in diagnostics:
+                raise ValueError("revision receipt has no committed world revision")
+            cls._validate_dependent_rereads(
+                diagnostics["understanding"]["details"].get("dependent_reparse"),
+                world,
+                bundle,
+                turn_id,
+            )
             trace = diagnostics["understanding"]["details"].get("hypotheses")
             if trace is not None:
                 batch = validate_trace(trace, meaning)
@@ -822,7 +1163,12 @@ class LearnedSession:
                     raise ValueError("candidate observation or world snapshot mismatch")
             try:
                 expected = cls._receipt_outcome(
-                    response, meaning, historical, previous_answer
+                    response,
+                    meaning,
+                    historical,
+                    previous_answer,
+                    uncertainty.at_turn(turn_id - 1),
+                    revision_outcome,
                 )
             except BudgetExceeded as exc:
                 raise ValueError(
@@ -858,17 +1204,14 @@ class LearnedSession:
                     "cached response does not match historical meaning and evidence"
                 )
             if action in _MUTATING:
-                if mutation_record is None or not _same_json(
-                    expected["evidence"], [mutation_record]
-                ):
-                    raise ValueError("cached mutation has no matching world event")
-                historical.apply(
-                    Meaning.from_dict(mutation_record["meaning"]),
-                    mutation_record["effects"],
-                    turn_id=turn_id,
-                    source=mutation_record["source"],
-                )
-                cursor += 1
+                if revision_outcome is None:
+                    if mutation_record is None or not _same_json(
+                        expected["evidence"], [mutation_record]
+                    ):
+                        raise ValueError("cached mutation has no matching world event")
+                elif mutation_record is not None:
+                    raise ValueError("revision cue was applied twice")
+                historical = world.at_turn(turn_id)
             elif mutation_record is not None:
                 raise ValueError("nonmutating response has a world mutation")
             if any(fact not in historical.facts() for fact in assertions):
@@ -902,7 +1245,7 @@ class LearnedSession:
                     action, slots, segment_facts, reply
                 ):
                     raise ValueError("cached decoder tokens violate evidence grounding")
-            if " ".join(segment["text"] for segment in segments) != response["text"]:
+            if cls._response_text(segments, diagnostics) != response["text"]:
                 raise ValueError("cached text and generation segments disagree")
             previous_answer = assertions if action in {"answer", "explain"} else []
             recent_context = cls._advance_context(
@@ -989,10 +1332,222 @@ class LearnedSession:
             for r in history
         ):
             raise ValueError("attention state missing from new session")
+        cls._validate_revisions(world, session.attention, history, bundle)
+        cls._validate_uncertainty(uncertainty, world, session.attention, history, count)
         session.world, session.context, session.turn_count = world, context, count
+        session.uncertainty = uncertainty
         session._previous_action, session._last_assertions, session._history = (
             expected_previous,
             deepcopy(last),
             deepcopy(history),
         )
         return session
+
+    @staticmethod
+    def _validate_revisions(
+        world: ExperienceWorld,
+        attention: AttentionState,
+        history: list[dict[str, Any]],
+        bundle: ModelBundle,
+    ) -> None:
+        receipts = {r["response"]["turn_id"]: r for r in history}
+        for revision in world.revisions:
+            turn = revision["turn_id"]
+            if (
+                revision["source"] != f"сообщение {turn}"
+                or revision["cue_id"] != f"turn:{turn}"
+            ):
+                raise ValueError("revision source does not match its session turn")
+            for link in revision["reviews"]:
+                before, after = link["archive_before"], link["archive_after"]
+                origin = attention.get(link["target"])
+                for archived in (before, after):
+                    if (
+                        archived["original_snapshot"]["model_fingerprint"]
+                        != bundle.fingerprint
+                    ):
+                        raise ValueError("revision proof uses another model")
+                    review = archived["review"]
+                    if review is not None and review["memory_version"] != list(
+                        memory_token(bundle.dynamics)
+                    ):
+                        raise ValueError("revision proof uses another memory")
+                    observation = Observation.from_dict(archived["observation"])
+                    if (
+                        observation.observation_id != f"turn:{observation.turn_id}"
+                        or observation.source != f"сообщение {observation.turn_id}"
+                    ):
+                        raise ValueError(
+                            "revision origin is outside session provenance"
+                        )
+                    if origin is not None and (
+                        origin["observation"] != archived["observation"]
+                        or origin["original_snapshot"] != archived["original_snapshot"]
+                        or origin["original_meaning"] != archived["original_meaning"]
+                    ):
+                        raise ValueError(
+                            "revision proof changed its original observation"
+                        )
+                cue = next(
+                    c
+                    for c in after["cues"]
+                    if c["observation"]["observation_id"] == revision["cue_id"]
+                )
+                observation = Observation.from_dict(cue["observation"])
+                if (
+                    observation.turn_id != turn
+                    or observation.source != revision["source"]
+                ):
+                    raise ValueError("revision cue has inconsistent source")
+                cue_record = attention.get(revision["cue_id"])
+                receipt = receipts.get(turn)
+                if cue_record is not None and (
+                    cue_record["observation"] != cue["observation"]
+                    or cue_record["original_meaning"] != cue["meaning"]
+                ):
+                    raise ValueError(
+                        "revision cue does not match original interpretation"
+                    )
+                if receipt is not None and (
+                    receipt["input"] != observation.text
+                    or receipt["response"]["meaning"] != cue["meaning"]
+                ):
+                    raise ValueError("revision cue does not match receipt")
+
+    @staticmethod
+    def _validate_dependent_rereads(
+        value: Any, world: ExperienceWorld, bundle: ModelBundle, turn_id: int
+    ) -> None:
+        if value is None:
+            return
+        exact_fields(
+            value, {"attempts", "max_reparses", "rereads"}, "dependent rereads"
+        )
+        if (
+            type(value["max_reparses"]) is not int
+            or not 0 <= value["max_reparses"] <= 128
+            or type(value["attempts"]) is not int
+            or type(value["rereads"]) is not list
+            or not 0
+            < value["attempts"]
+            == len(value["rereads"])
+            <= value["max_reparses"]
+        ):
+            raise ValueError("invalid dependent reread count")
+        revision = next((r for r in world.revisions if r["turn_id"] == turn_id), None)
+        if revision is None:
+            raise ValueError("dependent reread has no committed revision")
+        updates = {u["observation"]["turn_id"]: u for u in revision["updates"]}
+        previous = 0
+        for read in value["rereads"]:
+            exact_fields(
+                read,
+                {
+                    "observation",
+                    "old_context_digest",
+                    "context",
+                    "dependency_event_ids",
+                    "memory_version",
+                    "comparison",
+                    "changed",
+                },
+                "dependent reread",
+            )
+            observation = Observation.from_dict(read["observation"])
+            if not previous < observation.turn_id < turn_id:
+                raise ValueError("dependent reread sees a future observation")
+            previous = observation.turn_id
+            trace = read["comparison"]
+            selected = next(
+                (
+                    c["meaning"]
+                    for c in trace["batch"]["candidates"]
+                    if c["hypothesis_id"] == trace["selected_id"]
+                ),
+                None,
+            )
+            meaning = Meaning.from_dict(selected) if selected is not None else None
+            batch = validate_trace(trace, meaning)
+            context = DialogueContext.from_dict(read["context"])
+            before = [
+                {key: fact[key] for key in _SEMANTIC_FACT_FIELDS}
+                for fact in world.at_turn(turn_id).facts_before(observation.turn_id)
+            ]
+            original = world.at_turn(turn_id - 1).event_for_observation(observation)
+            changed = original is None or original["meaning"] != selected
+            if (
+                batch.observation != observation
+                or batch.context_digest != digest(context.to_dict())
+                or trace["snapshot"]["before_digest"] != digest(before)
+                or trace["snapshot"]["model_fingerprint"] != bundle.fingerprint
+                or trace["snapshot"]["dependency_event_ids"]
+                != read["dependency_event_ids"]
+                or read["memory_version"] != list(memory_token(bundle.dynamics))
+                or type(read["changed"]) is not bool
+                or read["changed"] != changed
+            ):
+                raise ValueError("dependent reread provenance does not match replay")
+            if changed:
+                update = updates.get(observation.turn_id)
+                if (
+                    update is None
+                    or update["meaning"] != selected
+                    or update["interpretation_dependencies"]
+                    != read["dependency_event_ids"]
+                ):
+                    raise ValueError("dependent reread does not match its world update")
+
+    @staticmethod
+    def _validate_uncertainty(
+        uncertainty: UncertaintyState,
+        world: ExperienceWorld,
+        attention: AttentionState,
+        history: list[dict[str, Any]],
+        count: int,
+    ) -> None:
+        receipts = {r["response"]["turn_id"]: r for r in history}
+        records = {r["observation"]["turn_id"]: r for r in uncertainty.records}
+        for turn, receipt in receipts.items():
+            transition = receipt["response"]["diagnostics"].get("freshness")
+            record = records.get(turn)
+            if transition != (record["record_id"] if record else None):
+                raise ValueError("freshness receipt has no matching state transition")
+        for turn, record in records.items():
+            observation = Observation.from_dict(record["observation"])
+            if (
+                turn > count
+                or observation.observation_id != f"turn:{turn}"
+                or observation.source != f"сообщение {turn}"
+            ):
+                raise ValueError("uncertainty observation is outside session history")
+            receipt = receipts.get(turn)
+            origin = attention.get(observation.observation_id)
+            if receipt is not None and (
+                receipt["input"] != observation.text
+                or receipt["response"]["meaning"] != record["meaning"]
+                or (
+                    record["accepted"]
+                    and receipt["response"]["action"] not in _MUTATING
+                )
+            ):
+                raise ValueError("uncertainty observation disagrees with receipt")
+            if origin is not None and (
+                origin["observation"] != observation.to_dict()
+                or origin["original_meaning"] != record["meaning"]
+                or any(
+                    entity not in origin["context"]["entities"]
+                    for entity in record["entities"]
+                )
+            ):
+                raise ValueError("uncertainty observation disagrees with archive")
+            historical = world.at_turn(turn if record["accepted"] else turn - 1)
+            if any(fact not in historical.facts() for fact in record["known_facts"]):
+                raise ValueError("uncertainty anchors lack historical support")
+            if record["accepted"]:
+                event = next((e for e in world.events if e["turn_id"] == turn), None)
+                if (
+                    event is None
+                    or event["meaning"] != record["meaning"]
+                    or event["effects"] != record["effects"]
+                ):
+                    raise ValueError("freshness confirmation was not committed")

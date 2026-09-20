@@ -687,6 +687,7 @@ class AttentionState:
         understanding: Any,
         *,
         seconds: float,
+        excluded_observations: tuple[str, ...] = (),
     ) -> dict[str, Any]:
         work = Work(self.limits, seconds)
         trace: dict[str, Any] = {
@@ -710,6 +711,7 @@ class AttentionState:
                 r
                 for r in work.considered
                 if r["speaker"] == "user"
+                and r["observation"]["observation_id"] not in excluded_observations
                 and any(
                     same_scope(Event.from_dict(e), meaning.event)
                     for e in r["index_events"]
