@@ -291,6 +291,8 @@ _COUNT_KEYS = {
     "pair_negative_examples",
     "pair_eligible_positive_examples",
     "pair_eligible_negative_examples",
+    "pair_critical_negative_examples",
+    "pair_eligible_critical_negative_examples",
     "unsupported_gold_spans",
     "unknown_identity_pairs_ignored",
 }
@@ -327,6 +329,10 @@ def _summary(value: Any, config: LearningConfig) -> dict[str, Any]:
     if (
         value["pair_positive_examples"] != value["pair_eligible_positive_examples"]
         or value["pair_negative_examples"] > value["pair_eligible_negative_examples"]
+        or value["pair_critical_negative_examples"]
+        > value["pair_eligible_critical_negative_examples"]
+        or value["pair_critical_negative_examples"]
+        > value["pair_negative_examples"]
     ):
         raise ValueError("sampled pair counts disagree with eligible examples")
     for kind, cap in (
@@ -651,6 +657,8 @@ def train_model(
     ignored_unknown_pairs = 0
     eligible_pair_positives = 0
     eligible_pair_negatives = 0
+    eligible_critical_negatives = 0
+    retained_critical_negatives = 0
     digest = hashlib.sha256()
     for document_index, document in enumerate(documents):
         if progress is not None:
@@ -758,6 +766,8 @@ def train_model(
         "unknown_identity_pairs_ignored": ignored_unknown_pairs,
         "pair_eligible_positive_examples": eligible_pair_positives,
         "pair_eligible_negative_examples": eligible_pair_negatives,
+        "pair_critical_negative_examples": retained_critical_negatives,
+        "pair_eligible_critical_negative_examples": eligible_critical_negatives,
         "score_interpretation": "uncalibrated_sigmoid",
     }
     for kind, examples in (("span", span_examples), ("pair", pair_examples)):
