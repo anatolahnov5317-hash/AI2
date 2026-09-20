@@ -27,7 +27,7 @@ from numpy.typing import NDArray
 from .schema import canonical_json, fields, text_field
 
 MODEL_SCHEMA = "ai2-open-candidate-model-v1"
-_ALGORITHM = "unicode-char-shape-sparse-logistic-v2"
+_ALGORITHM = "unicode-char-shape-sparse-logistic-v3"
 
 
 def _integer(value: Any, name: str, low: int, high: int) -> int:
@@ -391,6 +391,8 @@ _COUNT_KEYS = {
     "pair_negative_examples",
     "pair_eligible_positive_examples",
     "pair_eligible_negative_examples",
+    "pair_all_same_entity_examples",
+    "pair_nonpreferred_positive_examples_ignored",
     "pair_critical_negative_examples",
     "pair_eligible_critical_negative_examples",
     "unsupported_gold_spans",
@@ -429,6 +431,10 @@ def _summary(value: Any, config: LearningConfig) -> dict[str, Any]:
         raise ValueError("training token count exceeds model budget")
     if (
         value["pair_positive_examples"] != value["pair_eligible_positive_examples"]
+        or value["pair_all_same_entity_examples"]
+        < value["pair_positive_examples"]
+        or value["pair_nonpreferred_positive_examples_ignored"]
+        != value["pair_all_same_entity_examples"] - value["pair_positive_examples"]
         or value["pair_negative_examples"] > value["pair_eligible_negative_examples"]
         or value["pair_critical_negative_examples"]
         > value["pair_eligible_critical_negative_examples"]
@@ -748,10 +754,14 @@ def train_model(
     total gold span count, including unsupported gold spans. Pair negatives that
     represent explicit identity conflicts with the same surface, or with the same
     non-digit identifier skeleton and different digit runs, are always retained.
+    For each mention, only the nearest previous mention of the same known entity
+    is a positive antecedent target. Older same-entity mentions remain valid
+    alternatives but are ignored by the pair loss instead of becoming duplicate
+    positives or false negatives. Different known entities are negatives.
     Remaining pair negatives are reservoir sampled up to negative_ratio times the
-    eligible positive pair count. Pair eligible counts remain in the summary.
-    Unaligned gold spans are counted, not relabelled as negatives. Pair labels
-    are generated only within a document and the configured antecedent window.
+    preferred-positive count. Pair counts remain in the summary. Unaligned gold
+    spans are counted, not relabelled as negatives. Pair labels are generated
+    only within a document and the configured antecedent window.
     No corpus-wide feature matrix is materialized: SGD computes one sparse vector
     at a time.
     """
@@ -763,6 +773,8 @@ def train_model(
     ignored_unknown_pairs = 0
     eligible_pair_positives = 0
     eligible_pair_negatives = 0
+    all_same_entity_pairs = 0
+    ignored_nonpreferred_positives = 0
     eligible_critical_negatives = 0
     retained_critical_negatives = 0
     digest = hashlib.sha256()
@@ -821,12 +833,34 @@ def train_model(
         span_examples.extend(positives)
         span_examples.extend(negatives)
         pair_positives, pair_negatives, critical_negatives = 0, 0, 0
-        for left, right in _antecedent_pairs(document.mentions, config):
-            if left["entity_id"] is None or right["entity_id"] is None:
-                ignored_unknown_pairs += 1
-            elif left["entity_id"] == right["entity_id"]:
+        document_all_same = 0
+        document_ignored_same = 0
+        for right_index, right in enumerate(document.mentions):
+            previous = document.mentions[
+                max(0, right_index - config.max_antecedents) : right_index
+            ]
+            right_entity = right["entity_id"]
+            if right_entity is None:
+                ignored_unknown_pairs += len(previous)
+                continue
+            known_previous = []
+            for left in previous:
+                if left["entity_id"] is None:
+                    ignored_unknown_pairs += 1
+                else:
+                    known_previous.append(left)
+            same = [
+                left
+                for left in known_previous
+                if left["entity_id"] == right_entity
+            ]
+            if same:
                 pair_positives += 1
-            else:
+                document_all_same += len(same)
+                document_ignored_same += len(same) - 1
+            for left in known_previous:
+                if left["entity_id"] == right_entity:
+                    continue
                 pair_negatives += 1
                 if _critical_negative(
                     document.text,
@@ -834,8 +868,11 @@ def train_model(
                     (right["start"], right["end"]),
                 ):
                     critical_negatives += 1
+
         eligible_pair_positives += pair_positives
         eligible_pair_negatives += pair_negatives
+        all_same_entity_pairs += document_all_same
+        ignored_nonpreferred_positives += document_ignored_same
         eligible_critical_negatives += critical_negatives
 
         ordinary_negatives = pair_negatives - critical_negatives
@@ -852,26 +889,48 @@ def train_model(
         sampled_negatives = []
         negative_seen = 0
         rng = random.Random(f"{config.seed}:{document.document_id}:pair")
-        for left, right in _antecedent_pairs(document.mentions, config):
-            if left["entity_id"] is None or right["entity_id"] is None:
+        for right_index, right in enumerate(document.mentions):
+            previous = document.mentions[
+                max(0, right_index - config.max_antecedents) : right_index
+            ]
+            right_entity = right["entity_id"]
+            if right_entity is None:
                 continue
-            target = int(left["entity_id"] == right["entity_id"])
-            left_span = (left["start"], left["end"])
-            right_span = (right["start"], right["end"])
-            entry = (document_index, left_span, right_span, target)
-            if target:
-                pair_examples.append(entry)
-            elif _critical_negative(document.text, left_span, right_span):
-                pair_examples.append(entry)
-                retained_critical_negatives += 1
-            else:
-                negative_seen += 1
-                if len(sampled_negatives) < ordinary_limit:
-                    sampled_negatives.append(entry)
-                elif ordinary_limit:
-                    replace = rng.randrange(negative_seen)
-                    if replace < ordinary_limit:
-                        sampled_negatives[replace] = entry
+            known_previous = [
+                left for left in previous if left["entity_id"] is not None
+            ]
+            same = [
+                left
+                for left in known_previous
+                if left["entity_id"] == right_entity
+            ]
+            preferred = same[-1] if same else None
+            if preferred is not None:
+                pair_examples.append(
+                    (
+                        document_index,
+                        (preferred["start"], preferred["end"]),
+                        (right["start"], right["end"]),
+                        1,
+                    )
+                )
+            for left in known_previous:
+                if left["entity_id"] == right_entity:
+                    continue
+                left_span = (left["start"], left["end"])
+                right_span = (right["start"], right["end"])
+                entry = (document_index, left_span, right_span, 0)
+                if _critical_negative(document.text, left_span, right_span):
+                    pair_examples.append(entry)
+                    retained_critical_negatives += 1
+                else:
+                    negative_seen += 1
+                    if len(sampled_negatives) < ordinary_limit:
+                        sampled_negatives.append(entry)
+                    elif ordinary_limit:
+                        replace = rng.randrange(negative_seen)
+                        if replace < ordinary_limit:
+                            sampled_negatives[replace] = entry
         pair_examples.extend(sampled_negatives)
     summary: dict[str, Any] = {
         "train_document_count": len(documents),
@@ -883,6 +942,10 @@ def train_model(
         "unknown_identity_pairs_ignored": ignored_unknown_pairs,
         "pair_eligible_positive_examples": eligible_pair_positives,
         "pair_eligible_negative_examples": eligible_pair_negatives,
+        "pair_all_same_entity_examples": all_same_entity_pairs,
+        "pair_nonpreferred_positive_examples_ignored": (
+            ignored_nonpreferred_positives
+        ),
         "pair_critical_negative_examples": retained_critical_negatives,
         "pair_eligible_critical_negative_examples": eligible_critical_negatives,
         "pair_negative_sampling": "retain_identity_conflicts_then_reservoir_v2",
