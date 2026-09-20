@@ -26,6 +26,27 @@ class EvidenceRoot:
             raise ValueError("source_version must be positive")
 
 
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "root_id": self.root_id,
+            "group_id": self.group_id,
+            "source_id": self.source_id,
+            "source_version": self.source_version,
+        }
+
+    @classmethod
+    def from_dict(cls, value: dict[str, object]) -> "EvidenceRoot":
+        expected = {"root_id", "group_id", "source_id", "source_version"}
+        if type(value) is not dict or set(value) != expected:
+            raise ValueError("invalid evidence root")
+        return cls(
+            root_id=value["root_id"],
+            group_id=value["group_id"],
+            source_id=value["source_id"],
+            source_version=value["source_version"],
+        )
+
+
 class EvidenceLedger:
     """Track roots instead of counting derivation paths as fresh evidence."""
 
@@ -78,3 +99,38 @@ class EvidenceLedger:
             return self._roots[root_id]
         except KeyError as exc:
             raise ValueError("unknown evidence root") from exc
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "roots": [
+                self._roots[root_id].to_dict()
+                for root_id in sorted(self._roots)
+            ],
+            "claim_roots": {
+                claim_id: sorted(root_ids)
+                for claim_id, root_ids in sorted(self._claim_roots.items())
+            },
+        }
+
+    @classmethod
+    def from_dict(cls, value: dict[str, object]) -> "EvidenceLedger":
+        if (
+            type(value) is not dict
+            or set(value) != {"roots", "claim_roots"}
+            or type(value["roots"]) is not list
+            or type(value["claim_roots"]) is not dict
+        ):
+            raise ValueError("invalid evidence ledger")
+        ledger = cls()
+        for raw in value["roots"]:
+            if type(raw) is not dict:
+                raise ValueError("invalid evidence root entry")
+            ledger.register_root(EvidenceRoot.from_dict(raw))
+        for claim_id, raw_roots in value["claim_roots"].items():
+            if type(claim_id) is not str or type(raw_roots) is not list:
+                raise ValueError("invalid claim evidence entry")
+            roots = tuple(raw_roots)
+            if any(type(root_id) is not str for root_id in roots):
+                raise ValueError("invalid claim evidence root ID")
+            ledger.attach(claim_id, roots)
+        return ledger
