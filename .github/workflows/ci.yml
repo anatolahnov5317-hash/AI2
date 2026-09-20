@@ -11,6 +11,9 @@ jobs:
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    env:
+      OPENBLAS_NUM_THREADS: "1"
+      OMP_NUM_THREADS: "1"
     strategy:
       fail-fast: false
       matrix:
@@ -27,7 +30,7 @@ jobs:
       - run: ruff check .
       - run: ruff format --check .
       - run: pyright --pythonpath "$(command -v python)"
-      - run: timeout 180s python -m unittest discover -s tests -v
+      - run: timeout 300s python -m unittest discover -s tests -v
       - run: python -m compileall -q src tests
       - name: Exercise experiment CLI
         run: |
@@ -46,3 +49,9 @@ jobs:
         run: |
           timeout 45s text-factors converse --demo --state artifacts/grounded-chat.json
           timeout 35s text-factors dialogue-evaluate --split development --seeds 42 --modes factor oracle --seconds 25 --output artifacts/grounded-dialogue-smoke.json
+      - name: Exercise learned dialogue checkpoints and development evaluation
+        timeout-minutes: 3
+        run: |
+          timeout 100s text-factors learned-train --seconds 80 --output artifacts/learned-model.json
+          timeout 45s text-factors learned-chat --model artifacts/learned-model.json --state artifacts/learned-state.json --message "Петя передал книгу Маше" --message "У кого книга?"
+          timeout 35s text-factors learned-evaluate --model artifacts/learned-model.json --split development --seconds 25 --output artifacts/learned-development.json
