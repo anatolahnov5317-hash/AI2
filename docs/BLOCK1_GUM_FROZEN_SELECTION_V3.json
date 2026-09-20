@@ -1,0 +1,176 @@
+{
+  "schema": "ai2-block1-gum-selection-v1",
+  "frozen_at": "2026-09-20",
+  "repository": "https://github.com/amir-zeldes/gum",
+  "revision": "22fdf87f9c71c96bcc771461d06e689b1f90020d",
+  "selection_policy": "Frozen before the next model changes and before any predictions on these test documents: third independent Block-1 holdout. Use the first eight official train documents from textbook and vlog in splits.md order, all two official dev documents from each genre as validation, and all two official test documents from each genre as test. Whole documents are groups. All genres opened in earlier experiments (news, interview, academic, conversation, fiction, voyage) are excluded. No document is selected or removed using model scores, errors, or predictions.",
+  "prior_excluded_genres": [
+    "news",
+    "interview",
+    "academic",
+    "conversation",
+    "fiction",
+    "voyage"
+  ],
+  "selected_genres": [
+    "textbook",
+    "vlog"
+  ],
+  "train_documents_per_genre": 8,
+  "requirements": {
+    "max_unsupported_gold_rate": 0.1,
+    "min_unseen_surface_recall": 0.25,
+    "max_same_surface_false_merges": 0,
+    "min_accepted_link_precision": 0.9,
+    "min_accepted_link_decisions": 10,
+    "min_mention_f1_delta_from_baseline": 0,
+    "min_coreference_f1_delta_from_baseline": 0
+  },
+  "documents": [
+    {
+      "document_id": "GUM_textbook_alamo",
+      "group_id": "GUM_textbook_alamo",
+      "split": "train",
+      "language": "en"
+    },
+    {
+      "document_id": "GUM_textbook_anthropology",
+      "group_id": "GUM_textbook_anthropology",
+      "split": "train",
+      "language": "en"
+    },
+    {
+      "document_id": "GUM_textbook_artwork",
+      "group_id": "GUM_textbook_artwork",
+      "split": "train",
+      "language": "en"
+    },
+    {
+      "document_id": "GUM_textbook_cognition",
+      "group_id": "GUM_textbook_cognition",
+      "split": "train",
+      "language": "en"
+    },
+    {
+      "document_id": "GUM_textbook_entrepreneurship",
+      "group_id": "GUM_textbook_entrepreneurship",
+      "split": "train",
+      "language": "en"
+    },
+    {
+      "document_id": "GUM_textbook_evoethics",
+      "group_id": "GUM_textbook_evoethics",
+      "split": "train",
+      "language": "en"
+    },
+    {
+      "document_id": "GUM_textbook_grit",
+      "group_id": "GUM_textbook_grit",
+      "split": "train",
+      "language": "en"
+    },
+    {
+      "document_id": "GUM_textbook_history",
+      "group_id": "GUM_textbook_history",
+      "split": "train",
+      "language": "en"
+    },
+    {
+      "document_id": "GUM_vlog_appearance",
+      "group_id": "GUM_vlog_appearance",
+      "split": "train",
+      "language": "en"
+    },
+    {
+      "document_id": "GUM_vlog_college",
+      "group_id": "GUM_vlog_college",
+      "split": "train",
+      "language": "en"
+    },
+    {
+      "document_id": "GUM_vlog_covid",
+      "group_id": "GUM_vlog_covid",
+      "split": "train",
+      "language": "en"
+    },
+    {
+      "document_id": "GUM_vlog_exams",
+      "group_id": "GUM_vlog_exams",
+      "split": "train",
+      "language": "en"
+    },
+    {
+      "document_id": "GUM_vlog_hair",
+      "group_id": "GUM_vlog_hair",
+      "split": "train",
+      "language": "en"
+    },
+    {
+      "document_id": "GUM_vlog_hiking",
+      "group_id": "GUM_vlog_hiking",
+      "split": "train",
+      "language": "en"
+    },
+    {
+      "document_id": "GUM_vlog_lipstick",
+      "group_id": "GUM_vlog_lipstick",
+      "split": "train",
+      "language": "en"
+    },
+    {
+      "document_id": "GUM_vlog_mermaid",
+      "group_id": "GUM_vlog_mermaid",
+      "split": "train",
+      "language": "en"
+    },
+    {
+      "document_id": "GUM_textbook_governments",
+      "group_id": "GUM_textbook_governments",
+      "split": "validation",
+      "language": "en"
+    },
+    {
+      "document_id": "GUM_textbook_labor",
+      "group_id": "GUM_textbook_labor",
+      "split": "validation",
+      "language": "en"
+    },
+    {
+      "document_id": "GUM_vlog_portland",
+      "group_id": "GUM_vlog_portland",
+      "split": "validation",
+      "language": "en"
+    },
+    {
+      "document_id": "GUM_vlog_radiology",
+      "group_id": "GUM_vlog_radiology",
+      "split": "validation",
+      "language": "en"
+    },
+    {
+      "document_id": "GUM_textbook_chemistry",
+      "group_id": "GUM_textbook_chemistry",
+      "split": "test",
+      "language": "en"
+    },
+    {
+      "document_id": "GUM_textbook_union",
+      "group_id": "GUM_textbook_union",
+      "split": "test",
+      "language": "en"
+    },
+    {
+      "document_id": "GUM_vlog_london",
+      "group_id": "GUM_vlog_london",
+      "split": "test",
+      "language": "en"
+    },
+    {
+      "document_id": "GUM_vlog_studying",
+      "group_id": "GUM_vlog_studying",
+      "split": "test",
+      "language": "en"
+    }
+  ],
+  "test_predictions_seen_before_freeze": false
+}
