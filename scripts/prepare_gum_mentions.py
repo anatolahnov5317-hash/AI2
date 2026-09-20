@@ -278,6 +278,10 @@ def prepare_corpus(
         "exact_duplicate_documents_checked": True,
         "semantic_independence_verified": False,
     }
+    if "quality_gate" in manifest:
+        provenance["quality_gate"] = manifest["quality_gate"]
+    if "block1_selection" in manifest:
+        provenance["block1_selection"] = manifest["block1_selection"]
     corpus = {"schema": CORPUS_SCHEMA, "documents": documents, "provenance": provenance}
     receipt = {"documents": counts, "total_documents": len(counts)}
     return corpus, receipt
