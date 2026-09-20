@@ -91,6 +91,38 @@ class DependencyGraph:
         _id(node_id, "node_id")
         return tuple(sorted(self._dependents.get(node_id, set())))
 
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "dependents": {
+                node_id: sorted(dependents)
+                for node_id, dependents in sorted(self._dependents.items())
+            }
+        }
+
+    @classmethod
+    def from_dict(cls, value: dict[str, Any]) -> "DependencyGraph":
+        if (
+            type(value) is not dict
+            or set(value) != {"dependents"}
+            or type(value["dependents"]) is not dict
+        ):
+            raise ValueError("invalid dependency graph")
+        graph = cls()
+        for node_id, raw_dependents in value["dependents"].items():
+            if (
+                type(node_id) is not str
+                or type(raw_dependents) is not list
+                or any(
+                    type(dependent) is not str
+                    for dependent in raw_dependents
+                )
+            ):
+                raise ValueError("invalid dependency entry")
+            graph.add_node(node_id)
+            for dependent in raw_dependents:
+                graph.add_dependency(node_id, dependent)
+        return graph
+
     def affected(self, changed_ids: tuple[str, ...]) -> tuple[str, ...]:
         if not changed_ids:
             raise ValueError("changed_ids cannot be empty")
