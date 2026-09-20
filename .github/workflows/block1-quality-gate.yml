@@ -1,0 +1,79 @@
+name: Block1 Quality Gate
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - test/real-data-full-implementation
+    paths:
+      - ".github/workflows/block1-quality-gate.yml"
+      - "docs/GUM_BLOCK1_GATE_SELECTION.json"
+      - "scripts/freeze_gum_block1_gate.py"
+      - "scripts/prepare_gum_mentions.py"
+      - "scripts/check_block1_quality_gate.py"
+      - "src/text_factors/observations/**"
+      - "quality-gate-trigger.txt"
+
+permissions:
+  contents: read
+
+jobs:
+  block1-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      OPENBLAS_NUM_THREADS: "1"
+      OMP_NUM_THREADS: "1"
+      GUM_REVISION: "22fdf87f9c71c96bcc771461d06e689b1f90020d"
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: python -m pip install -e ".[dev]"
+
+      - name: Fetch frozen GUM revision
+        run: |
+          mkdir -p artifacts/gum
+          git -C artifacts/gum init
+          git -C artifacts/gum remote add origin https://github.com/amir-zeldes/gum.git
+          git -C artifacts/gum fetch --depth 1 origin "$GUM_REVISION"
+          git -C artifacts/gum checkout --detach FETCH_HEAD
+          test "$(git -C artifacts/gum rev-parse HEAD)" = "$GUM_REVISION"
+
+      - name: Freeze quality-gate manifest
+        run: |
+          python scripts/freeze_gum_block1_gate.py             --input-dir artifacts/gum             --output artifacts/GUM_BLOCK1_GATE_MANIFEST.json
+
+      - name: Prepare closed corpus
+        run: |
+          python scripts/prepare_gum_mentions.py             --input-dir artifacts/gum             --manifest artifacts/GUM_BLOCK1_GATE_MANIFEST.json             --output artifacts/gum-block1-corpus.json
+
+      - name: Train Block1 candidate model
+        run: |
+          text-factors mention-learning train             --corpus artifacts/gum-block1-corpus.json             --output-dir artifacts/gum-block1-model             --seed 17             --epochs 6             --feature-dim 8192             --max-span-tokens 8             --max-antecedents 64             --negative-ratio 3
+
+      - name: Evaluate frozen test split
+        run: |
+          text-factors mention-learning evaluate             --corpus artifacts/gum-block1-corpus.json             --model artifacts/gum-block1-model/model.json             --output artifacts/gum-block1-evaluation.json
+
+      - name: Check predeclared Block1 gate
+        run: |
+          python scripts/check_block1_quality_gate.py             --report artifacts/gum-block1-evaluation.json
+
+      - name: Upload quality-gate artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: block1-quality-gate
+          retention-days: 14
+          path: |
+            artifacts/GUM_BLOCK1_GATE_MANIFEST.json
+            artifacts/gum-block1-model/model.json
+            artifacts/gum-block1-model/trained.json
+            artifacts/gum-block1-model/progress.json
+            artifacts/gum-block1-evaluation.json
+          if-no-files-found: warn
