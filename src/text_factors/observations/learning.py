@@ -331,8 +331,7 @@ def _summary(value: Any, config: LearningConfig) -> dict[str, Any]:
         or value["pair_negative_examples"] > value["pair_eligible_negative_examples"]
         or value["pair_critical_negative_examples"]
         > value["pair_eligible_critical_negative_examples"]
-        or value["pair_critical_negative_examples"]
-        > value["pair_negative_examples"]
+        or value["pair_critical_negative_examples"] > value["pair_negative_examples"]
     ):
         raise ValueError("sampled pair counts disagree with eligible examples")
     for kind, cap in (
