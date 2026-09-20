@@ -22,7 +22,7 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
-dev = ["pyright>=1.1.400", "ruff>=0.12"]
+dev = ["pyright>=1.1.400", "ruff==0.16.8"]
 
 [project.scripts]
 text-factors = "text_factors.cli:main"
