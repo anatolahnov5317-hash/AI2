@@ -1,0 +1,160 @@
+name: Block 1 Frozen Quality Gate
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - test/block1-quality-gate
+    paths:
+      - ".github/workflows/block1-quality-gate.yml"
+      - "docs/BLOCK1_GUM_FROZEN_SELECTION.json"
+      - "scripts/freeze_gum_block1_selection.py"
+      - "scripts/prepare_gum_mentions.py"
+      - "src/text_factors/observations/**"
+      - "tests/test_block1_quality_gate.py"
+      - "tests/test_observation_learning.py"
+
+permissions:
+  contents: read
+
+jobs:
+  frozen-quality-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      OPENBLAS_NUM_THREADS: "1"
+      OMP_NUM_THREADS: "1"
+      GUM_REVISION: "22fdf87f9c71c96bcc771461d06e689b1f90020d"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install AI2
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+
+      - name: Checkout pinned GUM without selecting from predictions
+        run: |
+          mkdir -p artifacts/gum-source
+          git -C artifacts/gum-source init
+          git -C artifacts/gum-source remote add origin https://github.com/amir-zeldes/gum.git
+          git -C artifacts/gum-source fetch --depth=1 origin "$GUM_REVISION"
+          git -C artifacts/gum-source checkout --detach FETCH_HEAD
+          test "$(git -C artifacts/gum-source rev-parse HEAD)" = "$GUM_REVISION"
+
+      - name: Materialize checksum manifest from committed frozen selection
+        run: |
+          python scripts/freeze_gum_block1_selection.py \
+            --selection docs/BLOCK1_GUM_FROZEN_SELECTION.json \
+            --gum-root artifacts/gum-source \
+            --output artifacts/block1-manifest.json
+
+      - name: Build corpus from frozen manifest
+        run: |
+          python scripts/prepare_gum_mentions.py \
+            --input-dir artifacts/gum-source \
+            --manifest artifacts/block1-manifest.json \
+            --output artifacts/block1-corpus.json
+
+      - name: Freeze quality gate before training
+        run: |
+          text-factors mention-learning freeze-gate \
+            --corpus artifacts/block1-corpus.json \
+            --output artifacts/block1-gate.json
+
+      - name: Train only on declared train split and calibrate only on validation
+        run: |
+          text-factors mention-learning train \
+            --corpus artifacts/block1-corpus.json \
+            --output-dir artifacts/block1-model \
+            --seed 17 \
+            --epochs 8
+
+      - name: Run frozen test gate
+        id: quality
+        shell: bash
+        run: |
+          set +e
+          text-factors mention-learning quality-gate \
+            --corpus artifacts/block1-corpus.json \
+            --model artifacts/block1-model/model.json \
+            --gate artifacts/block1-gate.json \
+            --output artifacts/block1-quality-report.json
+          code=$?
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Record experiment receipt
+        shell: bash
+        run: |
+          python - <<'PY'
+          import hashlib
+          import json
+          import os
+          import subprocess
+          from pathlib import Path
+
+          paths = [
+              Path("docs/BLOCK1_GUM_FROZEN_SELECTION.json"),
+              Path("artifacts/block1-manifest.json"),
+              Path("artifacts/block1-corpus.json"),
+              Path("artifacts/block1-gate.json"),
+              Path("artifacts/block1-model/model.json"),
+              Path("artifacts/block1-quality-report.json"),
+          ]
+          receipt = {
+              "schema": "ai2-block1-frozen-experiment-receipt-v1",
+              "ai2_commit": subprocess.check_output(
+                  ["git", "rev-parse", "HEAD"], text=True
+              ).strip(),
+              "gum_revision": os.environ["GUM_REVISION"],
+              "gate_exit_code": int("${{ steps.quality.outputs.exit_code }}"),
+              "files": {},
+          }
+          for path in paths:
+              data = path.read_bytes()
+              receipt["files"][str(path)] = {
+                  "bytes": len(data),
+                  "sha256": hashlib.sha256(data).hexdigest(),
+              }
+          destination = Path("artifacts/block1-experiment-receipt.json")
+          destination.write_text(
+              json.dumps(receipt, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          PY
+
+      - name: Upload frozen experiment artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: block1-frozen-quality-gate
+          path: |
+            artifacts/block1-manifest.json
+            artifacts/block1-corpus.json
+            artifacts/block1-gate.json
+            artifacts/block1-model/
+            artifacts/block1-quality-report.json
+            artifacts/block1-experiment-receipt.json
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Enforce frozen gate result
+        if: always()
+        shell: bash
+        run: |
+          code="${{ steps.quality.outputs.exit_code }}"
+          if [ -z "$code" ]; then
+            echo "quality gate did not run" >&2
+            exit 2
+          fi
+          if [ "$code" -ne 0 ]; then
+            echo "Block-1 frozen quality gate failed; report was preserved." >&2
+            exit "$code"
+          fi
