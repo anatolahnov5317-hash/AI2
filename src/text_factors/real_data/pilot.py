@@ -42,9 +42,7 @@ def _wilson_upper(errors: int, total: int, confidence: float) -> float:
     p = errors / total
     denominator = 1.0 + z * z / total
     centre = p + z * z / (2.0 * total)
-    spread = z * math.sqrt(
-        p * (1.0 - p) / total + z * z / (4.0 * total * total)
-    )
+    spread = z * math.sqrt(p * (1.0 - p) / total + z * z / (4.0 * total * total))
     return min(1.0, (centre + spread) / denominator)
 
 
