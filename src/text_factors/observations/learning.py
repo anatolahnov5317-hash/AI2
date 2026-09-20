@@ -404,6 +404,8 @@ _SUMMARY_KEYS = _COUNT_KEYS | {
     "pair_training_enabled",
     "span_disabled_reason",
     "pair_disabled_reason",
+    "span_candidate_policy",
+    "pair_negative_sampling",
     "score_interpretation",
 }
 
@@ -452,6 +454,10 @@ def _summary(value: Any, config: LearningConfig) -> dict[str, Any]:
         or any(c not in "0123456789abcdef" for c in digest)
     ):
         raise ValueError("invalid train_data_sha256")
+    if value["span_candidate_policy"] != "contiguous_token_spans_up_to_configured_width":
+        raise ValueError("invalid span candidate policy")
+    if value["pair_negative_sampling"] != "hard_surface_shape_similarity_distance_v1":
+        raise ValueError("invalid pair negative sampling")
     if value["score_interpretation"] != "uncalibrated_sigmoid":
         raise ValueError("invalid score interpretation")
     return json.loads(canonical_json(value))
@@ -739,8 +745,9 @@ def train_model(
 
     Each document must explicitly declare coverage='complete'. Negative spans
     are reproducibly reservoir sampled up to negative_ratio times the document's
-    total gold span count, including unsupported gold spans. Pair negatives are
-    sampled up to negative_ratio times the eligible positive pair count. Both
+    total gold span count, including unsupported gold spans. Pair negatives use
+    deterministic hard-negative mining over surface/shape similarity and
+    distance, capped at negative_ratio times the eligible positive pair count. Both
     use negative_ratio as the limit when the respective positive count is zero.
     Pair eligible counts remain in the summary. Unaligned gold spans are counted,
     not relabelled as negatives. Pair labels are generated only within a document
@@ -868,6 +875,8 @@ def train_model(
         "unknown_identity_pairs_ignored": ignored_unknown_pairs,
         "pair_eligible_positive_examples": eligible_pair_positives,
         "pair_eligible_negative_examples": eligible_pair_negatives,
+        "span_candidate_policy": "contiguous_token_spans_up_to_configured_width",
+        "pair_negative_sampling": "hard_surface_shape_similarity_distance_v1",
         "score_interpretation": "uncalibrated_sigmoid",
     }
     for kind, examples in (("span", span_examples), ("pair", pair_examples)):
