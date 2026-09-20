@@ -49,9 +49,7 @@ class SparseTransform:
                 row[target_bit] = row.get(target_bit, 0) + 1
         self.episodes += 1
 
-    def predict(
-        self, source_bits: tuple[int, ...], *, limit: int
-    ) -> tuple[int, ...]:
+    def predict(self, source_bits: tuple[int, ...], *, limit: int) -> tuple[int, ...]:
         if type(limit) is not int or limit <= 0:
             raise ValueError("limit must be positive")
         source = _code(source_bits, self.width, "source")
@@ -79,8 +77,7 @@ class SparseTransform:
             "episodes": self.episodes,
             "counts": {
                 str(source): {
-                    str(target): count
-                    for target, count in sorted(row.items())
+                    str(target): count for target, count in sorted(row.items())
                 }
                 for source, row in sorted(self._counts.items())
             },
