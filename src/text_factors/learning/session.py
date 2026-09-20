@@ -10,6 +10,9 @@ from typing import Any
 
 from ..conversation.persistence import encode_json
 from ..conversation.schema import Budget, BudgetExceeded, ConversationLimits
+from .candidate_search import SearchLimits
+from .candidate_selection import select, validate_trace
+from .hypotheses import Observation, digest
 from .model import ModelBundle
 from .schema import (
     DialogueContext,
@@ -221,6 +224,31 @@ class LearnedSession:
                 text, context=self.context
             )
             budget.check()
+            semantic_facts = [
+                {key: fact[key] for key in _SEMANTIC_FACT_FIELDS}
+                for fact in self.world.facts()
+            ]
+            proposals = self.bundle.understanding.propose(
+                text,
+                self.context,
+                observation=Observation(
+                    f"turn:{turn_id}", text, turn_id, f"сообщение {turn_id}"
+                ),
+                initial=interpretation,
+                limits=SearchLimits(seconds=self._remaining(budget, 0.4)),
+            )
+            interpretation = select(
+                proposals,
+                interpretation,
+                self.bundle.dynamics,
+                semantic_facts,
+                model_fingerprint=self.model_fingerprint,
+                seconds=self._remaining(budget, 0.8),
+                dependency_event_ids=tuple(
+                    sorted({fact["event_id"] for fact in self.world.facts()})
+                ),
+            )
+            budget.check()
             meaning = interpretation.meaning
             diagnostics: dict[str, Any] = {
                 "understanding": {
@@ -245,10 +273,6 @@ class LearnedSession:
                     else "unknown"
                 )
             elif meaning.event is not None:
-                semantic_facts = [
-                    {key: fact[key] for key in _SEMANTIC_FACT_FIELDS}
-                    for fact in self.world.facts()
-                ]
                 prediction = self.bundle.dynamics.predict(
                     semantic_facts, meaning.event, seconds=self._remaining(budget, 1.0)
                 )
@@ -478,6 +502,8 @@ class LearnedSession:
         )
         if type(understanding["details"]) is not dict:
             raise ValueError("invalid understanding detail metadata")
+        if "hypotheses" in understanding["details"]:
+            validate_trace(understanding["details"]["hypotheses"], meaning)
         policy = exact_fields(
             diagnostics["policy"], {"action", "scores"}, "policy receipt"
         )
@@ -731,6 +757,32 @@ class LearnedSession:
                 cursor += 1
             if cursor < len(events) and events[cursor]["turn_id"] == turn_id:
                 mutation_record = events[cursor]
+            trace = diagnostics["understanding"]["details"].get("hypotheses")
+            if trace is not None:
+                batch = validate_trace(trace, meaning)
+                historical_facts = [
+                    {key: fact[key] for key in _SEMANTIC_FACT_FIELDS}
+                    for fact in historical.facts()
+                ]
+                if (
+                    batch.observation
+                    != Observation(
+                        f"turn:{turn_id}",
+                        receipt["input"],
+                        turn_id,
+                        f"сообщение {turn_id}",
+                    )
+                    or trace["snapshot"]["model_fingerprint"]
+                    != value["model_fingerprint"]
+                    or trace["snapshot"]["before_digest"] != digest(historical_facts)
+                    or trace["snapshot"]["dependency_event_ids"]
+                    != sorted({fact["event_id"] for fact in historical.facts()})
+                    or (
+                        count == len(history)
+                        and batch.context_digest != digest(recent_context.to_dict())
+                    )
+                ):
+                    raise ValueError("candidate observation or world snapshot mismatch")
             try:
                 expected = cls._receipt_outcome(
                     response, meaning, historical, previous_answer

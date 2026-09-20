@@ -105,7 +105,9 @@ class CandidateRelation:
 class ContextResponse:
     """One completed view read, including reads without a surviving candidate.
 
-    ``active`` means the view passed the memory's minimum active-point gate.
+    ``active`` means the view passed its reader's activation gate. The raw
+    memory reader uses minimum active points; a scene reader also admits an
+    explicitly supported portrait under its own minimum-point threshold.
     ``score`` is uncalibrated factor support, not a probability. The input digest
     identifies the actual transformed Boolean vector and excludes event/view
     names; repeating a sample with a new name cannot manufacture diversity.

@@ -1,0 +1,3276 @@
+{
+  "kind": "public_development_not_independent_evaluation",
+  "model_sha256": "6dbd35ab001aaa005ba3cb31913d7357307f9a9dc1206932614f9f4ab721192a",
+  "model_fingerprint": "885c07a4d8514355b5459f06fd442a60b77b8d7f4f76d6469c0a0c03df0ef2c5",
+  "source_sha256": "e149bc036df3d6b15c951535ac29a712f9ef2245d70a61a8ba9431e773a92317",
+  "seed": 42,
+  "cases": [
+    {
+      "group": "known_development_structures",
+      "text": "Маша переложила паспорт в шкаф.",
+      "passed": true,
+      "legacy_correct": true,
+      "candidate_covered": true,
+      "selected_correct": true,
+      "seconds": 0.004763443999763695,
+      "trace": {
+        "batch": {
+          "candidates": [
+            {
+              "bindings": [
+                [
+                  "actor",
+                  0,
+                  "маша"
+                ],
+                [
+                  "object",
+                  2,
+                  "паспорт"
+                ],
+                [
+                  "place",
+                  4,
+                  "шкаф"
+                ]
+              ],
+              "hypothesis_id": "h-2dbbc4ae2dd2952d3e7cbd747ff61fa846d9719e4bf52cc414fd88a8b4760754",
+              "language_regret": 0.0,
+              "meaning": {
+                "act": "inform",
+                "entities": [
+                  {
+                    "gender": "female",
+                    "kind": "person",
+                    "name": "маша"
+                  },
+                  {
+                    "gender": "male",
+                    "kind": "thing",
+                    "name": "паспорт"
+                  },
+                  {
+                    "gender": "male",
+                    "kind": "place",
+                    "name": "шкаф"
+                  }
+                ],
+                "event": {
+                  "actor": "маша",
+                  "condition": null,
+                  "content": null,
+                  "modality": "actual",
+                  "negated": false,
+                  "object": "паспорт",
+                  "place": "шкаф",
+                  "predicate": "move",
+                  "recipient": "",
+                  "spatial": "in",
+                  "time": "past"
+                },
+                "query": null
+              },
+              "missing": [],
+              "observation_id": "input",
+              "version": 1
+            }
+          ],
+          "complete": true,
+          "context_digest": "9fb19faeb42e22a2ebff6a1283e22cdc7522d671c262931f396d001648258817",
+          "expansions": 20,
+          "observation": {
+            "observation_id": "input",
+            "source": "input",
+            "text": "Маша переложила паспорт в шкаф.",
+            "turn_id": 0
+          },
+          "schema": "ai2-hypotheses-v1",
+          "stop_reason": ""
+        },
+        "reads": [
+          {
+            "contexts": [
+              {
+                "complete": true,
+                "context": "event_roles",
+                "input_sha256": "aa357332a24c48797c97d3071e690ff20645447f0da8b3579daffd40ed55a161",
+                "kind": "fixed role-coordinate transform; shared factor experience",
+                "matches": 1,
+                "memory_namespace": "144cdc61fc95aca061e7fad396bcdb8c056ce70eb598d34381fb1f27f7d47481",
+                "memory_step": 352,
+                "observation_id": "input",
+                "portraits": [
+                  {
+                    "coverage": 1.0,
+                    "portrait_id": "62",
+                    "support": 83
+                  }
+                ],
+                "response_count": 1,
+                "score": 1.0,
+                "source_positions": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ]
+              }
+            ],
+            "hypothesis_id": "h-2dbbc4ae2dd2952d3e7cbd747ff61fa846d9719e4bf52cc414fd88a8b4760754",
+            "reason": "shared_experience_comparison",
+            "score": 1.0,
+            "supported": true
+          }
+        ],
+        "reason": "single_complete_candidate",
+        "score_is_probability": false,
+        "selected_id": "h-2dbbc4ae2dd2952d3e7cbd747ff61fa846d9719e4bf52cc414fd88a8b4760754",
+        "snapshot": {
+          "before_digest": "99bcfca61a865fe7ac5bb675250de956e8e0fb175d59adac80bb2fb177154a2c",
+          "context_digest": "9fb19faeb42e22a2ebff6a1283e22cdc7522d671c262931f396d001648258817",
+          "dependency_event_ids": [],
+          "model_fingerprint": "885c07a4d8514355b5459f06fd442a60b77b8d7f4f76d6469c0a0c03df0ef2c5",
+          "observation_digest": "695293b3f5cdd6f8c023dbab561735a267f49f9cff003b83a12a3e7252ccf8ef"
+        },
+        "snapshot_id": "ff2ae00ad6b791769f1ff147d3294a4c2a037cf92d27b28658247d9714bd51eb"
+      }
+    },
+    {
+      "group": "known_development_structures",
+      "text": "Петя передал книгу Анне.",
+      "passed": true,
+      "legacy_correct": true,
+      "candidate_covered": true,
+      "selected_correct": true,
+      "seconds": 0.005726411998693948,
+      "trace": {
+        "batch": {
+          "candidates": [
+            {
+              "bindings": [
+                [
+                  "actor",
+                  0,
+                  "петя"
+                ],
+                [
+                  "object",
+                  2,
+                  "книга"
+                ],
+                [
+                  "recipient",
+                  3,
+                  "анна"
+                ]
+              ],
+              "hypothesis_id": "h-6d4f664489cd2990b7e75b9fb9d7b723cfef3d77dd19078e08e9a9f24412385c",
+              "language_regret": 0.0,
+              "meaning": {
+                "act": "inform",
+                "entities": [
+                  {
+                    "gender": "male",
+                    "kind": "person",
+                    "name": "петя"
+                  },
+                  {
+                    "gender": "female",
+                    "kind": "thing",
+                    "name": "книга"
+                  },
+                  {
+                    "gender": "female",
+                    "kind": "person",
+                    "name": "анна"
+                  }
+                ],
+                "event": {
+                  "actor": "петя",
+                  "condition": null,
+                  "content": null,
+                  "modality": "actual",
+                  "negated": false,
+                  "object": "книга",
+                  "place": "",
+                  "predicate": "give",
+                  "recipient": "анна",
+                  "spatial": "in",
+                  "time": "past"
+                },
+                "query": null
+              },
+              "missing": [],
+              "observation_id": "input",
+              "version": 1
+            }
+          ],
+          "complete": true,
+          "context_digest": "9fb19faeb42e22a2ebff6a1283e22cdc7522d671c262931f396d001648258817",
+          "expansions": 20,
+          "observation": {
+            "observation_id": "input",
+            "source": "input",
+            "text": "Петя передал книгу Анне.",
+            "turn_id": 0
+          },
+          "schema": "ai2-hypotheses-v1",
+          "stop_reason": ""
+        },
+        "reads": [
+          {
+            "contexts": [
+              {
+                "complete": true,
+                "context": "event_roles",
+                "input_sha256": "65c66a35f9771376e7a9b140f26a014a29ae85c14e9e80f67cf5d4dcdca1195c",
+                "kind": "fixed role-coordinate transform; shared factor experience",
+                "matches": 1,
+                "memory_namespace": "144cdc61fc95aca061e7fad396bcdb8c056ce70eb598d34381fb1f27f7d47481",
+                "memory_step": 352,
+                "observation_id": "input",
+                "portraits": [
+                  {
+                    "coverage": 1.0,
+                    "portrait_id": "54",
+                    "support": 80
+                  }
+                ],
+                "response_count": 1,
+                "score": 1.0,
+                "source_positions": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4
+                ]
+              },
+              {
+                "complete": true,
+                "context": "actor_recipient_exchange",
+                "input_sha256": "65c66a35f9771376e7a9b140f26a014a29ae85c14e9e80f67cf5d4dcdca1195c",
+                "kind": "fixed role-coordinate transform; shared factor experience",
+                "matches": 1,
+                "memory_namespace": "144cdc61fc95aca061e7fad396bcdb8c056ce70eb598d34381fb1f27f7d47481",
+                "memory_step": 352,
+                "observation_id": "input",
+                "portraits": [
+                  {
+                    "coverage": 1.0,
+                    "portrait_id": "54",
+                    "support": 80
+                  }
+                ],
+                "response_count": 1,
+                "score": 1.0,
+                "source_positions": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4
+                ]
+              }
+            ],
+            "hypothesis_id": "h-6d4f664489cd2990b7e75b9fb9d7b723cfef3d77dd19078e08e9a9f24412385c",
+            "reason": "shared_experience_comparison",
+            "score": 1.0,
+            "supported": true
+          }
+        ],
+        "reason": "single_complete_candidate",
+        "score_is_probability": false,
+        "selected_id": "h-6d4f664489cd2990b7e75b9fb9d7b723cfef3d77dd19078e08e9a9f24412385c",
+        "snapshot": {
+          "before_digest": "99bcfca61a865fe7ac5bb675250de956e8e0fb175d59adac80bb2fb177154a2c",
+          "context_digest": "9fb19faeb42e22a2ebff6a1283e22cdc7522d671c262931f396d001648258817",
+          "dependency_event_ids": [],
+          "model_fingerprint": "885c07a4d8514355b5459f06fd442a60b77b8d7f4f76d6469c0a0c03df0ef2c5",
+          "observation_digest": "5780b8410b9b8488cbf36ca81a35936de262b2f7431d32913e334036013ed3c0"
+        },
+        "snapshot_id": "a27195dab0c9182f6cd0dcdca93fa846c8186e6ee234a8e997c898b9e260aba6"
+      }
+    },
+    {
+      "group": "known_development_structures",
+      "text": "Книга не на столе.",
+      "passed": true,
+      "legacy_correct": true,
+      "candidate_covered": true,
+      "selected_correct": true,
+      "seconds": 0.0037736150006821845,
+      "trace": {
+        "batch": {
+          "candidates": [
+            {
+              "bindings": [
+                [
+                  "object",
+                  0,
+                  "книга"
+                ],
+                [
+                  "place",
+                  3,
+                  "стол"
+                ]
+              ],
+              "hypothesis_id": "h-1693509030db67daf8e7f304e435c658bc425b2641e84053788e77df31326f36",
+              "language_regret": 0.0,
+              "meaning": {
+                "act": "inform",
+                "entities": [
+                  {
+                    "gender": "female",
+                    "kind": "thing",
+                    "name": "книга"
+                  },
+                  {
+                    "gender": "male",
+                    "kind": "place",
+                    "name": "стол"
+                  }
+                ],
+                "event": {
+                  "actor": "",
+                  "condition": null,
+                  "content": null,
+                  "modality": "actual",
+                  "negated": true,
+                  "object": "книга",
+                  "place": "стол",
+                  "predicate": "locate",
+                  "recipient": "",
+                  "spatial": "on",
+                  "time": "present"
+                },
+                "query": null
+              },
+              "missing": [],
+              "observation_id": "input",
+              "version": 1
+            }
+          ],
+          "complete": true,
+          "context_digest": "9fb19faeb42e22a2ebff6a1283e22cdc7522d671c262931f396d001648258817",
+          "expansions": 19,
+          "observation": {
+            "observation_id": "input",
+            "source": "input",
+            "text": "Книга не на столе.",
+            "turn_id": 0
+          },
+          "schema": "ai2-hypotheses-v1",
+          "stop_reason": ""
+        },
+        "reads": [
+          {
+            "contexts": [
+              {
+                "complete": true,
+                "context": "event_roles",
+                "input_sha256": "704ef0b4302c74ab3071cdd3bc1210345e5f36133786191408c55c7c8a40b722",
+                "kind": "fixed role-coordinate transform; shared factor experience",
+                "matches": 1,
+                "memory_namespace": "144cdc61fc95aca061e7fad396bcdb8c056ce70eb598d34381fb1f27f7d47481",
+                "memory_step": 352,
+                "observation_id": "input",
+                "portraits": [
+                  {
+                    "coverage": 1.0,
+                    "portrait_id": "77",
+                    "support": 78
+                  }
+                ],
+                "response_count": 1,
+                "score": 1.0,
+                "source_positions": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4
+                ]
+              }
+            ],
+            "hypothesis_id": "h-1693509030db67daf8e7f304e435c658bc425b2641e84053788e77df31326f36",
+            "reason": "shared_experience_comparison",
+            "score": 1.0,
+            "supported": true
+          }
+        ],
+        "reason": "single_complete_candidate",
+        "score_is_probability": false,
+        "selected_id": "h-1693509030db67daf8e7f304e435c658bc425b2641e84053788e77df31326f36",
+        "snapshot": {
+          "before_digest": "99bcfca61a865fe7ac5bb675250de956e8e0fb175d59adac80bb2fb177154a2c",
+          "context_digest": "9fb19faeb42e22a2ebff6a1283e22cdc7522d671c262931f396d001648258817",
+          "dependency_event_ids": [],
+          "model_fingerprint": "885c07a4d8514355b5459f06fd442a60b77b8d7f4f76d6469c0a0c03df0ef2c5",
+          "observation_digest": "fed945a3aadeaeca840e2aea00810f36a93e0532777bf65cb9a9483704f013d6"
+        },
+        "snapshot_id": "83ceee78bea5b1244f39eb2a89a5c039f9625c718ed361b531b19fe114ecab8f"
+      }
+    },
+    {
+      "group": "known_development_structures",
+      "text": "У Оли есть телефон.",
+      "passed": true,
+      "legacy_correct": true,
+      "candidate_covered": true,
+      "selected_correct": true,
+      "seconds": 0.0037225479991320753,
+      "trace": {
+        "batch": {
+          "candidates": [
+            {
+              "bindings": [
+                [
+                  "actor",
+                  1,
+                  "оля"
+                ],
+                [
+                  "object",
+                  3,
+                  "телефон"
+                ]
+              ],
+              "hypothesis_id": "h-80c270fb3e74c002cb9e561728f9a094795ae50c1128f0fb3158356578c4e63e",
+              "language_regret": 0.0,
+              "meaning": {
+                "act": "inform",
+                "entities": [
+                  {
+                    "gender": "female",
+                    "kind": "person",
+                    "name": "оля"
+                  },
+                  {
+                    "gender": "male",
+                    "kind": "thing",
+                    "name": "телефон"
+                  }
+                ],
+                "event": {
+                  "actor": "оля",
+                  "condition": null,
+                  "content": null,
+                  "modality": "actual",
+                  "negated": false,
+                  "object": "телефон",
+                  "place": "",
+                  "predicate": "have",
+                  "recipient": "",
+                  "spatial": "in",
+                  "time": "present"
+                },
+                "query": null
+              },
+              "missing": [],
+              "observation_id": "input",
+              "version": 1
+            }
+          ],
+          "complete": true,
+          "context_digest": "9fb19faeb42e22a2ebff6a1283e22cdc7522d671c262931f396d001648258817",
+          "expansions": 19,
+          "observation": {
+            "observation_id": "input",
+            "source": "input",
+            "text": "У Оли есть телефон.",
+            "turn_id": 0
+          },
+          "schema": "ai2-hypotheses-v1",
+          "stop_reason": ""
+        },
+        "reads": [
+          {
+            "contexts": [
+              {
+                "complete": true,
+                "context": "event_roles",
+                "input_sha256": "aa04d5e006d8f55a1be021fccf30909900ae9e0501f2918f5adba9686a0fc5a2",
+                "kind": "fixed role-coordinate transform; shared factor experience",
+                "matches": 1,
+                "memory_namespace": "144cdc61fc95aca061e7fad396bcdb8c056ce70eb598d34381fb1f27f7d47481",
+                "memory_step": 352,
+                "observation_id": "input",
+                "portraits": [
+                  {
+                    "coverage": 1.0,
+                    "portrait_id": "56",
+                    "support": 72
+                  }
+                ],
+                "response_count": 1,
+                "score": 1.0,
+                "source_positions": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4
+                ]
+              }
+            ],
+            "hypothesis_id": "h-80c270fb3e74c002cb9e561728f9a094795ae50c1128f0fb3158356578c4e63e",
+            "reason": "shared_experience_comparison",
+            "score": 1.0,
+            "supported": true
+          }
+        ],
+        "reason": "single_complete_candidate",
+        "score_is_probability": false,
+        "selected_id": "h-80c270fb3e74c002cb9e561728f9a094795ae50c1128f0fb3158356578c4e63e",
+        "snapshot": {
+          "before_digest": "99bcfca61a865fe7ac5bb675250de956e8e0fb175d59adac80bb2fb177154a2c",
+          "context_digest": "9fb19faeb42e22a2ebff6a1283e22cdc7522d671c262931f396d001648258817",
+          "dependency_event_ids": [],
+          "model_fingerprint": "885c07a4d8514355b5459f06fd442a60b77b8d7f4f76d6469c0a0c03df0ef2c5",
+          "observation_digest": "d98bcd2211f634d130991262947930ad2b059409862eb6c3bff4b68068e8ec16"
+        },
+        "snapshot_id": "9c8e97f16e04bddc8aa588af4ef37fdfcd2a7ec12df756550cce70724f83bb88"
+      }
+    },
+    {
+      "group": "known_development_structures",
+      "text": "Маша получила книгу от Пети",
+      "passed": true,
+      "legacy_correct": true,
+      "candidate_covered": true,
+      "selected_correct": true,
+      "seconds": 0.005638139000438969,
+      "trace": {
+        "batch": {
+          "candidates": [
+            {
+              "bindings": [
+                [
+                  "actor",
+                  4,
+                  "петя"
+                ],
+                [
+                  "object",
+                  2,
+                  "книга"
+                ],
+                [
+                  "recipient",
+                  0,
+                  "маша"
+                ]
+              ],
+              "hypothesis_id": "h-252823984024556cece1f23be8ed28ec0782c3e46a9c5ea6c8c65db04e59cc79",
+              "language_regret": 0.0,
+              "meaning": {
+                "act": "inform",
+                "entities": [
+                  {
+                    "gender": "male",
+                    "kind": "person",
+                    "name": "петя"
+                  },
+                  {
+                    "gender": "female",
+                    "kind": "thing",
+                    "name": "книга"
+                  },
+                  {
+                    "gender": "female",
+                    "kind": "person",
+                    "name": "маша"
+                  }
+                ],
+                "event": {
+                  "actor": "петя",
+                  "condition": null,
+                  "content": null,
+                  "modality": "actual",
+                  "negated": false,
+                  "object": "книга",
+                  "place": "",
+                  "predicate": "give",
+                  "recipient": "маша",
+                  "spatial": "in",
+                  "time": "past"
+                },
+                "query": null
+              },
+              "missing": [],
+              "observation_id": "input",
+              "version": 1
+            }
+          ],
+          "complete": true,
+          "context_digest": "9fb19faeb42e22a2ebff6a1283e22cdc7522d671c262931f396d001648258817",
+          "expansions": 20,
+          "observation": {
+            "observation_id": "input",
+            "source": "input",
+            "text": "Маша получила книгу от Пети",
+            "turn_id": 0
+          },
+          "schema": "ai2-hypotheses-v1",
+          "stop_reason": ""
+        },
+        "reads": [
+          {
+            "contexts": [
+              {
+                "complete": true,
+                "context": "event_roles",
+                "input_sha256": "65c66a35f9771376e7a9b140f26a014a29ae85c14e9e80f67cf5d4dcdca1195c",
+                "kind": "fixed role-coordinate transform; shared factor experience",
+                "matches": 1,
+                "memory_namespace": "144cdc61fc95aca061e7fad396bcdb8c056ce70eb598d34381fb1f27f7d47481",
+                "memory_step": 352,
+                "observation_id": "input",
+                "portraits": [
+                  {
+                    "coverage": 1.0,
+                    "portrait_id": "54",
+                    "support": 80
+                  }
+                ],
+                "response_count": 1,
+                "score": 1.0,
+                "source_positions": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4
+                ]
+              },
+              {
+                "complete": true,
+                "context": "actor_recipient_exchange",
+                "input_sha256": "65c66a35f9771376e7a9b140f26a014a29ae85c14e9e80f67cf5d4dcdca1195c",
+                "kind": "fixed role-coordinate transform; shared factor experience",
+                "matches": 1,
+                "memory_namespace": "144cdc61fc95aca061e7fad396bcdb8c056ce70eb598d34381fb1f27f7d47481",
+                "memory_step": 352,
+                "observation_id": "input",
+                "portraits": [
+                  {
+                    "coverage": 1.0,
+                    "portrait_id": "54",
+                    "support": 80
+                  }
+                ],
+                "response_count": 1,
+                "score": 1.0,
+                "source_positions": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4
+                ]
+              }
+            ],
+            "hypothesis_id": "h-252823984024556cece1f23be8ed28ec0782c3e46a9c5ea6c8c65db04e59cc79",
+            "reason": "shared_experience_comparison",
+            "score": 1.0,
+            "supported": true
+          }
+        ],
+        "reason": "single_complete_candidate",
+        "score_is_probability": false,
+        "selected_id": "h-252823984024556cece1f23be8ed28ec0782c3e46a9c5ea6c8c65db04e59cc79",
+        "snapshot": {
+          "before_digest": "99bcfca61a865fe7ac5bb675250de956e8e0fb175d59adac80bb2fb177154a2c",
+          "context_digest": "9fb19faeb42e22a2ebff6a1283e22cdc7522d671c262931f396d001648258817",
+          "dependency_event_ids": [],
+          "model_fingerprint": "885c07a4d8514355b5459f06fd442a60b77b8d7f4f76d6469c0a0c03df0ef2c5",
+          "observation_digest": "39c2dfc1e9ee9aa37604bf01fdc61168109b39e8223f74b010cba41c89af750c"
+        },
+        "snapshot_id": "8b616ee6305c5c5f473479b85944f466af7674ca908a2bd8e264ce36e6591d60"
+      }
+    },
+    {
+      "group": "known_development_structures",
+      "text": "Петя передал книгу Маше",
+      "passed": true,
+      "legacy_correct": true,
+      "candidate_covered": true,
+      "selected_correct": true,
+      "seconds": 0.005754384999818285,
+      "trace": {
+        "batch": {
+          "candidates": [
+            {
+              "bindings": [
+                [
+                  "actor",
+                  0,
+                  "петя"
+                ],
+                [
+                  "object",
+                  2,
+                  "книга"
+                ],
+                [
+                  "recipient",
+                  3,
+                  "маша"
+                ]
+              ],
+              "hypothesis_id": "h-252823984024556cece1f23be8ed28ec0782c3e46a9c5ea6c8c65db04e59cc79",
+              "language_regret": 0.0,
+              "meaning": {
+                "act": "inform",
+                "entities": [
+                  {
+                    "gender": "male",
+                    "kind": "person",
+                    "name": "петя"
+                  },
+                  {
+                    "gender": "female",
+                    "kind": "thing",
+                    "name": "книга"
+                  },
+                  {
+                    "gender": "female",
+                    "kind": "person",
+                    "name": "маша"
+                  }
+                ],
+                "event": {
+                  "actor": "петя",
+                  "condition": null,
+                  "content": null,
+                  "modality": "actual",
+                  "negated": false,
+                  "object": "книга",
+                  "place": "",
+                  "predicate": "give",
+                  "recipient": "маша",
+                  "spatial": "in",
+                  "time": "past"
+                },
+                "query": null
+              },
+              "missing": [],
+              "observation_id": "input",
+              "version": 1
+            }
+          ],
+          "complete": true,
+          "context_digest": "9fb19faeb42e22a2ebff6a1283e22cdc7522d671c262931f396d001648258817",
+          "expansions": 20,
+          "observation": {
+            "observation_id": "input",
+            "source": "input",
+            "text": "Петя передал книгу Маше",
+            "turn_id": 0
+          },
+          "schema": "ai2-hypotheses-v1",
+          "stop_reason": ""
+        },
+        "reads": [
+          {
+            "contexts": [
+              {
+                "complete": true,
+                "context": "event_roles",
+                "input_sha256": "65c66a35f9771376e7a9b140f26a014a29ae85c14e9e80f67cf5d4dcdca1195c",
+                "kind": "fixed role-coordinate transform; shared factor experience",
+                "matches": 1,
+                "memory_namespace": "144cdc61fc95aca061e7fad396bcdb8c056ce70eb598d34381fb1f27f7d47481",
+                "memory_step": 352,
+                "observation_id": "input",
+                "portraits": [
+                  {
+                    "coverage": 1.0,
+                    "portrait_id": "54",
+                    "support": 80
+                  }
+                ],
+                "response_count": 1,
+                "score": 1.0,
+                "source_positions": [
+                  0,
+                  1,
+                  2,
+                  3
+                ]
+              },
+              {
+                "complete": true,
+                "context": "actor_recipient_exchange",
+                "input_sha256": "65c66a35f9771376e7a9b140f26a014a29ae85c14e9e80f67cf5d4dcdca1195c",
+                "kind": "fixed role-coordinate transform; shared factor experience",
+                "matches": 1,
+                "memory_namespace": "144cdc61fc95aca061e7fad396bcdb8c056ce70eb598d34381fb1f27f7d47481",
+                "memory_step": 352,
+                "observation_id": "input",
+                "portraits": [
+                  {
+                    "coverage": 1.0,
+                    "portrait_id": "54",
+                    "support": 80
+                  }
+                ],
+                "response_count": 1,
+                "score": 1.0,
+                "source_positions": [
+                  0,
+                  1,
+                  2,
+                  3
+                ]
+              }
+            ],
+            "hypothesis_id": "h-252823984024556cece1f23be8ed28ec0782c3e46a9c5ea6c8c65db04e59cc79",
+            "reason": "shared_experience_comparison",
+            "score": 1.0,
+            "supported": true
+          }
+        ],
+        "reason": "single_complete_candidate",
+        "score_is_probability": false,
+        "selected_id": "h-252823984024556cece1f23be8ed28ec0782c3e46a9c5ea6c8c65db04e59cc79",
+        "snapshot": {
+          "before_digest": "99bcfca61a865fe7ac5bb675250de956e8e0fb175d59adac80bb2fb177154a2c",
+          "context_digest": "9fb19faeb42e22a2ebff6a1283e22cdc7522d671c262931f396d001648258817",
+          "dependency_event_ids": [],
+          "model_fingerprint": "885c07a4d8514355b5459f06fd442a60b77b8d7f4f76d6469c0a0c03df0ef2c5",
+          "observation_digest": "950591ed390a8af0855e242e07e3919cffa5fe26450cd974d6e9a69afdd96565"
+        },
+        "snapshot_id": "57d1e5dbfce9d11d130450d003df647088d675c95acc3e0a3db71ccc16ee1747"
+      }
+    },
+    {
+      "group": "known_development_structures",
+      "text": "Оля получила паспорт от Ивана.",
+      "passed": true,
+      "legacy_correct": true,
+      "candidate_covered": true,
+      "selected_correct": true,
+      "seconds": 0.005822586999784107,
+      "trace": {
+        "batch": {
+          "candidates": [
+            {
+              "bindings": [
+                [
+                  "actor",
+                  4,
+                  "иван"
+                ],
+                [
+                  "object",
+                  2,
+                  "паспорт"
+                ],
+                [
+                  "recipient",
+                  0,
+                  "оля"
+                ]
+              ],
+              "hypothesis_id": "h-28389a73688f670b4dcba513f23fafe2f495279f67be783a110503670f83db70",
+              "language_regret": 0.0,
+              "meaning": {
+                "act": "inform",
+                "entities": [
+                  {
+                    "gender": "male",
+                    "kind": "person",
+                    "name": "иван"
+                  },
+                  {
+                    "gender": "male",
+                    "kind": "thing",
+                    "name": "паспорт"
+                  },
+                  {
+                    "gender": "female",
+                    "kind": "person",
+                    "name": "оля"
+                  }
+                ],
+                "event": {
+                  "actor": "иван",
+                  "condition": null,
+                  "content": null,
+                  "modality": "actual",
+                  "negated": false,
+                  "object": "паспорт",
+                  "place": "",
+                  "predicate": "give",
+                  "recipient": "оля",
+                  "spatial": "in",
+                  "time": "past"
+                },
+                "query": null
+              },
+              "missing": [],
+              "observation_id": "input",
+              "version": 1
+            }
+          ],
+          "complete": true,
+          "context_digest": "9fb19faeb42e22a2ebff6a1283e22cdc7522d671c262931f396d001648258817",
+          "expansions": 20,
+          "observation": {
+            "observation_id": "input",
+            "source": "input",
+            "text": "Оля получила паспорт от Ивана.",
+            "turn_id": 0
+          },
+          "schema": "ai2-hypotheses-v1",
+          "stop_reason": ""
+        },
+        "reads": [
+          {
+            "contexts": [
+              {
+                "complete": true,
+                "context": "event_roles",
+                "input_sha256": "65c66a35f9771376e7a9b140f26a014a29ae85c14e9e80f67cf5d4dcdca1195c",
+                "kind": "fixed role-coordinate transform; shared factor experience",
+                "matches": 1,
+                "memory_namespace": "144cdc61fc95aca061e7fad396bcdb8c056ce70eb598d34381fb1f27f7d47481",
+                "memory_step": 352,
+                "observation_id": "input",
+                "portraits": [
+                  {
+                    "coverage": 1.0,
+                    "portrait_id": "54",
+                    "support": 80
+                  }
+                ],
+                "response_count": 1,
+                "score": 1.0,
+                "source_positions": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ]
+              },
+              {
+                "complete": true,
+                "context": "actor_recipient_exchange",
+                "input_sha256": "65c66a35f9771376e7a9b140f26a014a29ae85c14e9e80f67cf5d4dcdca1195c",
+                "kind": "fixed role-coordinate transform; shared factor experience",
+                "matches": 1,
+                "memory_namespace": "144cdc61fc95aca061e7fad396bcdb8c056ce70eb598d34381fb1f27f7d47481",
+                "memory_step": 352,
+                "observation_id": "input",
+                "portraits": [
+                  {
+                    "coverage": 1.0,
+                    "portrait_id": "54",
+                    "support": 80
+                  }
+                ],
+                "response_count": 1,
+                "score": 1.0,
+                "source_positions": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ]
+              }
+            ],
+            "hypothesis_id": "h-28389a73688f670b4dcba513f23fafe2f495279f67be783a110503670f83db70",
+            "reason": "shared_experience_comparison",
+            "score": 1.0,
+            "supported": true
+          }
+        ],
+        "reason": "single_complete_candidate",
+        "score_is_probability": false,
+        "selected_id": "h-28389a73688f670b4dcba513f23fafe2f495279f67be783a110503670f83db70",
+        "snapshot": {
+          "before_digest": "99bcfca61a865fe7ac5bb675250de956e8e0fb175d59adac80bb2fb177154a2c",
+          "context_digest": "9fb19faeb42e22a2ebff6a1283e22cdc7522d671c262931f396d001648258817",
+          "dependency_event_ids": [],
+          "model_fingerprint": "885c07a4d8514355b5459f06fd442a60b77b8d7f4f76d6469c0a0c03df0ef2c5",
+          "observation_digest": "165caac834c3568ee7a9e5cf46e3e2f6224e5587c012125b2fee0f547b536eae"
+        },
+        "snapshot_id": "2210b3ef44986e586ef2d870cdecb96945ec291b3b49876f4868c958ca0b564e"
+      }
+    },
+    {
+      "group": "known_development_structures",
+      "text": "Иван передал паспорт Оле.",
+      "passed": true,
+      "legacy_correct": true,
+      "candidate_covered": true,
+      "selected_correct": true,
+      "seconds": 0.005954965999990236,
+      "trace": {
+        "batch": {
+          "candidates": [
+            {
+              "bindings": [
+                [
+                  "actor",
+                  0,
+                  "иван"
+                ],
+                [
+                  "object",
+                  2,
+                  "паспорт"
+                ],
+                [
+                  "recipient",
+                  3,
+                  "оля"
+                ]
+              ],
+              "hypothesis_id": "h-28389a73688f670b4dcba513f23fafe2f495279f67be783a110503670f83db70",
+              "language_regret": 0.0,
+              "meaning": {
+                "act": "inform",
+                "entities": [
+                  {
+                    "gender": "male",
+                    "kind": "person",
+                    "name": "иван"
+                  },
+                  {
+                    "gender": "male",
+                    "kind": "thing",
+                    "name": "паспорт"
+                  },
+                  {
+                    "gender": "female",
+                    "kind": "person",
+                    "name": "оля"
+                  }
+                ],
+                "event": {
+                  "actor": "иван",
+                  "condition": null,
+                  "content": null,
+                  "modality": "actual",
+                  "negated": false,
+                  "object": "паспорт",
+                  "place": "",
+                  "predicate": "give",
+                  "recipient": "оля",
+                  "spatial": "in",
+                  "time": "past"
+                },
+                "query": null
+              },
+              "missing": [],
+              "observation_id": "input",
+              "version": 1
+            }
+          ],
+          "complete": true,
+          "context_digest": "9fb19faeb42e22a2ebff6a1283e22cdc7522d671c262931f396d001648258817",
+          "expansions": 20,
+          "observation": {
+            "observation_id": "input",
+            "source": "input",
+            "text": "Иван передал паспорт Оле.",
+            "turn_id": 0
+          },
+          "schema": "ai2-hypotheses-v1",
+          "stop_reason": ""
+        },
+        "reads": [
+          {
+            "contexts": [
+              {
+                "complete": true,
+                "context": "event_roles",
+                "input_sha256": "65c66a35f9771376e7a9b140f26a014a29ae85c14e9e80f67cf5d4dcdca1195c",
+                "kind": "fixed role-coordinate transform; shared factor experience",
+                "matches": 1,
+                "memory_namespace": "144cdc61fc95aca061e7fad396bcdb8c056ce70eb598d34381fb1f27f7d47481",
+                "memory_step": 352,
+                "observation_id": "input",
+                "portraits": [
+                  {
+                    "coverage": 1.0,
+                    "portrait_id": "54",
+                    "support": 80
+                  }
+                ],
+                "response_count": 1,
+                "score": 1.0,
+                "source_positions": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4
+                ]
+              },
+              {
+                "complete": true,
+                "context": "actor_recipient_exchange",
+                "input_sha256": "65c66a35f9771376e7a9b140f26a014a29ae85c14e9e80f67cf5d4dcdca1195c",
+                "kind": "fixed role-coordinate transform; shared factor experience",
+                "matches": 1,
+                "memory_namespace": "144cdc61fc95aca061e7fad396bcdb8c056ce70eb598d34381fb1f27f7d47481",
+                "memory_step": 352,
+                "observation_id": "input",
+                "portraits": [
+                  {
+                    "coverage": 1.0,
+                    "portrait_id": "54",
+                    "support": 80
+                  }
+                ],
+                "response_count": 1,
+                "score": 1.0,
+                "source_positions": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4
+                ]
+              }
+            ],
+            "hypothesis_id": "h-28389a73688f670b4dcba513f23fafe2f495279f67be783a110503670f83db70",
+            "reason": "shared_experience_comparison",
+            "score": 1.0,
+            "supported": true
+          }
+        ],
+        "reason": "single_complete_candidate",
+        "score_is_probability": false,
+        "selected_id": "h-28389a73688f670b4dcba513f23fafe2f495279f67be783a110503670f83db70",
+        "snapshot": {
+          "before_digest": "99bcfca61a865fe7ac5bb675250de956e8e0fb175d59adac80bb2fb177154a2c",
+          "context_digest": "9fb19faeb42e22a2ebff6a1283e22cdc7522d671c262931f396d001648258817",
+          "dependency_event_ids": [],
+          "model_fingerprint": "885c07a4d8514355b5459f06fd442a60b77b8d7f4f76d6469c0a0c03df0ef2c5",
+          "observation_digest": "c7029cc3d733fbd292af720b00d5efeb82205e81f65f3894d340646047bb26dc"
+        },
+        "snapshot_id": "56d0a7956259f0e2b8365a9d9318297321b385a64abc31233388ab0867aa8f71"
+      }
+    },
+    {
+      "group": "known_development_structures",
+      "text": "Катя передала игрушку Мише.",
+      "passed": true,
+      "legacy_correct": true,
+      "candidate_covered": true,
+      "selected_correct": true,
+      "seconds": 0.005757007998909103,
+      "trace": {
+        "batch": {
+          "candidates": [
+            {
+              "bindings": [
+                [
+                  "actor",
+                  0,
+                  "катя"
+                ],
+                [
+                  "object",
+                  2,
+                  "игрушка"
+                ],
+                [
+                  "recipient",
+                  3,
+                  "миша"
+                ]
+              ],
+              "hypothesis_id": "h-11e820f8b5b3916678f3c5cf7c572e60407e87023084e3cf20b40078693cbe38",
+              "language_regret": 0.0,
+              "meaning": {
+                "act": "inform",
+                "entities": [
+                  {
+                    "gender": "female",
+                    "kind": "person",
+                    "name": "катя"
+                  },
+                  {
+                    "gender": "female",
+                    "kind": "thing",
+                    "name": "игрушка"
+                  },
+                  {
+                    "gender": "male",
+                    "kind": "person",
+                    "name": "миша"
+                  }
+                ],
+                "event": {
+                  "actor": "катя",
+                  "condition": null,
+                  "content": null,
+                  "modality": "actual",
+                  "negated": false,
+                  "object": "игрушка",
+                  "place": "",
+                  "predicate": "give",
+                  "recipient": "миша",
+                  "spatial": "in",
+                  "time": "past"
+                },
+                "query": null
+              },
+              "missing": [],
+              "observation_id": "input",
+              "version": 1
+            }
+          ],
+          "complete": true,
+          "context_digest": "9fb19faeb42e22a2ebff6a1283e22cdc7522d671c262931f396d001648258817",
+          "expansions": 20,
+          "observation": {
+            "observation_id": "input",
+            "source": "input",
+            "text": "Катя передала игрушку Мише.",
+            "turn_id": 0
+          },
+          "schema": "ai2-hypotheses-v1",
+          "stop_reason": ""
+        },
+        "reads": [
+          {
+            "contexts": [
+              {
+                "complete": true,
+                "context": "event_roles",
+                "input_sha256": "65c66a35f9771376e7a9b140f26a014a29ae85c14e9e80f67cf5d4dcdca1195c",
+                "kind": "fixed role-coordinate transform; shared factor experience",
+                "matches": 1,
+                "memory_namespace": "144cdc61fc95aca061e7fad396bcdb8c056ce70eb598d34381fb1f27f7d47481",
+                "memory_step": 352,
+                "observation_id": "input",
+                "portraits": [
+                  {
+                    "coverage": 1.0,
+                    "portrait_id": "54",
+                    "support": 80
+                  }
+                ],
+                "response_count": 1,
+                "score": 1.0,
+                "source_positions": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4
+                ]
+              },
+              {
+                "complete": true,
+                "context": "actor_recipient_exchange",
+                "input_sha256": "65c66a35f9771376e7a9b140f26a014a29ae85c14e9e80f67cf5d4dcdca1195c",
+                "kind": "fixed role-coordinate transform; shared factor experience",
+                "matches": 1,
+                "memory_namespace": "144cdc61fc95aca061e7fad396bcdb8c056ce70eb598d34381fb1f27f7d47481",
+                "memory_step": 352,
+                "observation_id": "input",
+                "portraits": [
+                  {
+                    "coverage": 1.0,
+                    "portrait_id": "54",
+                    "support": 80
+                  }
+                ],
+                "response_count": 1,
+                "score": 1.0,
+                "source_positions": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4
+                ]
+              }
+            ],
+            "hypothesis_id": "h-11e820f8b5b3916678f3c5cf7c572e60407e87023084e3cf20b40078693cbe38",
+            "reason": "shared_experience_comparison",
+            "score": 1.0,
+            "supported": true
+          }
+        ],
+        "reason": "single_complete_candidate",
+        "score_is_probability": false,
+        "selected_id": "h-11e820f8b5b3916678f3c5cf7c572e60407e87023084e3cf20b40078693cbe38",
+        "snapshot": {
+          "before_digest": "99bcfca61a865fe7ac5bb675250de956e8e0fb175d59adac80bb2fb177154a2c",
+          "context_digest": "9fb19faeb42e22a2ebff6a1283e22cdc7522d671c262931f396d001648258817",
+          "dependency_event_ids": [],
+          "model_fingerprint": "885c07a4d8514355b5459f06fd442a60b77b8d7f4f76d6469c0a0c03df0ef2c5",
+          "observation_digest": "05ba82ea4e8622d14bf39add784ce787c54bff11369751373cc62db426f94332"
+        },
+        "snapshot_id": "0e40a8148b3ca02ae0a550cf9ec280ce8d952321c4076654a329c6ad9762bea8"
+      }
+    },
+    {
+      "group": "known_development_structures",
+      "text": "Миша получил игрушку от Кати.",
+      "passed": true,
+      "legacy_correct": true,
+      "candidate_covered": true,
+      "selected_correct": true,
+      "seconds": 0.005760091999036376,
+      "trace": {
+        "batch": {
+          "candidates": [
+            {
+              "bindings": [
+                [
+                  "actor",
+                  4,
+                  "катя"
+                ],
+                [
+                  "object",
+                  2,
+                  "игрушка"
+                ],
+                [
+                  "recipient",
+                  0,
+                  "миша"
+                ]
+              ],
+              "hypothesis_id": "h-11e820f8b5b3916678f3c5cf7c572e60407e87023084e3cf20b40078693cbe38",
+              "language_regret": 0.0,
+              "meaning": {
+                "act": "inform",
+                "entities": [
+                  {
+                    "gender": "female",
+                    "kind": "person",
+                    "name": "катя"
+                  },
+                  {
+                    "gender": "female",
+                    "kind": "thing",
+                    "name": "игрушка"
+                  },
+                  {
+                    "gender": "male",
+                    "kind": "person",
+                    "name": "миша"
+                  }
+                ],
+                "event": {
+                  "actor": "катя",
+                  "condition": null,
+                  "content": null,
+                  "modality": "actual",
+                  "negated": false,
+                  "object": "игрушка",
+                  "place": "",
+                  "predicate": "give",
+                  "recipient": "миша",
+                  "spatial": "in",
+                  "time": "past"
+                },
+                "query": null
+              },
+              "missing": [],
+              "observation_id": "input",
+              "version": 1
+            }
+          ],
+          "complete": true,
+          "context_digest": "9fb19faeb42e22a2ebff6a1283e22cdc7522d671c262931f396d001648258817",
+          "expansions": 20,
+          "observation": {
+            "observation_id": "input",
+            "source": "input",
+            "text": "Миша получил игрушку от Кати.",
+            "turn_id": 0
+          },
+          "schema": "ai2-hypotheses-v1",
+          "stop_reason": ""
+        },
+        "reads": [
+          {
+            "contexts": [
+              {
+                "complete": true,
+                "context": "event_roles",
+                "input_sha256": "65c66a35f9771376e7a9b140f26a014a29ae85c14e9e80f67cf5d4dcdca1195c",
+                "kind": "fixed role-coordinate transform; shared factor experience",
+                "matches": 1,
+                "memory_namespace": "144cdc61fc95aca061e7fad396bcdb8c056ce70eb598d34381fb1f27f7d47481",
+                "memory_step": 352,
+                "observation_id": "input",
+                "portraits": [
+                  {
+                    "coverage": 1.0,
+                    "portrait_id": "54",
+                    "support": 80
+                  }
+                ],
+                "response_count": 1,
+                "score": 1.0,
+                "source_positions": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ]
+              },
+              {
+                "complete": true,
+                "context": "actor_recipient_exchange",
+                "input_sha256": "65c66a35f9771376e7a9b140f26a014a29ae85c14e9e80f67cf5d4dcdca1195c",
+                "kind": "fixed role-coordinate transform; shared factor experience",
+                "matches": 1,
+                "memory_namespace": "144cdc61fc95aca061e7fad396bcdb8c056ce70eb598d34381fb1f27f7d47481",
+                "memory_step": 352,
+                "observation_id": "input",
+                "portraits": [
+                  {
+                    "coverage": 1.0,
+                    "portrait_id": "54",
+                    "support": 80
+                  }
+                ],
+                "response_count": 1,
+                "score": 1.0,
+                "source_positions": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ]
+              }
+            ],
+            "hypothesis_id": "h-11e820f8b5b3916678f3c5cf7c572e60407e87023084e3cf20b40078693cbe38",
+            "reason": "shared_experience_comparison",
+            "score": 1.0,
+            "supported": true
+          }
+        ],
+        "reason": "single_complete_candidate",
+        "score_is_probability": false,
+        "selected_id": "h-11e820f8b5b3916678f3c5cf7c572e60407e87023084e3cf20b40078693cbe38",
+        "snapshot": {
+          "before_digest": "99bcfca61a865fe7ac5bb675250de956e8e0fb175d59adac80bb2fb177154a2c",
+          "context_digest": "9fb19faeb42e22a2ebff6a1283e22cdc7522d671c262931f396d001648258817",
+          "dependency_event_ids": [],
+          "model_fingerprint": "885c07a4d8514355b5459f06fd442a60b77b8d7f4f76d6469c0a0c03df0ef2c5",
+          "observation_digest": "60da348dd47246217b7269a8de1e8b4f8b81baeb27555dc37bec665cebf24f80"
+        },
+        "snapshot_id": "e75632371cf3a2919df740c541288212485422d7c28f09ac648e11fec690403d"
+      }
+    },
+    {
+      "group": "known_development_structures",
+      "text": "Иван не передал книгу Оле.",
+      "passed": true,
+      "legacy_correct": true,
+      "candidate_covered": true,
+      "selected_correct": true,
+      "seconds": 0.005767964999904507,
+      "trace": {
+        "batch": {
+          "candidates": [
+            {
+              "bindings": [
+                [
+                  "actor",
+                  0,
+                  "иван"
+                ],
+                [
+                  "object",
+                  3,
+                  "книга"
+                ],
+                [
+                  "recipient",
+                  4,
+                  "оля"
+                ]
+              ],
+              "hypothesis_id": "h-f36ec23722f40fbce93e5e953ef6fa10f2e23eb5257729cf6098eaeb7c67c156",
+              "language_regret": 0.0,
+              "meaning": {
+                "act": "inform",
+                "entities": [
+                  {
+                    "gender": "male",
+                    "kind": "person",
+                    "name": "иван"
+                  },
+                  {
+                    "gender": "female",
+                    "kind": "thing",
+                    "name": "книга"
+                  },
+                  {
+                    "gender": "female",
+                    "kind": "person",
+                    "name": "оля"
+                  }
+                ],
+                "event": {
+                  "actor": "иван",
+                  "condition": null,
+                  "content": null,
+                  "modality": "actual",
+                  "negated": true,
+                  "object": "книга",
+                  "place": "",
+                  "predicate": "give",
+                  "recipient": "оля",
+                  "spatial": "in",
+                  "time": "past"
+                },
+                "query": null
+              },
+              "missing": [],
+              "observation_id": "input",
+              "version": 1
+            }
+          ],
+          "complete": true,
+          "context_digest": "9fb19faeb42e22a2ebff6a1283e22cdc7522d671c262931f396d001648258817",
+          "expansions": 20,
+          "observation": {
+            "observation_id": "input",
+            "source": "input",
+            "text": "Иван не передал книгу Оле.",
+            "turn_id": 0
+          },
+          "schema": "ai2-hypotheses-v1",
+          "stop_reason": ""
+        },
+        "reads": [
+          {
+            "contexts": [
+              {
+                "complete": true,
+                "context": "event_roles",
+                "input_sha256": "cf0e11feea0101c916d78ebf6205f83d1bc6c4f452659f7a3fe6a8f60089c3aa",
+                "kind": "fixed role-coordinate transform; shared factor experience",
+                "matches": 1,
+                "memory_namespace": "144cdc61fc95aca061e7fad396bcdb8c056ce70eb598d34381fb1f27f7d47481",
+                "memory_step": 352,
+                "observation_id": "input",
+                "portraits": [
+                  {
+                    "coverage": 1.0,
+                    "portrait_id": "72",
+                    "support": 83
+                  }
+                ],
+                "response_count": 1,
+                "score": 1.0,
+                "source_positions": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ]
+              },
+              {
+                "complete": true,
+                "context": "actor_recipient_exchange",
+                "input_sha256": "cf0e11feea0101c916d78ebf6205f83d1bc6c4f452659f7a3fe6a8f60089c3aa",
+                "kind": "fixed role-coordinate transform; shared factor experience",
+                "matches": 1,
+                "memory_namespace": "144cdc61fc95aca061e7fad396bcdb8c056ce70eb598d34381fb1f27f7d47481",
+                "memory_step": 352,
+                "observation_id": "input",
+                "portraits": [
+                  {
+                    "coverage": 1.0,
+                    "portrait_id": "72",
+                    "support": 83
+                  }
+                ],
+                "response_count": 1,
+                "score": 1.0,
+                "source_positions": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ]
+              }
+            ],
+            "hypothesis_id": "h-f36ec23722f40fbce93e5e953ef6fa10f2e23eb5257729cf6098eaeb7c67c156",
+            "reason": "shared_experience_comparison",
+            "score": 1.0,
+            "supported": true
+          }
+        ],
+        "reason": "single_complete_candidate",
+        "score_is_probability": false,
+        "selected_id": "h-f36ec23722f40fbce93e5e953ef6fa10f2e23eb5257729cf6098eaeb7c67c156",
+        "snapshot": {
+          "before_digest": "99bcfca61a865fe7ac5bb675250de956e8e0fb175d59adac80bb2fb177154a2c",
+          "context_digest": "9fb19faeb42e22a2ebff6a1283e22cdc7522d671c262931f396d001648258817",
+          "dependency_event_ids": [],
+          "model_fingerprint": "885c07a4d8514355b5459f06fd442a60b77b8d7f4f76d6469c0a0c03df0ef2c5",
+          "observation_digest": "c4adbc80305a33279c37eb285957a37b5dece208cf943edba9e1e7c88b73c07a"
+        },
+        "snapshot_id": "9a5c05e2354539be0cd2f2a7653082d9d4b9ab941c78d7eff999ae70f22dcafd"
+      }
+    },
+    {
+      "group": "known_development_structures",
+      "text": "Иван обещал передать книгу Оле.",
+      "passed": true,
+      "legacy_correct": true,
+      "candidate_covered": true,
+      "selected_correct": true,
+      "seconds": 0.004187257000012323,
+      "trace": {
+        "batch": {
+          "candidates": [
+            {
+              "bindings": [
+                [
+                  "actor",
+                  0,
+                  "иван"
+                ],
+                [
+                  "object",
+                  3,
+                  "книга"
+                ],
+                [
+                  "recipient",
+                  4,
+                  "оля"
+                ],
+                [
+                  "outer_actor",
+                  0,
+                  "иван"
+                ]
+              ],
+              "hypothesis_id": "h-cb11f6327f67ce1ec6fa357d093ac6ee071c5a419b59d3294c47f64353fd771a",
+              "language_regret": 0.0,
+              "meaning": {
+                "act": "inform",
+                "entities": [
+                  {
+                    "gender": "male",
+                    "kind": "person",
+                    "name": "иван"
+                  },
+                  {
+                    "gender": "female",
+                    "kind": "thing",
+                    "name": "книга"
+                  },
+                  {
+                    "gender": "female",
+                    "kind": "person",
+                    "name": "оля"
+                  }
+                ],
+                "event": {
+                  "actor": "иван",
+                  "condition": null,
+                  "content": {
+                    "actor": "иван",
+                    "condition": null,
+                    "content": null,
+                    "modality": "intended",
+                    "negated": false,
+                    "object": "книга",
+                    "place": "",
+                    "predicate": "give",
+                    "recipient": "оля",
+                    "spatial": "in",
+                    "time": "future"
+                  },
+                  "modality": "actual",
+                  "negated": false,
+                  "object": "",
+                  "place": "",
+                  "predicate": "promise",
+                  "recipient": "",
+                  "spatial": "in",
+                  "time": "past"
+                },
+                "query": null
+              },
+              "missing": [],
+              "observation_id": "input",
+              "version": 1
+            }
+          ],
+          "complete": true,
+          "context_digest": "9fb19faeb42e22a2ebff6a1283e22cdc7522d671c262931f396d001648258817",
+          "expansions": 21,
+          "observation": {
+            "observation_id": "input",
+            "source": "input",
+            "text": "Иван обещал передать книгу Оле.",
+            "turn_id": 0
+          },
+          "schema": "ai2-hypotheses-v1",
+          "stop_reason": ""
+        },
+        "reads": [
+          {
+            "contexts": [
+              {
+                "complete": true,
+                "context": "event_roles",
+                "input_sha256": "7e4686b1ac7ead9d63ecfdb292459bac77b0d6a74d6e9f9432e59eeb0109fb9f",
+                "kind": "fixed role-coordinate transform; shared factor experience",
+                "matches": 1,
+                "memory_namespace": "144cdc61fc95aca061e7fad396bcdb8c056ce70eb598d34381fb1f27f7d47481",
+                "memory_step": 352,
+                "observation_id": "input",
+                "portraits": [
+                  {
+                    "coverage": 1.0,
+                    "portrait_id": "66",
+                    "support": 87
+                  }
+                ],
+                "response_count": 1,
+                "score": 1.0,
+                "source_positions": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5
+                ]
+              }
+            ],
+            "hypothesis_id": "h-cb11f6327f67ce1ec6fa357d093ac6ee071c5a419b59d3294c47f64353fd771a",
+            "reason": "shared_experience_comparison",
+            "score": 1.0,
+            "supported": true
+          }
+        ],
+        "reason": "single_complete_candidate",
+        "score_is_probability": false,
+        "selected_id": "h-cb11f6327f67ce1ec6fa357d093ac6ee071c5a419b59d3294c47f64353fd771a",
+        "snapshot": {
+          "before_digest": "99bcfca61a865fe7ac5bb675250de956e8e0fb175d59adac80bb2fb177154a2c",
+          "context_digest": "9fb19faeb42e22a2ebff6a1283e22cdc7522d671c262931f396d001648258817",
+          "dependency_event_ids": [],
+          "model_fingerprint": "885c07a4d8514355b5459f06fd442a60b77b8d7f4f76d6469c0a0c03df0ef2c5",
+          "observation_digest": "15e0199086fddff828c5be419ff67dea1a8012f5218b1eae26d28bfa2c47a0f9"
+        },
+        "snapshot_id": "c1ad238d5b4ce46cb4c33476e2f86644f19047646aee8735c13dd0c3542f52e3"
+      }
+    },
+    {
+      "group": "reference_examples_with_experience",
+      "text": "Он передал книгу Пете",
+      "passed": true,
+      "legacy_abstained": true,
+      "trace": {
+        "batch": {
+          "candidates": [
+            {
+              "bindings": [
+                [
+                  "actor",
+                  0,
+                  "петя"
+                ],
+                [
+                  "object",
+                  2,
+                  "книга"
+                ],
+                [
+                  "recipient",
+                  3,
+                  "петя"
+                ]
+              ],
+              "hypothesis_id": "h-7a91557420a8fd1cfb4df2c71728eb65cafb40b28cb17377d0bb4ca37d27651a",
+              "language_regret": 0.0,
+              "meaning": {
+                "act": "inform",
+                "entities": [
+                  {
+                    "gender": "male",
+                    "kind": "person",
+                    "name": "петя"
+                  },
+                  {
+                    "gender": "female",
+                    "kind": "thing",
+                    "name": "книга"
+                  }
+                ],
+                "event": {
+                  "actor": "петя",
+                  "condition": null,
+                  "content": null,
+                  "modality": "actual",
+                  "negated": false,
+                  "object": "книга",
+                  "place": "",
+                  "predicate": "give",
+                  "recipient": "петя",
+                  "spatial": "in",
+                  "time": "past"
+                },
+                "query": null
+              },
+              "missing": [],
+              "observation_id": "input",
+              "version": 1
+            },
+            {
+              "bindings": [
+                [
+                  "actor",
+                  0,
+                  "миша"
+                ],
+                [
+                  "object",
+                  2,
+                  "книга"
+                ],
+                [
+                  "recipient",
+                  3,
+                  "петя"
+                ]
+              ],
+              "hypothesis_id": "h-eb23a7558eaa55c15a76efc6c3e650cf489c2d4c68d76d661a745c17e35a58bb",
+              "language_regret": 0.008810721323057047,
+              "meaning": {
+                "act": "inform",
+                "entities": [
+                  {
+                    "gender": "male",
+                    "kind": "person",
+                    "name": "миша"
+                  },
+                  {
+                    "gender": "female",
+                    "kind": "thing",
+                    "name": "книга"
+                  },
+                  {
+                    "gender": "male",
+                    "kind": "person",
+                    "name": "петя"
+                  }
+                ],
+                "event": {
+                  "actor": "миша",
+                  "condition": null,
+                  "content": null,
+                  "modality": "actual",
+                  "negated": false,
+                  "object": "книга",
+                  "place": "",
+                  "predicate": "give",
+                  "recipient": "петя",
+                  "spatial": "in",
+                  "time": "past"
+                },
+                "query": null
+              },
+              "missing": [],
+              "observation_id": "input",
+              "version": 1
+            },
+            {
+              "bindings": [
+                [
+                  "object",
+                  2,
+                  "книга"
+                ],
+                [
+                  "recipient",
+                  3,
+                  "петя"
+                ]
+              ],
+              "hypothesis_id": "h-1aa33a20a4fef00bee411ca39ccf0e80f8a454e0427bd5750ef65596b148a294",
+              "language_regret": 0.1016484587821281,
+              "meaning": {
+                "act": "inform",
+                "entities": [
+                  {
+                    "gender": "female",
+                    "kind": "thing",
+                    "name": "книга"
+                  },
+                  {
+                    "gender": "male",
+                    "kind": "person",
+                    "name": "петя"
+                  }
+                ],
+                "event": {
+                  "actor": "",
+                  "condition": null,
+                  "content": null,
+                  "modality": "actual",
+                  "negated": false,
+                  "object": "книга",
+                  "place": "",
+                  "predicate": "give",
+                  "recipient": "петя",
+                  "spatial": "in",
+                  "time": "past"
+                },
+                "query": null
+              },
+              "missing": [
+                "actor",
+                "unconsumed_span:0"
+              ],
+              "observation_id": "input",
+              "version": 1
+            }
+          ],
+          "complete": true,
+          "context_digest": "11d26369bba9392c94a686187c7223d65395f42a8cbb6cd366be0923d3c4b8bb",
+          "expansions": 26,
+          "observation": {
+            "observation_id": "input",
+            "source": "input",
+            "text": "Он передал книгу Пете",
+            "turn_id": 0
+          },
+          "schema": "ai2-hypotheses-v1",
+          "stop_reason": ""
+        },
+        "reads": [
+          {
+            "contexts": [
+              {
+                "complete": true,
+                "context": "event_roles",
+                "input_sha256": "b0372543d6c6c94faaee093d30547222b5a007f2d0bae9caa442bf78bcaa8e40",
+                "kind": "fixed role-coordinate transform; shared factor experience",
+                "matches": 0,
+                "memory_namespace": "144cdc61fc95aca061e7fad396bcdb8c056ce70eb598d34381fb1f27f7d47481",
+                "memory_step": 352,
+                "observation_id": "input",
+                "portraits": [],
+                "response_count": 1,
+                "score": 0.0,
+                "source_positions": [
+                  0,
+                  1,
+                  2,
+                  3
+                ]
+              }
+            ],
+            "hypothesis_id": "h-7a91557420a8fd1cfb4df2c71728eb65cafb40b28cb17377d0bb4ca37d27651a",
+            "reason": "shared_experience_comparison",
+            "score": 0.0,
+            "supported": false
+          },
+          {
+            "contexts": [
+              {
+                "complete": true,
+                "context": "event_roles",
+                "input_sha256": "65c66a35f9771376e7a9b140f26a014a29ae85c14e9e80f67cf5d4dcdca1195c",
+                "kind": "fixed role-coordinate transform; shared factor experience",
+                "matches": 1,
+                "memory_namespace": "144cdc61fc95aca061e7fad396bcdb8c056ce70eb598d34381fb1f27f7d47481",
+                "memory_step": 352,
+                "observation_id": "input",
+                "portraits": [
+                  {
+                    "coverage": 1.0,
+                    "portrait_id": "54",
+                    "support": 80
+                  }
+                ],
+                "response_count": 1,
+                "score": 1.0,
+                "source_positions": [
+                  0,
+                  1,
+                  2,
+                  3
+                ]
+              },
+              {
+                "complete": true,
+                "context": "actor_recipient_exchange",
+                "input_sha256": "65c66a35f9771376e7a9b140f26a014a29ae85c14e9e80f67cf5d4dcdca1195c",
+                "kind": "fixed role-coordinate transform; shared factor experience",
+                "matches": 1,
+                "memory_namespace": "144cdc61fc95aca061e7fad396bcdb8c056ce70eb598d34381fb1f27f7d47481",
+                "memory_step": 352,
+                "observation_id": "input",
+                "portraits": [
+                  {
+                    "coverage": 1.0,
+                    "portrait_id": "54",
+                    "support": 80
+                  }
+                ],
+                "response_count": 1,
+                "score": 1.0,
+                "source_positions": [
+                  0,
+                  1,
+                  2,
+                  3
+                ]
+              }
+            ],
+            "hypothesis_id": "h-eb23a7558eaa55c15a76efc6c3e650cf489c2d4c68d76d661a745c17e35a58bb",
+            "reason": "shared_experience_comparison",
+            "score": 1.0,
+            "supported": true
+          }
+        ],
+        "reason": "common_experience_disambiguation",
+        "score_is_probability": false,
+        "selected_id": "h-eb23a7558eaa55c15a76efc6c3e650cf489c2d4c68d76d661a745c17e35a58bb",
+        "snapshot": {
+          "before_digest": "99bcfca61a865fe7ac5bb675250de956e8e0fb175d59adac80bb2fb177154a2c",
+          "context_digest": "11d26369bba9392c94a686187c7223d65395f42a8cbb6cd366be0923d3c4b8bb",
+          "dependency_event_ids": [],
+          "model_fingerprint": "885c07a4d8514355b5459f06fd442a60b77b8d7f4f76d6469c0a0c03df0ef2c5",
+          "observation_digest": "aa4076a7e206ab9c415f8f9091ace9215939943d67bd04d03f096fa56e6719f9"
+        },
+        "snapshot_id": "cd60093989436d4a5ecad5151e5c379715ff25dbca79add03aa41efc3b724e69"
+      }
+    },
+    {
+      "group": "reference_examples_with_experience",
+      "text": "Он передал книгу Мише",
+      "passed": true,
+      "legacy_abstained": true,
+      "trace": {
+        "batch": {
+          "candidates": [
+            {
+              "bindings": [
+                [
+                  "actor",
+                  0,
+                  "петя"
+                ],
+                [
+                  "object",
+                  2,
+                  "книга"
+                ],
+                [
+                  "recipient",
+                  3,
+                  "миша"
+                ]
+              ],
+              "hypothesis_id": "h-e675913702a141eded76e12d8c1a720dd41a0a15a5060c571db0b055054235b6",
+              "language_regret": 0.0,
+              "meaning": {
+                "act": "inform",
+                "entities": [
+                  {
+                    "gender": "male",
+                    "kind": "person",
+                    "name": "петя"
+                  },
+                  {
+                    "gender": "female",
+                    "kind": "thing",
+                    "name": "книга"
+                  },
+                  {
+                    "gender": "male",
+                    "kind": "person",
+                    "name": "миша"
+                  }
+                ],
+                "event": {
+                  "actor": "петя",
+                  "condition": null,
+                  "content": null,
+                  "modality": "actual",
+                  "negated": false,
+                  "object": "книга",
+                  "place": "",
+                  "predicate": "give",
+                  "recipient": "миша",
+                  "spatial": "in",
+                  "time": "past"
+                },
+                "query": null
+              },
+              "missing": [],
+              "observation_id": "input",
+              "version": 1
+            },
+            {
+              "bindings": [
+                [
+                  "actor",
+                  0,
+                  "миша"
+                ],
+                [
+                  "object",
+                  2,
+                  "книга"
+                ],
+                [
+                  "recipient",
+                  3,
+                  "миша"
+                ]
+              ],
+              "hypothesis_id": "h-d8cae2a172f50aedc6f0c5e862d38958573fbc6bda6ee8c380a047de8485e61e",
+              "language_regret": 0.008810721323057047,
+              "meaning": {
+                "act": "inform",
+                "entities": [
+                  {
+                    "gender": "male",
+                    "kind": "person",
+                    "name": "миша"
+                  },
+                  {
+                    "gender": "female",
+                    "kind": "thing",
+                    "name": "книга"
+                  }
+                ],
+                "event": {
+                  "actor": "миша",
+                  "condition": null,
+                  "content": null,
+                  "modality": "actual",
+                  "negated": false,
+                  "object": "книга",
+                  "place": "",
+                  "predicate": "give",
+                  "recipient": "миша",
+                  "spatial": "in",
+                  "time": "past"
+                },
+                "query": null
+              },
+              "missing": [],
+              "observation_id": "input",
+              "version": 1
+            },
+            {
+              "bindings": [
+                [
+                  "object",
+                  2,
+                  "книга"
+                ],
+                [
+                  "recipient",
+                  3,
+                  "миша"
+                ]
+              ],
+              "hypothesis_id": "h-7db0a815b889ba3158cd9f21d8096c2896c9c179acc7e3ddea3c1e7d44347ee8",
+              "language_regret": 0.1016484587821281,
+              "meaning": {
+                "act": "inform",
+                "entities": [
+                  {
+                    "gender": "female",
+                    "kind": "thing",
+                    "name": "книга"
+                  },
+                  {
+                    "gender": "male",
+                    "kind": "person",
+                    "name": "миша"
+                  }
+                ],
+                "event": {
+                  "actor": "",
+                  "condition": null,
+                  "content": null,
+                  "modality": "actual",
+                  "negated": false,
+                  "object": "книга",
+                  "place": "",
+                  "predicate": "give",
+                  "recipient": "миша",
+                  "spatial": "in",
+                  "time": "past"
+                },
+                "query": null
+              },
+              "missing": [
+                "actor",
+                "unconsumed_span:0"
+              ],
+              "observation_id": "input",
+              "version": 1
+            }
+          ],
+          "complete": true,
+          "context_digest": "11d26369bba9392c94a686187c7223d65395f42a8cbb6cd366be0923d3c4b8bb",
+          "expansions": 26,
+          "observation": {
+            "observation_id": "input",
+            "source": "input",
+            "text": "Он передал книгу Мише",
+            "turn_id": 0
+          },
+          "schema": "ai2-hypotheses-v1",
+          "stop_reason": ""
+        },
+        "reads": [
+          {
+            "contexts": [
+              {
+                "complete": true,
+                "context": "event_roles",
+                "input_sha256": "65c66a35f9771376e7a9b140f26a014a29ae85c14e9e80f67cf5d4dcdca1195c",
+                "kind": "fixed role-coordinate transform; shared factor experience",
+                "matches": 1,
+                "memory_namespace": "144cdc61fc95aca061e7fad396bcdb8c056ce70eb598d34381fb1f27f7d47481",
+                "memory_step": 352,
+                "observation_id": "input",
+                "portraits": [
+                  {
+                    "coverage": 1.0,
+                    "portrait_id": "54",
+                    "support": 80
+                  }
+                ],
+                "response_count": 1,
+                "score": 1.0,
+                "source_positions": [
+                  0,
+                  1,
+                  2,
+                  3
+                ]
+              },
+              {
+                "complete": true,
+                "context": "actor_recipient_exchange",
+                "input_sha256": "65c66a35f9771376e7a9b140f26a014a29ae85c14e9e80f67cf5d4dcdca1195c",
+                "kind": "fixed role-coordinate transform; shared factor experience",
+                "matches": 1,
+                "memory_namespace": "144cdc61fc95aca061e7fad396bcdb8c056ce70eb598d34381fb1f27f7d47481",
+                "memory_step": 352,
+                "observation_id": "input",
+                "portraits": [
+                  {
+                    "coverage": 1.0,
+                    "portrait_id": "54",
+                    "support": 80
+                  }
+                ],
+                "response_count": 1,
+                "score": 1.0,
+                "source_positions": [
+                  0,
+                  1,
+                  2,
+                  3
+                ]
+              }
+            ],
+            "hypothesis_id": "h-e675913702a141eded76e12d8c1a720dd41a0a15a5060c571db0b055054235b6",
+            "reason": "shared_experience_comparison",
+            "score": 1.0,
+            "supported": true
+          },
+          {
+            "contexts": [
+              {
+                "complete": true,
+                "context": "event_roles",
+                "input_sha256": "b0372543d6c6c94faaee093d30547222b5a007f2d0bae9caa442bf78bcaa8e40",
+                "kind": "fixed role-coordinate transform; shared factor experience",
+                "matches": 0,
+                "memory_namespace": "144cdc61fc95aca061e7fad396bcdb8c056ce70eb598d34381fb1f27f7d47481",
+                "memory_step": 352,
+                "observation_id": "input",
+                "portraits": [],
+                "response_count": 1,
+                "score": 0.0,
+                "source_positions": [
+                  0,
+                  1,
+                  2,
+                  3
+                ]
+              }
+            ],
+            "hypothesis_id": "h-d8cae2a172f50aedc6f0c5e862d38958573fbc6bda6ee8c380a047de8485e61e",
+            "reason": "shared_experience_comparison",
+            "score": 0.0,
+            "supported": false
+          }
+        ],
+        "reason": "common_experience_disambiguation",
+        "score_is_probability": false,
+        "selected_id": "h-e675913702a141eded76e12d8c1a720dd41a0a15a5060c571db0b055054235b6",
+        "snapshot": {
+          "before_digest": "99bcfca61a865fe7ac5bb675250de956e8e0fb175d59adac80bb2fb177154a2c",
+          "context_digest": "11d26369bba9392c94a686187c7223d65395f42a8cbb6cd366be0923d3c4b8bb",
+          "dependency_event_ids": [],
+          "model_fingerprint": "885c07a4d8514355b5459f06fd442a60b77b8d7f4f76d6469c0a0c03df0ef2c5",
+          "observation_digest": "1db7b8d7d257a6de6d9254fb38a7c2afd2cf5a281f69e8f13413ca8f1eb4db80"
+        },
+        "snapshot_id": "287559f278c5b4e6ac67760f1f8898330515dcdf87d1a54861828b93c2f2ed18"
+      }
+    },
+    {
+      "group": "incomplete_input_no_facts",
+      "text": "Маша передала",
+      "passed": true,
+      "response": {
+        "turn_id": 1,
+        "text": "Уточните запрос в поддерживаемом формате.",
+        "action": "clarify",
+        "complete": false,
+        "reason": "policy_requested_clarification",
+        "meaning": null,
+        "assertions": [],
+        "evidence": [],
+        "diagnostics": {
+          "understanding": {
+            "score": 0.43196823020458647,
+            "reason": "unsupported_learned_utterance",
+            "alternatives": [],
+            "details": {
+              "fingerprint": "5f11757405e419837c51d56e39d21ccff5cb0b82616c31c7814a46aa8d77f164",
+              "head_margins": {
+                "act": 0.43196823020458647,
+                "inner": 1.098564763082809,
+                "inner_modality": 1.098564763082809,
+                "inner_negated": 1.0,
+                "inner_time": 1.0,
+                "modality": 1.0829002721003762,
+                "negated": 0.9056817724350992,
+                "outer": 1.1734770464742694,
+                "outer_modality": 1.2805838990250735,
+                "outer_negated": 1.1618200781067305,
+                "outer_time": 1.2805838990250735,
+                "predicate": 0.65582525685338,
+                "query": 0.5752217318316978,
+                "query_time": 1.0,
+                "relation": 1.4891196628231735,
+                "spatial": 1.0892883040631607,
+                "time": 1.2700572188352028
+              },
+              "heads": {
+                "act": "unknown",
+                "inner": "",
+                "inner_modality": "actual",
+                "inner_negated": "false",
+                "inner_time": "past",
+                "modality": "actual",
+                "negated": "false",
+                "outer": "",
+                "outer_modality": "actual",
+                "outer_negated": "false",
+                "outer_time": "past",
+                "predicate": "",
+                "query": "",
+                "query_time": "present",
+                "relation": "",
+                "spatial": "in",
+                "time": "past"
+              },
+              "hypotheses": {
+                "batch": {
+                  "candidates": [
+                    {
+                      "bindings": [
+                        [
+                          "mention",
+                          0,
+                          "маша"
+                        ]
+                      ],
+                      "hypothesis_id": "h-4d98c801498dd8910bb5bcdd21d194ace2161c5377a60ec6d4900753f71b6525",
+                      "language_regret": 0.0,
+                      "meaning": null,
+                      "missing": [
+                        "unresolved_structure"
+                      ],
+                      "observation_id": "turn:1",
+                      "version": 1
+                    }
+                  ],
+                  "complete": true,
+                  "context_digest": "9fb19faeb42e22a2ebff6a1283e22cdc7522d671c262931f396d001648258817",
+                  "expansions": 17,
+                  "observation": {
+                    "observation_id": "turn:1",
+                    "source": "сообщение 1",
+                    "text": "Маша передала",
+                    "turn_id": 1
+                  },
+                  "schema": "ai2-hypotheses-v1",
+                  "stop_reason": ""
+                },
+                "reads": [],
+                "reason": "ambiguous_partial_structure",
+                "score_is_probability": false,
+                "selected_id": null,
+                "snapshot": {
+                  "before_digest": "99bcfca61a865fe7ac5bb675250de956e8e0fb175d59adac80bb2fb177154a2c",
+                  "context_digest": "9fb19faeb42e22a2ebff6a1283e22cdc7522d671c262931f396d001648258817",
+                  "dependency_event_ids": [],
+                  "model_fingerprint": "885c07a4d8514355b5459f06fd442a60b77b8d7f4f76d6469c0a0c03df0ef2c5",
+                  "observation_digest": "518a2c5f2cb036dcbfee6a5a3ed16619e0fd730f17f3fe5216f2677725a0d905"
+                },
+                "snapshot_id": "b4b8e9330fa7f0bcbd964dc45c01d4298d99c83662441c7736c3f3b31121faff"
+              },
+              "model": "ai2-learned-understanding-v1",
+              "score_is_calibrated_probability": false,
+              "training_version": "v05-understanding-train-v3"
+            }
+          },
+          "policy": {
+            "action": "clarify",
+            "scores": {
+              "clarify": -11.587128314212086,
+              "unknown": -17.952952258374417
+            }
+          },
+          "generation": {
+            "segments": [
+              {
+                "text": "Уточните запрос в поддерживаемом формате.",
+                "tokens": [
+                  "уточните",
+                  "запрос",
+                  "в",
+                  "поддерживаемом",
+                  "формате",
+                  "."
+                ],
+                "slots": {},
+                "assertions": []
+              }
+            ],
+            "grounded": true
+          }
+        },
+        "elapsed_seconds": 0.005527
+      }
+    },
+    {
+      "group": "incomplete_input_no_facts",
+      "text": "Он положил книгу на стол",
+      "passed": true,
+      "response": {
+        "turn_id": 1,
+        "text": "Уточните запрос в поддерживаемом формате.",
+        "action": "clarify",
+        "complete": false,
+        "reason": "ambiguous_or_missing_reference",
+        "meaning": null,
+        "assertions": [],
+        "evidence": [],
+        "diagnostics": {
+          "understanding": {
+            "score": 0.6354006931620206,
+            "reason": "ambiguous_or_missing_reference",
+            "alternatives": [],
+            "details": {
+              "fingerprint": "5f11757405e419837c51d56e39d21ccff5cb0b82616c31c7814a46aa8d77f164",
+              "head_margins": {
+                "act": 1.0990903917689174,
+                "inner": 0.9329378186401421,
+                "inner_modality": 0.9329378186401421,
+                "inner_negated": 1.0,
+                "inner_time": 1.0,
+                "modality": 0.7358543688022537,
+                "negated": 1.1559416641133295,
+                "outer": 0.7235142370712075,
+                "outer_modality": 1.0156979564470794,
+                "outer_negated": 0.9670786873692304,
+                "outer_time": 1.0156979564470794,
+                "predicate": 0.6453950891103917,
+                "query": 1.0364001131673604,
+                "query_time": 1.0,
+                "relation": 0.9127438459511461,
+                "spatial": 1.1935485682960372,
+                "time": 0.6354006931620206
+              },
+              "heads": {
+                "act": "inform",
+                "inner": "",
+                "inner_modality": "actual",
+                "inner_negated": "false",
+                "inner_time": "past",
+                "modality": "actual",
+                "negated": "false",
+                "outer": "",
+                "outer_modality": "actual",
+                "outer_negated": "false",
+                "outer_time": "past",
+                "predicate": "move",
+                "query": "",
+                "query_time": "present",
+                "relation": "",
+                "spatial": "on",
+                "time": "past"
+              },
+              "hypotheses": {
+                "batch": {
+                  "candidates": [
+                    {
+                      "bindings": [
+                        [
+                          "object",
+                          2,
+                          "книга"
+                        ],
+                        [
+                          "place",
+                          4,
+                          "стол"
+                        ]
+                      ],
+                      "hypothesis_id": "h-811dd5cdc8ce024510a8e964a1158cef0fe9c417abdd9f592570f670defc69d0",
+                      "language_regret": 0.0,
+                      "meaning": {
+                        "act": "inform",
+                        "entities": [
+                          {
+                            "gender": "female",
+                            "kind": "thing",
+                            "name": "книга"
+                          },
+                          {
+                            "gender": "male",
+                            "kind": "place",
+                            "name": "стол"
+                          }
+                        ],
+                        "event": {
+                          "actor": "",
+                          "condition": null,
+                          "content": null,
+                          "modality": "actual",
+                          "negated": false,
+                          "object": "книга",
+                          "place": "стол",
+                          "predicate": "move",
+                          "recipient": "",
+                          "spatial": "on",
+                          "time": "past"
+                        },
+                        "query": null
+                      },
+                      "missing": [
+                        "actor"
+                      ],
+                      "observation_id": "turn:1",
+                      "version": 1
+                    }
+                  ],
+                  "complete": true,
+                  "context_digest": "9fb19faeb42e22a2ebff6a1283e22cdc7522d671c262931f396d001648258817",
+                  "expansions": 20,
+                  "observation": {
+                    "observation_id": "turn:1",
+                    "source": "сообщение 1",
+                    "text": "Он положил книгу на стол",
+                    "turn_id": 1
+                  },
+                  "schema": "ai2-hypotheses-v1",
+                  "stop_reason": ""
+                },
+                "reads": [],
+                "reason": "ambiguous_partial_structure",
+                "score_is_probability": false,
+                "selected_id": null,
+                "snapshot": {
+                  "before_digest": "99bcfca61a865fe7ac5bb675250de956e8e0fb175d59adac80bb2fb177154a2c",
+                  "context_digest": "9fb19faeb42e22a2ebff6a1283e22cdc7522d671c262931f396d001648258817",
+                  "dependency_event_ids": [],
+                  "model_fingerprint": "885c07a4d8514355b5459f06fd442a60b77b8d7f4f76d6469c0a0c03df0ef2c5",
+                  "observation_digest": "10b0f67fce069eac83176157f31b72414ecae997b9dde9ad07be8a289e3e76a5"
+                },
+                "snapshot_id": "0a9151e8ca287aadece3f325ef510fd9f03e5e80aebf62196ca2a7b88e6a5ad2"
+              },
+              "model": "ai2-learned-understanding-v1",
+              "reference_margins": {
+                "actor": 1.0
+              },
+              "role_margins": {
+                "actor": 0.8236836985225314
+              },
+              "score_is_calibrated_probability": false,
+              "training_version": "v05-understanding-train-v3"
+            }
+          },
+          "policy": {
+            "action": "clarify",
+            "scores": {
+              "clarify": -11.97659308097381,
+              "unknown": -22.34740141304686
+            }
+          },
+          "generation": {
+            "segments": [
+              {
+                "text": "Уточните запрос в поддерживаемом формате.",
+                "tokens": [
+                  "уточните",
+                  "запрос",
+                  "в",
+                  "поддерживаемом",
+                  "формате",
+                  "."
+                ],
+                "slots": {},
+                "assertions": []
+              }
+            ],
+            "grounded": true
+          }
+        },
+        "elapsed_seconds": 0.006674
+      }
+    },
+    {
+      "group": "annotated_candidate_memory_controls",
+      "before": [
+        {
+          "subject": "книга",
+          "relation": "holder",
+          "value": "петя",
+          "negated": false,
+          "spatial": "in"
+        }
+      ],
+      "passed": true,
+      "trace": {
+        "batch": {
+          "candidates": [
+            {
+              "bindings": [],
+              "hypothesis_id": "h-d433a59d69cb2349d350ab4682f14dfd516e04e4c01824ca327cdcbf01803c8a",
+              "language_regret": 0.0,
+              "meaning": {
+                "act": "inform",
+                "entities": [],
+                "event": {
+                  "actor": "петя",
+                  "condition": null,
+                  "content": null,
+                  "modality": "actual",
+                  "negated": false,
+                  "object": "книга",
+                  "place": "",
+                  "predicate": "give",
+                  "recipient": "миша",
+                  "spatial": "in",
+                  "time": "past"
+                },
+                "query": null
+              },
+              "missing": [],
+              "observation_id": "structured",
+              "version": 1
+            },
+            {
+              "bindings": [],
+              "hypothesis_id": "h-8d66fed3b096df43730ee90f44743e6a6067243f4404f11bac57f7ce70710ea5",
+              "language_regret": 0.0,
+              "meaning": {
+                "act": "inform",
+                "entities": [],
+                "event": {
+                  "actor": "миша",
+                  "condition": null,
+                  "content": null,
+                  "modality": "actual",
+                  "negated": false,
+                  "object": "книга",
+                  "place": "",
+                  "predicate": "give",
+                  "recipient": "петя",
+                  "spatial": "in",
+                  "time": "past"
+                },
+                "query": null
+              },
+              "missing": [],
+              "observation_id": "structured",
+              "version": 1
+            }
+          ],
+          "complete": true,
+          "context_digest": "9fb19faeb42e22a2ebff6a1283e22cdc7522d671c262931f396d001648258817",
+          "expansions": 0,
+          "observation": {
+            "observation_id": "structured",
+            "source": "input",
+            "text": "неоднозначное сообщение",
+            "turn_id": 0
+          },
+          "schema": "ai2-hypotheses-v1",
+          "stop_reason": ""
+        },
+        "reads": [
+          {
+            "contexts": [
+              {
+                "complete": true,
+                "context": "event_roles",
+                "input_sha256": "f74defe7f29f8fb38f8dcb60914adafb6231529837a8c5a6619da3b6ffd040f3",
+                "kind": "fixed role-coordinate transform; shared factor experience",
+                "matches": 1,
+                "memory_namespace": "144cdc61fc95aca061e7fad396bcdb8c056ce70eb598d34381fb1f27f7d47481",
+                "memory_step": 352,
+                "observation_id": "structured",
+                "portraits": [
+                  {
+                    "coverage": 1.0,
+                    "portrait_id": "0",
+                    "support": 87
+                  }
+                ],
+                "response_count": 1,
+                "score": 1.0,
+                "source_positions": [
+                  0,
+                  1
+                ]
+              },
+              {
+                "complete": true,
+                "context": "actor_recipient_exchange",
+                "input_sha256": "467dc35ac7de52706715f0c69ff137686467c3dab691d1e3fca10bf560c60c2a",
+                "kind": "fixed role-coordinate transform; shared factor experience",
+                "matches": 0,
+                "memory_namespace": "144cdc61fc95aca061e7fad396bcdb8c056ce70eb598d34381fb1f27f7d47481",
+                "memory_step": 352,
+                "observation_id": "structured",
+                "portraits": [],
+                "response_count": 1,
+                "score": 0.0,
+                "source_positions": [
+                  0,
+                  1
+                ]
+              }
+            ],
+            "hypothesis_id": "h-d433a59d69cb2349d350ab4682f14dfd516e04e4c01824ca327cdcbf01803c8a",
+            "reason": "shared_experience_comparison",
+            "score": 1.0,
+            "supported": true
+          },
+          {
+            "contexts": [
+              {
+                "complete": true,
+                "context": "event_roles",
+                "input_sha256": "467dc35ac7de52706715f0c69ff137686467c3dab691d1e3fca10bf560c60c2a",
+                "kind": "fixed role-coordinate transform; shared factor experience",
+                "matches": 0,
+                "memory_namespace": "144cdc61fc95aca061e7fad396bcdb8c056ce70eb598d34381fb1f27f7d47481",
+                "memory_step": 352,
+                "observation_id": "structured",
+                "portraits": [],
+                "response_count": 1,
+                "score": 0.0,
+                "source_positions": [
+                  0,
+                  1
+                ]
+              },
+              {
+                "complete": true,
+                "context": "actor_recipient_exchange",
+                "input_sha256": "f74defe7f29f8fb38f8dcb60914adafb6231529837a8c5a6619da3b6ffd040f3",
+                "kind": "fixed role-coordinate transform; shared factor experience",
+                "matches": 1,
+                "memory_namespace": "144cdc61fc95aca061e7fad396bcdb8c056ce70eb598d34381fb1f27f7d47481",
+                "memory_step": 352,
+                "observation_id": "structured",
+                "portraits": [
+                  {
+                    "coverage": 1.0,
+                    "portrait_id": "0",
+                    "support": 87
+                  }
+                ],
+                "response_count": 1,
+                "score": 1.0,
+                "source_positions": [
+                  0,
+                  1
+                ]
+              }
+            ],
+            "hypothesis_id": "h-8d66fed3b096df43730ee90f44743e6a6067243f4404f11bac57f7ce70710ea5",
+            "reason": "shared_experience_comparison",
+            "score": 0.0,
+            "supported": false
+          }
+        ],
+        "reason": "common_experience_disambiguation",
+        "score_is_probability": false,
+        "selected_id": "h-d433a59d69cb2349d350ab4682f14dfd516e04e4c01824ca327cdcbf01803c8a",
+        "snapshot": {
+          "before_digest": "e1ba64b28b6a140a5f4585ba3f8b6ed6c163095b8dc57d80166454a7ade71c3e",
+          "context_digest": "9fb19faeb42e22a2ebff6a1283e22cdc7522d671c262931f396d001648258817",
+          "dependency_event_ids": [],
+          "model_fingerprint": "885c07a4d8514355b5459f06fd442a60b77b8d7f4f76d6469c0a0c03df0ef2c5",
+          "observation_digest": "ec2d172597cea8ef94fd369e7cf0ea261ca9ebd28cf5135eed1c6e35f224f47d"
+        },
+        "snapshot_id": "aaf13649a771915043aa4d1356f259b370f34428aceec28d5c7429b34298e7ba"
+      }
+    },
+    {
+      "group": "annotated_candidate_memory_controls",
+      "before": [
+        {
+          "subject": "книга",
+          "relation": "holder",
+          "value": "миша",
+          "negated": false,
+          "spatial": "in"
+        }
+      ],
+      "passed": true,
+      "trace": {
+        "batch": {
+          "candidates": [
+            {
+              "bindings": [],
+              "hypothesis_id": "h-d433a59d69cb2349d350ab4682f14dfd516e04e4c01824ca327cdcbf01803c8a",
+              "language_regret": 0.0,
+              "meaning": {
+                "act": "inform",
+                "entities": [],
+                "event": {
+                  "actor": "петя",
+                  "condition": null,
+                  "content": null,
+                  "modality": "actual",
+                  "negated": false,
+                  "object": "книга",
+                  "place": "",
+                  "predicate": "give",
+                  "recipient": "миша",
+                  "spatial": "in",
+                  "time": "past"
+                },
+                "query": null
+              },
+              "missing": [],
+              "observation_id": "structured",
+              "version": 1
+            },
+            {
+              "bindings": [],
+              "hypothesis_id": "h-8d66fed3b096df43730ee90f44743e6a6067243f4404f11bac57f7ce70710ea5",
+              "language_regret": 0.0,
+              "meaning": {
+                "act": "inform",
+                "entities": [],
+                "event": {
+                  "actor": "миша",
+                  "condition": null,
+                  "content": null,
+                  "modality": "actual",
+                  "negated": false,
+                  "object": "книга",
+                  "place": "",
+                  "predicate": "give",
+                  "recipient": "петя",
+                  "spatial": "in",
+                  "time": "past"
+                },
+                "query": null
+              },
+              "missing": [],
+              "observation_id": "structured",
+              "version": 1
+            }
+          ],
+          "complete": true,
+          "context_digest": "9fb19faeb42e22a2ebff6a1283e22cdc7522d671c262931f396d001648258817",
+          "expansions": 0,
+          "observation": {
+            "observation_id": "structured",
+            "source": "input",
+            "text": "неоднозначное сообщение",
+            "turn_id": 0
+          },
+          "schema": "ai2-hypotheses-v1",
+          "stop_reason": ""
+        },
+        "reads": [
+          {
+            "contexts": [
+              {
+                "complete": true,
+                "context": "event_roles",
+                "input_sha256": "467dc35ac7de52706715f0c69ff137686467c3dab691d1e3fca10bf560c60c2a",
+                "kind": "fixed role-coordinate transform; shared factor experience",
+                "matches": 0,
+                "memory_namespace": "144cdc61fc95aca061e7fad396bcdb8c056ce70eb598d34381fb1f27f7d47481",
+                "memory_step": 352,
+                "observation_id": "structured",
+                "portraits": [],
+                "response_count": 1,
+                "score": 0.0,
+                "source_positions": [
+                  0,
+                  1
+                ]
+              },
+              {
+                "complete": true,
+                "context": "actor_recipient_exchange",
+                "input_sha256": "f74defe7f29f8fb38f8dcb60914adafb6231529837a8c5a6619da3b6ffd040f3",
+                "kind": "fixed role-coordinate transform; shared factor experience",
+                "matches": 1,
+                "memory_namespace": "144cdc61fc95aca061e7fad396bcdb8c056ce70eb598d34381fb1f27f7d47481",
+                "memory_step": 352,
+                "observation_id": "structured",
+                "portraits": [
+                  {
+                    "coverage": 1.0,
+                    "portrait_id": "0",
+                    "support": 87
+                  }
+                ],
+                "response_count": 1,
+                "score": 1.0,
+                "source_positions": [
+                  0,
+                  1
+                ]
+              }
+            ],
+            "hypothesis_id": "h-d433a59d69cb2349d350ab4682f14dfd516e04e4c01824ca327cdcbf01803c8a",
+            "reason": "shared_experience_comparison",
+            "score": 0.0,
+            "supported": false
+          },
+          {
+            "contexts": [
+              {
+                "complete": true,
+                "context": "event_roles",
+                "input_sha256": "f74defe7f29f8fb38f8dcb60914adafb6231529837a8c5a6619da3b6ffd040f3",
+                "kind": "fixed role-coordinate transform; shared factor experience",
+                "matches": 1,
+                "memory_namespace": "144cdc61fc95aca061e7fad396bcdb8c056ce70eb598d34381fb1f27f7d47481",
+                "memory_step": 352,
+                "observation_id": "structured",
+                "portraits": [
+                  {
+                    "coverage": 1.0,
+                    "portrait_id": "0",
+                    "support": 87
+                  }
+                ],
+                "response_count": 1,
+                "score": 1.0,
+                "source_positions": [
+                  0,
+                  1
+                ]
+              },
+              {
+                "complete": true,
+                "context": "actor_recipient_exchange",
+                "input_sha256": "467dc35ac7de52706715f0c69ff137686467c3dab691d1e3fca10bf560c60c2a",
+                "kind": "fixed role-coordinate transform; shared factor experience",
+                "matches": 0,
+                "memory_namespace": "144cdc61fc95aca061e7fad396bcdb8c056ce70eb598d34381fb1f27f7d47481",
+                "memory_step": 352,
+                "observation_id": "structured",
+                "portraits": [],
+                "response_count": 1,
+                "score": 0.0,
+                "source_positions": [
+                  0,
+                  1
+                ]
+              }
+            ],
+            "hypothesis_id": "h-8d66fed3b096df43730ee90f44743e6a6067243f4404f11bac57f7ce70710ea5",
+            "reason": "shared_experience_comparison",
+            "score": 1.0,
+            "supported": true
+          }
+        ],
+        "reason": "common_experience_disambiguation",
+        "score_is_probability": false,
+        "selected_id": "h-8d66fed3b096df43730ee90f44743e6a6067243f4404f11bac57f7ce70710ea5",
+        "snapshot": {
+          "before_digest": "f125555bbf5666e14b4d62f3a465160b27d7828a572e7ff3654ac8de04e15e42",
+          "context_digest": "9fb19faeb42e22a2ebff6a1283e22cdc7522d671c262931f396d001648258817",
+          "dependency_event_ids": [],
+          "model_fingerprint": "885c07a4d8514355b5459f06fd442a60b77b8d7f4f76d6469c0a0c03df0ef2c5",
+          "observation_digest": "ec2d172597cea8ef94fd369e7cf0ea261ca9ebd28cf5135eed1c6e35f224f47d"
+        },
+        "snapshot_id": "9590d10d813fcac99e80d0efb93d6579344f6b15c14da47ed6a6a698c47e10c8"
+      }
+    },
+    {
+      "group": "annotated_candidate_memory_controls",
+      "before": [
+        {
+          "subject": "ключ",
+          "relation": "holder",
+          "value": "петя",
+          "negated": false,
+          "spatial": "in"
+        }
+      ],
+      "passed": true,
+      "trace": {
+        "batch": {
+          "candidates": [
+            {
+              "bindings": [],
+              "hypothesis_id": "h-d433a59d69cb2349d350ab4682f14dfd516e04e4c01824ca327cdcbf01803c8a",
+              "language_regret": 0.0,
+              "meaning": {
+                "act": "inform",
+                "entities": [],
+                "event": {
+                  "actor": "петя",
+                  "condition": null,
+                  "content": null,
+                  "modality": "actual",
+                  "negated": false,
+                  "object": "книга",
+                  "place": "",
+                  "predicate": "give",
+                  "recipient": "миша",
+                  "spatial": "in",
+                  "time": "past"
+                },
+                "query": null
+              },
+              "missing": [],
+              "observation_id": "structured",
+              "version": 1
+            },
+            {
+              "bindings": [],
+              "hypothesis_id": "h-8d66fed3b096df43730ee90f44743e6a6067243f4404f11bac57f7ce70710ea5",
+              "language_regret": 0.0,
+              "meaning": {
+                "act": "inform",
+                "entities": [],
+                "event": {
+                  "actor": "миша",
+                  "condition": null,
+                  "content": null,
+                  "modality": "actual",
+                  "negated": false,
+                  "object": "книга",
+                  "place": "",
+                  "predicate": "give",
+                  "recipient": "петя",
+                  "spatial": "in",
+                  "time": "past"
+                },
+                "query": null
+              },
+              "missing": [],
+              "observation_id": "structured",
+              "version": 1
+            }
+          ],
+          "complete": true,
+          "context_digest": "9fb19faeb42e22a2ebff6a1283e22cdc7522d671c262931f396d001648258817",
+          "expansions": 0,
+          "observation": {
+            "observation_id": "structured",
+            "source": "input",
+            "text": "неоднозначное сообщение",
+            "turn_id": 0
+          },
+          "schema": "ai2-hypotheses-v1",
+          "stop_reason": ""
+        },
+        "reads": [
+          {
+            "contexts": [
+              {
+                "complete": true,
+                "context": "event_roles",
+                "input_sha256": "65c66a35f9771376e7a9b140f26a014a29ae85c14e9e80f67cf5d4dcdca1195c",
+                "kind": "fixed role-coordinate transform; shared factor experience",
+                "matches": 1,
+                "memory_namespace": "144cdc61fc95aca061e7fad396bcdb8c056ce70eb598d34381fb1f27f7d47481",
+                "memory_step": 352,
+                "observation_id": "structured",
+                "portraits": [
+                  {
+                    "coverage": 1.0,
+                    "portrait_id": "54",
+                    "support": 80
+                  }
+                ],
+                "response_count": 1,
+                "score": 1.0,
+                "source_positions": [
+                  0,
+                  1
+                ]
+              },
+              {
+                "complete": true,
+                "context": "actor_recipient_exchange",
+                "input_sha256": "65c66a35f9771376e7a9b140f26a014a29ae85c14e9e80f67cf5d4dcdca1195c",
+                "kind": "fixed role-coordinate transform; shared factor experience",
+                "matches": 1,
+                "memory_namespace": "144cdc61fc95aca061e7fad396bcdb8c056ce70eb598d34381fb1f27f7d47481",
+                "memory_step": 352,
+                "observation_id": "structured",
+                "portraits": [
+                  {
+                    "coverage": 1.0,
+                    "portrait_id": "54",
+                    "support": 80
+                  }
+                ],
+                "response_count": 1,
+                "score": 1.0,
+                "source_positions": [
+                  0,
+                  1
+                ]
+              }
+            ],
+            "hypothesis_id": "h-d433a59d69cb2349d350ab4682f14dfd516e04e4c01824ca327cdcbf01803c8a",
+            "reason": "shared_experience_comparison",
+            "score": 1.0,
+            "supported": true
+          },
+          {
+            "contexts": [
+              {
+                "complete": true,
+                "context": "event_roles",
+                "input_sha256": "65c66a35f9771376e7a9b140f26a014a29ae85c14e9e80f67cf5d4dcdca1195c",
+                "kind": "fixed role-coordinate transform; shared factor experience",
+                "matches": 1,
+                "memory_namespace": "144cdc61fc95aca061e7fad396bcdb8c056ce70eb598d34381fb1f27f7d47481",
+                "memory_step": 352,
+                "observation_id": "structured",
+                "portraits": [
+                  {
+                    "coverage": 1.0,
+                    "portrait_id": "54",
+                    "support": 80
+                  }
+                ],
+                "response_count": 1,
+                "score": 1.0,
+                "source_positions": [
+                  0,
+                  1
+                ]
+              },
+              {
+                "complete": true,
+                "context": "actor_recipient_exchange",
+                "input_sha256": "65c66a35f9771376e7a9b140f26a014a29ae85c14e9e80f67cf5d4dcdca1195c",
+                "kind": "fixed role-coordinate transform; shared factor experience",
+                "matches": 1,
+                "memory_namespace": "144cdc61fc95aca061e7fad396bcdb8c056ce70eb598d34381fb1f27f7d47481",
+                "memory_step": 352,
+                "observation_id": "structured",
+                "portraits": [
+                  {
+                    "coverage": 1.0,
+                    "portrait_id": "54",
+                    "support": 80
+                  }
+                ],
+                "response_count": 1,
+                "score": 1.0,
+                "source_positions": [
+                  0,
+                  1
+                ]
+              }
+            ],
+            "hypothesis_id": "h-8d66fed3b096df43730ee90f44743e6a6067243f4404f11bac57f7ce70710ea5",
+            "reason": "shared_experience_comparison",
+            "score": 1.0,
+            "supported": true
+          }
+        ],
+        "reason": "ambiguous_candidate_tie",
+        "score_is_probability": false,
+        "selected_id": null,
+        "snapshot": {
+          "before_digest": "844405750f1460c46168b740f696fe8c23fc8479d90c9e1aadf92997df924270",
+          "context_digest": "9fb19faeb42e22a2ebff6a1283e22cdc7522d671c262931f396d001648258817",
+          "dependency_event_ids": [],
+          "model_fingerprint": "885c07a4d8514355b5459f06fd442a60b77b8d7f4f76d6469c0a0c03df0ef2c5",
+          "observation_digest": "ec2d172597cea8ef94fd369e7cf0ea261ca9ebd28cf5135eed1c6e35f224f47d"
+        },
+        "snapshot_id": "b148a8e90cd1957a401841579931d4ee246c7118029221c8e88e23bcae981950"
+      }
+    }
+  ],
+  "metrics": {
+    "annotated_candidate_memory_controls": {
+      "passed": 3,
+      "total": 3
+    },
+    "incomplete_input_no_facts": {
+      "passed": 2,
+      "total": 2
+    },
+    "known_development_structures": {
+      "passed": 12,
+      "total": 12
+    },
+    "reference_examples_with_experience": {
+      "passed": 2,
+      "total": 2
+    }
+  }
+}

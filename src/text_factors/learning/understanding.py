@@ -24,7 +24,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from math import isfinite
 from time import perf_counter
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
@@ -48,6 +48,10 @@ from .schema import (
     bounded_text,
     exact_fields,
 )
+
+if TYPE_CHECKING:
+    from .candidate_search import SearchLimits
+    from .hypotheses import CandidateSet, Observation
 
 HEAD_DIM = 384
 ROLE_DIM = 512
@@ -752,6 +756,26 @@ class LearnedUnderstanding:
             )
         return Interpretation(
             meaning, min(1.0, max(0.0, minimum)), diagnostics=diagnostics
+        )
+
+    def propose(
+        self,
+        text: str,
+        context: DialogueContext = _EMPTY_CONTEXT,
+        *,
+        observation: Observation | None = None,
+        initial: Interpretation | None = None,
+        limits: SearchLimits | None = None,
+    ) -> CandidateSet:
+        """Retain bounded alternatives; the caller decides before projecting facts."""
+        from .candidate_search import propose
+        from .hypotheses import Observation
+
+        observation = observation or Observation("input", text)
+        if observation.text != text or not isinstance(context, DialogueContext):
+            raise ValueError("candidate input does not match its observation")
+        return propose(
+            self, observation, context, initial or self.interpret(text, context), limits
         )
 
     @staticmethod

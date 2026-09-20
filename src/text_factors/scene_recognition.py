@@ -32,6 +32,7 @@ from .memory import ClusterStatus, CombinatorialMemory
 from .recognition import (
     CandidateRelation,
     ClusterEvidence,
+    ContextResponse,
     ContextView,
     RecognitionCandidate,
     RecognitionLimits,
@@ -436,6 +437,7 @@ class FactorSceneReader:
         found: list[RecognitionCandidate] = []
         proposals: list[SceneProposal] = []
         traces: list[SceneViewTrace] = []
+        responses: list[ContextResponse] = []
         relations: list[CandidateRelation] = []
         seen_ids: set[str] = set()
         examined = 0
@@ -549,10 +551,32 @@ class FactorSceneReader:
                     True,
                 )
                 budget.check()
+                response = ContextResponse(
+                    view.context_id,
+                    view.view_id,
+                    view.observation_id,
+                    view.source_positions,
+                    sum(
+                        4.0
+                        * len(item.matched_bits)
+                        / len(item.signature)
+                        * log1p(item.observations)
+                        for item in current
+                    ),
+                    bool(local_candidates)
+                    or len({item.point_index for item in current})
+                    >= self.memory.config.min_active_points,
+                    hashlib.sha256(
+                        len(active).to_bytes(8, "little")
+                        + np.packbits(active, bitorder="little").tobytes()
+                    ).hexdigest(),
+                )
+                budget.check()
                 found.extend(local_candidates)
                 proposals.extend(local_proposals)
                 relations.extend(local_relations)
                 traces.append(trace)
+                responses.append(response)
                 examined += 1
                 pending_view = None
                 if progress is not None:
@@ -587,6 +611,7 @@ class FactorSceneReader:
             stop_reason=stop_reason,
             memory_step=read_step,
             encoding_id=self.encoding_id,
+            responses=tuple(responses),
         )
         return SceneRecognitionResult(
             recognition,

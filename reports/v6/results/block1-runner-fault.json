@@ -1,0 +1,23 @@
+{
+  "total_tests": 2,
+  "completed_batches": 1,
+  "total_batches": 1,
+  "batches": [
+    {
+      "batch": 1,
+      "requested": [
+        "_batch_exit_fixture.ExitFixture.test_a_exit",
+        "_batch_exit_fixture.ExitFixture.test_b_unreached"
+      ],
+      "tests": [],
+      "status": "incomplete",
+      "not_completed": [
+        "_batch_exit_fixture.ExitFixture.test_a_exit",
+        "_batch_exit_fixture.ExitFixture.test_b_unreached"
+      ],
+      "returncode": 0,
+      "seconds": 0.06436961600047653,
+      "peak_worker_rss_kib": null
+    }
+  ]
+}
