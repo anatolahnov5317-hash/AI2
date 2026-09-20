@@ -27,7 +27,7 @@ from numpy.typing import NDArray
 from .schema import canonical_json, fields, text_field
 
 MODEL_SCHEMA = "ai2-open-candidate-model-v1"
-_ALGORITHM = "unicode-char-shape-sparse-logistic-v1"
+_ALGORITHM = "unicode-char-shape-sparse-logistic-v2"
 
 
 def _integer(value: Any, name: str, low: int, high: int) -> int:
@@ -268,6 +268,39 @@ def _pair_features(
     return _vector(features, config)
 
 
+def _digit_runs(value: str) -> tuple[str, ...]:
+    runs: list[str] = []
+    current: list[str] = []
+    for character in value:
+        if character.isdigit():
+            current.append(character)
+        elif current:
+            runs.append("".join(current))
+            current = []
+    if current:
+        runs.append("".join(current))
+    return tuple(runs)
+
+
+def _critical_negative(
+    text: str,
+    left: tuple[int, int],
+    right: tuple[int, int],
+) -> bool:
+    """Return true for identity conflicts that must never be sampled away."""
+
+    left_text, right_text = text[slice(*left)], text[slice(*right)]
+    left_folded, right_folded = left_text.casefold(), right_text.casefold()
+    if left_folded == right_folded:
+        return True
+    left_digits, right_digits = _digit_runs(left_text), _digit_runs(right_text)
+    if not left_digits or not right_digits or left_digits == right_digits:
+        return False
+    left_skeleton = "".join(char for char in left_folded if not char.isdigit())
+    right_skeleton = "".join(char for char in right_folded if not char.isdigit())
+    return bool(left_skeleton) and left_skeleton == right_skeleton
+
+
 def _sigmoid(value: float) -> float:
     if value >= 0:
         return 1.0 / (1.0 + math.exp(-value))
@@ -304,6 +337,7 @@ _SUMMARY_KEYS = _COUNT_KEYS | {
     "pair_training_enabled",
     "span_disabled_reason",
     "pair_disabled_reason",
+    "pair_negative_sampling",
     "score_interpretation",
 }
 
@@ -355,6 +389,11 @@ def _summary(value: Any, config: LearningConfig) -> dict[str, Any]:
         or any(c not in "0123456789abcdef" for c in digest)
     ):
         raise ValueError("invalid train_data_sha256")
+    if (
+        value["pair_negative_sampling"]
+        != "retain_identity_conflicts_then_reservoir_v2"
+    ):
+        raise ValueError("invalid pair negative sampling")
     if value["score_interpretation"] != "uncalibrated_sigmoid":
         raise ValueError("invalid score interpretation")
     return json.loads(canonical_json(value))
@@ -640,13 +679,15 @@ def train_model(
 
     Each document must explicitly declare coverage='complete'. Negative spans
     are reproducibly reservoir sampled up to negative_ratio times the document's
-    total gold span count, including unsupported gold spans. Pair negatives are
-    sampled up to negative_ratio times the eligible positive pair count. Both
-    use negative_ratio as the limit when the respective positive count is zero.
-    Pair eligible counts remain in the summary. Unaligned gold spans are counted,
-    not relabelled as negatives. Pair labels are generated only within a document
-    and the configured antecedent window. No corpus-wide feature matrix is
-    materialized: SGD computes one sparse vector at a time.
+    total gold span count, including unsupported gold spans. Pair negatives that
+    represent explicit identity conflicts with the same surface, or with the same
+    non-digit identifier skeleton and different digit runs, are always retained.
+    Remaining pair negatives are reservoir sampled up to negative_ratio times the
+    eligible positive pair count. Pair eligible counts remain in the summary.
+    Unaligned gold spans are counted, not relabelled as negatives. Pair labels
+    are generated only within a document and the configured antecedent window.
+    No corpus-wide feature matrix is materialized: SGD computes one sparse vector
+    at a time.
     """
     config = config or LearningConfig()
     documents = _documents(train_documents, config)
@@ -713,7 +754,7 @@ def train_model(
             raise ValueError("corpus exceeds max_training_examples")
         span_examples.extend(positives)
         span_examples.extend(negatives)
-        pair_positives, pair_negatives = 0, 0
+        pair_positives, pair_negatives, critical_negatives = 0, 0, 0
         for left, right in _antecedent_pairs(document.mentions, config):
             if left["entity_id"] is None or right["entity_id"] is None:
                 ignored_unknown_pairs += 1
@@ -721,40 +762,51 @@ def train_model(
                 pair_positives += 1
             else:
                 pair_negatives += 1
+                if _critical_negative(
+                    document.text,
+                    (left["start"], left["end"]),
+                    (right["start"], right["end"]),
+                ):
+                    critical_negatives += 1
         eligible_pair_positives += pair_positives
         eligible_pair_negatives += pair_negatives
-        negative_limit = min(
-            pair_negatives, max(1, pair_positives) * config.negative_ratio
+        eligible_critical_negatives += critical_negatives
+
+        ordinary_negatives = pair_negatives - critical_negatives
+        ordinary_limit = min(
+            ordinary_negatives, max(1, pair_positives) * config.negative_ratio
         )
+        selected_negative_count = critical_negatives + ordinary_limit
         if (
-            len(pair_examples) + pair_positives + negative_limit
+            len(pair_examples) + pair_positives + selected_negative_count
             > config.max_pair_examples
         ):
             raise ValueError("corpus exceeds max_pair_examples")
-        negatives = []
+
+        sampled_negatives = []
         negative_seen = 0
         rng = random.Random(f"{config.seed}:{document.document_id}:pair")
         for left, right in _antecedent_pairs(document.mentions, config):
             if left["entity_id"] is None or right["entity_id"] is None:
                 continue
             target = int(left["entity_id"] == right["entity_id"])
-            entry = (
-                document_index,
-                (left["start"], left["end"]),
-                (right["start"], right["end"]),
-                target,
-            )
+            left_span = (left["start"], left["end"])
+            right_span = (right["start"], right["end"])
+            entry = (document_index, left_span, right_span, target)
             if target:
                 pair_examples.append(entry)
+            elif _critical_negative(document.text, left_span, right_span):
+                pair_examples.append(entry)
+                retained_critical_negatives += 1
             else:
                 negative_seen += 1
-                if len(negatives) < negative_limit:
-                    negatives.append(entry)
-                else:
+                if len(sampled_negatives) < ordinary_limit:
+                    sampled_negatives.append(entry)
+                elif ordinary_limit:
                     replace = rng.randrange(negative_seen)
-                    if replace < negative_limit:
-                        negatives[replace] = entry
-        pair_examples.extend(negatives)
+                    if replace < ordinary_limit:
+                        sampled_negatives[replace] = entry
+        pair_examples.extend(sampled_negatives)
     summary: dict[str, Any] = {
         "train_document_count": len(documents),
         "train_token_count": sum(len(document.tokens) for document in documents),
@@ -767,6 +819,7 @@ def train_model(
         "pair_eligible_negative_examples": eligible_pair_negatives,
         "pair_critical_negative_examples": retained_critical_negatives,
         "pair_eligible_critical_negative_examples": eligible_critical_negatives,
+        "pair_negative_sampling": "retain_identity_conflicts_then_reservoir_v2",
         "score_interpretation": "uncalibrated_sigmoid",
     }
     for kind, examples in (("span", span_examples), ("pair", pair_examples)):
