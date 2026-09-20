@@ -31,6 +31,7 @@ from .recognition import (
     memory_encoding_id,
     recognize_views,
 )
+from .real_data.budget import BudgetTracker, ResourceBudget
 
 MODEL_FORMAT_VERSION = 3
 
@@ -563,12 +564,42 @@ class TextFactorModel:
         *,
         epochs: int = 1,
         stride: int = 1,
+        budget: ResourceBudget | None = None,
+        progress: Callable[[dict[str, Any]], None] | None = None,
     ) -> TextFactorModel:
         if type(epochs) is not int or epochs <= 0:
             raise ValueError("epochs must be a positive integer")
-        for _ in range(epochs):
+        tracker = BudgetTracker(budget) if budget is not None else None
+        for epoch in range(epochs):
             for window, offset in self.encoder.iter_windows(text, stride=stride):
+                if tracker is not None:
+                    tracker.consume(
+                        steps=1,
+                        items=1,
+                        bytes_processed=len(window.encode("utf-8")),
+                    )
                 self.partial_fit_window(window, offset=offset)
+                if tracker is not None:
+                    tracker.check_clusters(self.memory.cluster_count)
+                    if tracker.should_checkpoint():
+                        snapshot = tracker.mark_checkpoint()
+                        if progress is not None:
+                            progress(
+                                {
+                                    "phase": "training",
+                                    "epoch": epoch + 1,
+                                    "budget": snapshot.to_dict(),
+                                    "clusters": self.memory.cluster_count,
+                                }
+                            )
+        if tracker is not None and progress is not None:
+            progress(
+                {
+                    "phase": "completed",
+                    "budget": tracker.snapshot(complete=True).to_dict(),
+                    "clusters": self.memory.cluster_count,
+                }
+            )
         return self
 
     def transform_text(self, text: str, *, stride: int = 1) -> list[TransformResult]:
@@ -692,9 +723,15 @@ class TextFactorModel:
             ],
         }
 
-    def save(self, path: str | Path) -> Path:
+    def save(
+        self,
+        path: str | Path,
+        *,
+        max_file_bytes: int = DEFAULT_MAX_MODEL_FILE_BYTES,
+    ) -> Path:
         """Atomically save without pickle so loading cannot execute code."""
 
+        max_file_bytes = _positive_limit("max_file_bytes", max_file_bytes)
         destination = Path(path)
         destination.parent.mkdir(parents=True, exist_ok=True)
         clusters = list(self.memory.iter_clusters())
@@ -816,6 +853,11 @@ class TextFactorModel:
                 )
                 stream.flush()
                 os.fsync(stream.fileno())
+            if temporary_path.stat().st_size > max_file_bytes:
+                raise ValueError(
+                    "model artifact exceeds max_file_bytes "
+                    f"({temporary_path.stat().st_size} > {max_file_bytes})"
+                )
             os.replace(temporary_path, destination)
         except BaseException:
             if temporary_path is not None:
