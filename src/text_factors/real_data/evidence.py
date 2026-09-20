@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Any
 
 
 def _nonempty(value: str, name: str) -> str:
@@ -26,7 +27,7 @@ class EvidenceRoot:
             raise ValueError("source_version must be positive")
 
 
-    def to_dict(self) -> dict[str, object]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "root_id": self.root_id,
             "group_id": self.group_id,
@@ -35,7 +36,7 @@ class EvidenceRoot:
         }
 
     @classmethod
-    def from_dict(cls, value: dict[str, object]) -> "EvidenceRoot":
+    def from_dict(cls, value: dict[str, Any]) -> "EvidenceRoot":
         expected = {"root_id", "group_id", "source_id", "source_version"}
         if type(value) is not dict or set(value) != expected:
             raise ValueError("invalid evidence root")
@@ -100,7 +101,7 @@ class EvidenceLedger:
         except KeyError as exc:
             raise ValueError("unknown evidence root") from exc
 
-    def to_dict(self) -> dict[str, object]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "roots": [
                 self._roots[root_id].to_dict()
@@ -113,7 +114,7 @@ class EvidenceLedger:
         }
 
     @classmethod
-    def from_dict(cls, value: dict[str, object]) -> "EvidenceLedger":
+    def from_dict(cls, value: dict[str, Any]) -> "EvidenceLedger":
         if (
             type(value) is not dict
             or set(value) != {"roots", "claim_roots"}
