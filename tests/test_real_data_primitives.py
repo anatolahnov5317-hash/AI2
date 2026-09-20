@@ -27,6 +27,8 @@ from text_factors.real_data import (
     UncertaintyScope,
     evaluate_pilot,
     evidence_root,
+    load_state,
+    save_state,
     source_slice,
 )
 
@@ -280,6 +282,35 @@ class RealDataPrimitiveTests(unittest.TestCase):
         self.assertLess(report["ungrounded_upper_bound"], 0.01)
         self.assertEqual(report["resolvable_coverage"], 1.0)
         self.assertTrue(report["passed"])
+
+    def test_real_data_state_roundtrip_preserves_contexts_and_evidence(self):
+        engine = RealDataEngine()
+        engine.register_evidence(EvidenceRoot("r1", "g1", "s1", 1))
+        engine.add_claim(_claim("c1", roots=("r1",)))
+        contexts = ContextRegistry(width=64)
+        contexts.learn(LearningEpisode("e1", "g1", (1,), (10,)))
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "state.json"
+            save_state(path, engine, contexts=contexts, model_version="m1")
+            restored, restored_contexts, version = load_state(path)
+        self.assertEqual(version, "m1")
+        self.assertEqual(restored.to_dict(), engine.to_dict())
+        self.assertIsNotNone(restored_contexts)
+        assert restored_contexts is not None
+        self.assertEqual(restored_contexts.to_dict(), contexts.to_dict())
+
+    def test_real_data_state_detects_corruption(self):
+        engine = RealDataEngine()
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "state.json"
+            save_state(path, engine, model_version="m1")
+            value = path.read_text(encoding="utf-8").replace(
+                '"model_version":"m1"',
+                '"model_version":"m2"',
+            )
+            path.write_text(value, encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "fingerprint mismatch"):
+                load_state(path)
 
     def test_source_slice_rejects_invalid_offsets(self):
         with self.assertRaises(ValueError):
