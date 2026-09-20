@@ -205,6 +205,27 @@ class ObservationLearningTests(unittest.TestCase):
         self.assertEqual(summary["pair_eligible_negative_examples"], 14)
         self.assertEqual(summary["pair_negative_examples"], 3)
 
+    def test_pair_training_uses_only_nearest_same_entity_antecedent(self):
+        text = "Alex Alex Alex Bob"
+        mentions: list[tuple[int, int, str | None]] = [
+            (0, 4, "a"),
+            (5, 9, "a"),
+            (10, 14, "a"),
+            (15, 18, "b"),
+        ]
+        model = train_model(
+            [_document("preferred-antecedent", text, mentions)],
+            replace(self.config, max_antecedents=8),
+        )
+        summary = model.training_summary
+        self.assertEqual(summary["pair_all_same_entity_examples"], 3)
+        self.assertEqual(summary["pair_positive_examples"], 2)
+        self.assertEqual(summary["pair_eligible_positive_examples"], 2)
+        self.assertEqual(
+            summary["pair_nonpreferred_positive_examples_ignored"],
+            1,
+        )
+
     def test_identity_conflict_negatives_are_never_sampled_away(self):
         text = "Alex met Alex. Alex saw Alex."
         starts = []
