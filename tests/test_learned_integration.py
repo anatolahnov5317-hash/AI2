@@ -430,7 +430,11 @@ class LearnedIntegrationTests(unittest.TestCase):
             python_path = os.pathsep.join(
                 filter(None, (directory, os.environ.get("PYTHONPATH", "")))
             )
-            runtime.seconds = 2.0
+            # The hard deadline includes importing Python/NumPy and restoring
+            # the actual numeric model. Use the same startup allowance as the
+            # successful turns above, so slower CI reaches the injected stall.
+            # The 30-second child delay must still be killed before it returns.
+            runtime.seconds = 10.0
             with (
                 patch.object(runtime_module, "WORKER", module.stem),
                 patch.dict(os.environ, {"PYTHONPATH": python_path}),
