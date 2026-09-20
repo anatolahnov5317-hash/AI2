@@ -86,7 +86,10 @@ class CompositionalEncoder:
                 prefix + str(counter).encode("ascii"), digest_size=32
             ).digest()
             for offset in range(0, len(digest), 4):
-                bits.add(int.from_bytes(digest[offset : offset + 4], "little") % self.width)
+                value = int.from_bytes(
+                    digest[offset : offset + 4], "little"
+                )
+                bits.add(value % self.width)
                 if len(bits) >= self.active_bits_per_atom:
                     break
             counter += 1
