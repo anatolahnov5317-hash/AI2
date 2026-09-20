@@ -11,6 +11,7 @@ only two explicitly known entity identities.
 from __future__ import annotations
 
 import hashlib
+import heapq
 import json
 import math
 import random
@@ -27,7 +28,7 @@ from numpy.typing import NDArray
 from .schema import canonical_json, fields, text_field
 
 MODEL_SCHEMA = "ai2-open-candidate-model-v1"
-_ALGORITHM = "unicode-char-shape-sparse-logistic-v1"
+_ALGORITHM = "unicode-char-shape-sparse-logistic-v2"
 
 
 def _integer(value: Any, name: str, low: int, high: int) -> int:
@@ -52,10 +53,10 @@ class LearningConfig:
 
     seed: int = 17
     epochs: int = 12
-    feature_dim: int = 4096
-    max_span_tokens: int = 4
+    feature_dim: int = 8192
+    max_span_tokens: int = 8
     max_tokens: int = 4096
-    max_antecedents: int = 32
+    max_antecedents: int = 64
     negative_ratio: int = 3
     max_documents: int = 128
     max_document_chars: int = 262_144
@@ -231,13 +232,39 @@ def _coordinates(mention: Any, text: str) -> tuple[int, int]:
     return start, end
 
 
+def _overlapping_token_indices(
+    tokens: list[_Token], span: tuple[int, int]
+) -> tuple[int, ...]:
+    return tuple(
+        index
+        for index, token in enumerate(tokens)
+        if token.end > span[0] and token.start < span[1]
+    )
+
+
+def _digit_runs(value: str) -> tuple[str, ...]:
+    runs: list[str] = []
+    current: list[str] = []
+    for character in value:
+        if character.isdigit():
+            current.append(character)
+        elif current:
+            runs.append("".join(current))
+            current = []
+    if current:
+        runs.append("".join(current))
+    return tuple(runs)
+
+
 def _pair_features(
     text: str,
+    tokens: list[_Token],
     left: tuple[int, int],
     right: tuple[int, int],
     config: LearningConfig,
 ) -> tuple[NDArray[np.int64], NDArray[np.float64]]:
     left_text, right_text = text[slice(*left)], text[slice(*right)]
+    left_folded, right_folded = left_text.casefold(), right_text.casefold()
     left_bounded = _clip(left_text, config.max_feature_chars)
     right_bounded = _clip(right_text, config.max_feature_chars)
     left_grams, right_grams = (
@@ -246,26 +273,101 @@ def _pair_features(
     )
     overlap = len(left_grams & right_grams) / max(1, len(left_grams | right_grams))
     left_shape, right_shape = _shape(left_bounded), _shape(right_bounded)
+    left_token_indices = _overlapping_token_indices(tokens, left)
+    right_token_indices = _overlapping_token_indices(tokens, right)
+    left_tokens = tuple(
+        text[tokens[index].start : tokens[index].end].casefold()
+        for index in left_token_indices
+    )
+    right_tokens = tuple(
+        text[tokens[index].start : tokens[index].end].casefold()
+        for index in right_token_indices
+    )
+    left_token_set, right_token_set = set(left_tokens), set(right_tokens)
+    token_union = left_token_set | right_token_set
+    token_overlap = (
+        len(left_token_set & right_token_set) / len(token_union) if token_union else 0.0
+    )
+    if left_token_indices and right_token_indices:
+        token_gap = max(0, right_token_indices[0] - left_token_indices[-1] - 1)
+    else:
+        token_gap = 0
+    if left[1] <= right[0]:
+        between = text[left[1] : right[0]]
+    elif right[1] <= left[0]:
+        between = text[right[1] : left[0]]
+    else:
+        between = ""
+    punctuation = sum(unicodedata.category(char).startswith("P") for char in between)
+    line_breaks = between.count("\n") + between.count("\r")
+    left_digits, right_digits = _digit_runs(left_text), _digit_runs(right_text)
     features = [
         (f"exact-equal:{left_text == right_text}", 1.0),
-        (f"folded-equal:{left_text.casefold() == right_text.casefold()}", 1.0),
+        (f"folded-equal:{left_folded == right_folded}", 1.0),
         (f"shape-equal:{left_shape == right_shape}", 1.0),
         (f"left-shape:{left_shape}", 1.0),
         (f"right-shape:{right_shape}", 1.0),
         (f"distance:{_bucket(abs(right[0] - left[1]))}", 1.0),
+        (f"token-gap:{_bucket(token_gap)}", 1.0),
+        (f"punctuation-gap:{_bucket(punctuation)}", 1.0),
+        (f"line-break-gap:{_bucket(line_breaks)}", 1.0),
+        (f"left-token-width:{_bucket(len(left_tokens))}", 1.0),
+        (f"right-token-width:{_bucket(len(right_tokens))}", 1.0),
+        (f"same-first-token:{bool(left_tokens and right_tokens and left_tokens[0] == right_tokens[0])}", 1.0),
+        (f"same-last-token:{bool(left_tokens and right_tokens and left_tokens[-1] == right_tokens[-1])}", 1.0),
+        (f"surface-contained:{left_folded in right_folded or right_folded in left_folded}", 1.0),
+        (f"digit-pattern-equal:{bool(left_digits) and left_digits == right_digits}", 1.0),
+        (f"both-have-digits:{bool(left_digits) and bool(right_digits)}", 1.0),
         (f"overlapping:{max(left[0], right[0]) < min(left[1], right[1])}", 1.0),
         (f"rightward:{left[0] <= right[0]}", 1.0),
         (f"similarity-bucket:{int(overlap * 10)}", 1.0),
+        (f"token-similarity-bucket:{int(token_overlap * 10)}", 1.0),
         ("similarity", overlap),
+        ("token-similarity", token_overlap),
     ]
     features.extend((f"left:{gram}", 0.5) for gram in sorted(left_grams))
     features.extend((f"right:{gram}", 0.5) for gram in sorted(right_grams))
     for prefix, span in (("left", left), ("right", right)):
-        context = text[max(0, span[0] - 24) : span[0]] + text[span[1] : span[1] + 24]
+        context = text[max(0, span[0] - 32) : span[0]] + text[span[1] : span[1] + 32]
         features.extend(
             (f"{prefix}-context:{gram}", 0.25) for gram in _grams(context, config)
         )
     return _vector(features, config)
+
+
+def _hard_negative_priority(
+    text: str,
+    tokens: list[_Token],
+    left: tuple[int, int],
+    right: tuple[int, int],
+    config: LearningConfig,
+) -> tuple[float, int]:
+    left_text, right_text = text[slice(*left)], text[slice(*right)]
+    left_folded, right_folded = left_text.casefold(), right_text.casefold()
+    left_grams, right_grams = set(_grams(left_text, config)), set(_grams(right_text, config))
+    overlap = len(left_grams & right_grams) / max(1, len(left_grams | right_grams))
+    left_indices = _overlapping_token_indices(tokens, left)
+    right_indices = _overlapping_token_indices(tokens, right)
+    token_gap = (
+        max(0, right_indices[0] - left_indices[-1] - 1)
+        if left_indices and right_indices
+        else 0
+    )
+    hardness = (
+        4.0 * float(left_folded == right_folded)
+        + 2.0 * float(_shape(left_text) == _shape(right_text))
+        + 2.0 * overlap
+        + float(left_folded in right_folded or right_folded in left_folded)
+        + 1.0 / (1.0 + token_gap)
+    )
+    tie = int.from_bytes(
+        hashlib.blake2s(
+            f"{left[0]}:{left[1]}:{right[0]}:{right[1]}".encode(),
+            digest_size=8,
+        ).digest(),
+        "little",
+    )
+    return hardness, tie
 
 
 def _sigmoid(value: float) -> float:
@@ -438,8 +540,10 @@ class CandidateModel:
             raise ValueError("a mention cannot link to itself")
         if not self.pair_training_enabled:
             return 0.5
+        tokens = self._prepare(text)
         return _score(
-            self._link_weights, _pair_features(text, left_span, right_span, self.config)
+            self._link_weights,
+            _pair_features(text, tokens, left_span, right_span, self.config),
         )
 
     def to_dict(self) -> dict[str, Any]:
@@ -585,7 +689,7 @@ def _fit(
             document_index, left, right, target = examples[index]
             document = documents[document_index]
             vector = (
-                _pair_features(document.text, left, right, config)
+                _pair_features(document.text, document.tokens, left, right, config)
                 if pair
                 else _span_features(document.text, document.tokens, left, right, config)
             )
@@ -724,30 +828,36 @@ def train_model(
             > config.max_pair_examples
         ):
             raise ValueError("corpus exceeds max_pair_examples")
-        negatives = []
-        negative_seen = 0
-        rng = random.Random(f"{config.seed}:{document.document_id}:pair")
+        hard_negatives: list[tuple[float, int, tuple]] = []
         for left, right in _antecedent_pairs(document.mentions, config):
             if left["entity_id"] is None or right["entity_id"] is None:
                 continue
             target = int(left["entity_id"] == right["entity_id"])
-            entry = (
-                document_index,
-                (left["start"], left["end"]),
-                (right["start"], right["end"]),
-                target,
-            )
+            left_span = (left["start"], left["end"])
+            right_span = (right["start"], right["end"])
+            entry = (document_index, left_span, right_span, target)
             if target:
                 pair_examples.append(entry)
-            else:
-                negative_seen += 1
-                if len(negatives) < negative_limit:
-                    negatives.append(entry)
-                else:
-                    replace = rng.randrange(negative_seen)
-                    if replace < negative_limit:
-                        negatives[replace] = entry
-        pair_examples.extend(negatives)
+                continue
+            priority, tie = _hard_negative_priority(
+                document.text,
+                document.tokens,
+                left_span,
+                right_span,
+                config,
+            )
+            ranked = (priority, tie, entry)
+            if len(hard_negatives) < negative_limit:
+                heapq.heappush(hard_negatives, ranked)
+            elif ranked[:2] > hard_negatives[0][:2]:
+                heapq.heapreplace(hard_negatives, ranked)
+        pair_examples.extend(
+            item[2]
+            for item in sorted(
+                hard_negatives,
+                key=lambda item: (-item[0], -item[1]),
+            )
+        )
     summary: dict[str, Any] = {
         "train_document_count": len(documents),
         "train_token_count": sum(len(document.tokens) for document in documents),
