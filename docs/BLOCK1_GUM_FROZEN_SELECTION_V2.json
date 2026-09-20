@@ -1,0 +1,174 @@
+{
+  "schema": "ai2-block1-gum-selection-v1",
+  "frozen_at": "2026-09-20",
+  "repository": "https://github.com/amir-zeldes/gum",
+  "revision": "22fdf87f9c71c96bcc771461d06e689b1f90020d",
+  "selection_policy": "Frozen before model changes and before model predictions: second independent Block-1 holdout. Use the first eight official train documents from fiction and voyage in splits.md order, all two official dev documents from each genre as validation, and all two official test documents from each genre as test. Whole documents are groups. The prior news/interview pilot and the first academic/conversation frozen experiment are excluded. No document is selected or removed using model scores, errors, or predictions.",
+  "prior_excluded_genres": [
+    "news",
+    "interview",
+    "academic",
+    "conversation"
+  ],
+  "selected_genres": [
+    "fiction",
+    "voyage"
+  ],
+  "train_documents_per_genre": 8,
+  "requirements": {
+    "max_unsupported_gold_rate": 0.1,
+    "min_unseen_surface_recall": 0.25,
+    "max_same_surface_false_merges": 0,
+    "min_accepted_link_precision": 0.9,
+    "min_accepted_link_decisions": 10,
+    "min_mention_f1_delta_from_baseline": 0,
+    "min_coreference_f1_delta_from_baseline": 0
+  },
+  "documents": [
+    {
+      "document_id": "GUM_fiction_claus",
+      "group_id": "GUM_fiction_claus",
+      "split": "train",
+      "language": "en"
+    },
+    {
+      "document_id": "GUM_fiction_error",
+      "group_id": "GUM_fiction_error",
+      "split": "train",
+      "language": "en"
+    },
+    {
+      "document_id": "GUM_fiction_frankenstein",
+      "group_id": "GUM_fiction_frankenstein",
+      "split": "train",
+      "language": "en"
+    },
+    {
+      "document_id": "GUM_fiction_garden",
+      "group_id": "GUM_fiction_garden",
+      "split": "train",
+      "language": "en"
+    },
+    {
+      "document_id": "GUM_fiction_giants",
+      "group_id": "GUM_fiction_giants",
+      "split": "train",
+      "language": "en"
+    },
+    {
+      "document_id": "GUM_fiction_honour",
+      "group_id": "GUM_fiction_honour",
+      "split": "train",
+      "language": "en"
+    },
+    {
+      "document_id": "GUM_fiction_moon",
+      "group_id": "GUM_fiction_moon",
+      "split": "train",
+      "language": "en"
+    },
+    {
+      "document_id": "GUM_fiction_oversite",
+      "group_id": "GUM_fiction_oversite",
+      "split": "train",
+      "language": "en"
+    },
+    {
+      "document_id": "GUM_voyage_chatham",
+      "group_id": "GUM_voyage_chatham",
+      "split": "train",
+      "language": "en"
+    },
+    {
+      "document_id": "GUM_voyage_cleveland",
+      "group_id": "GUM_voyage_cleveland",
+      "split": "train",
+      "language": "en"
+    },
+    {
+      "document_id": "GUM_voyage_cuba",
+      "group_id": "GUM_voyage_cuba",
+      "split": "train",
+      "language": "en"
+    },
+    {
+      "document_id": "GUM_voyage_fortlee",
+      "group_id": "GUM_voyage_fortlee",
+      "split": "train",
+      "language": "en"
+    },
+    {
+      "document_id": "GUM_voyage_guadeloupe",
+      "group_id": "GUM_voyage_guadeloupe",
+      "split": "train",
+      "language": "en"
+    },
+    {
+      "document_id": "GUM_voyage_isfahan",
+      "group_id": "GUM_voyage_isfahan",
+      "split": "train",
+      "language": "en"
+    },
+    {
+      "document_id": "GUM_voyage_lodz",
+      "group_id": "GUM_voyage_lodz",
+      "split": "train",
+      "language": "en"
+    },
+    {
+      "document_id": "GUM_voyage_merida",
+      "group_id": "GUM_voyage_merida",
+      "split": "train",
+      "language": "en"
+    },
+    {
+      "document_id": "GUM_fiction_beast",
+      "group_id": "GUM_fiction_beast",
+      "split": "validation",
+      "language": "en"
+    },
+    {
+      "document_id": "GUM_fiction_lunre",
+      "group_id": "GUM_fiction_lunre",
+      "split": "validation",
+      "language": "en"
+    },
+    {
+      "document_id": "GUM_voyage_athens",
+      "group_id": "GUM_voyage_athens",
+      "split": "validation",
+      "language": "en"
+    },
+    {
+      "document_id": "GUM_voyage_coron",
+      "group_id": "GUM_voyage_coron",
+      "split": "validation",
+      "language": "en"
+    },
+    {
+      "document_id": "GUM_fiction_falling",
+      "group_id": "GUM_fiction_falling",
+      "split": "test",
+      "language": "en"
+    },
+    {
+      "document_id": "GUM_fiction_teeth",
+      "group_id": "GUM_fiction_teeth",
+      "split": "test",
+      "language": "en"
+    },
+    {
+      "document_id": "GUM_voyage_oakland",
+      "group_id": "GUM_voyage_oakland",
+      "split": "test",
+      "language": "en"
+    },
+    {
+      "document_id": "GUM_voyage_vavau",
+      "group_id": "GUM_voyage_vavau",
+      "split": "test",
+      "language": "en"
+    }
+  ],
+  "test_predictions_seen_before_freeze": false
+}
