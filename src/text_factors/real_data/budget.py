@@ -68,7 +68,7 @@ class BudgetSnapshot:
         return asdict(self)
 
     @classmethod
-    def from_dict(cls, value: dict[str, Any]) -> "BudgetSnapshot":
+    def from_dict(cls, value: dict[str, Any]) -> BudgetSnapshot:
         if type(value) is not dict:
             raise ValueError("budget snapshot must be an object")
         allowed = {
