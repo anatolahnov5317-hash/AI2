@@ -101,10 +101,7 @@ def _validate_selection(
     if selection.get("schema") != SELECTION_SCHEMA:
         raise ValueError("unsupported frozen selection schema")
     revision = selection.get("revision")
-    if (
-        type(revision) is not str
-        or not re.fullmatch(r"[0-9a-f]{40}", revision)
-    ):
+    if type(revision) is not str or not re.fullmatch(r"[0-9a-f]{40}", revision):
         raise ValueError("selection requires a pinned 40-hex GUM revision")
     if selection.get("test_predictions_seen_before_freeze") is not False:
         raise ValueError("selection must be frozen before test predictions")
@@ -170,9 +167,7 @@ def build_manifest(
         metadata = ET.fromstring(xml_data)
         if metadata.tag != "text" or metadata.get("id") != document_id:
             raise ValueError(f"{document_id}: invalid XML identity")
-        expected_partition = (
-            "dev" if item["split"] == "validation" else item["split"]
-        )
+        expected_partition = "dev" if item["split"] == "validation" else item["split"]
         if metadata.get("partition") != expected_partition:
             raise ValueError(f"{document_id}: XML partition mismatch")
         source_url = metadata.get("sourceURL")
