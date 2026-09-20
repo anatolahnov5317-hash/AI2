@@ -275,6 +275,35 @@ def run(args: argparse.Namespace) -> int:
                 "output": args.output,
             }
         )
+    elif args.learning_operation == "freeze-gate":
+        from .quality_gate import freeze_quality_gate
+
+        corpus = load_learning_corpus(args.corpus)
+        result = freeze_quality_gate(corpus)
+        write_artifact(Path(args.output), result, overwrite=args.overwrite)
+        _print(
+            {
+                "status": "quality_gate_frozen",
+                "output": args.output,
+                "gate_fingerprint": result["gate_fingerprint"],
+            }
+        )
+    elif args.learning_operation == "quality-gate":
+        from .quality_gate import evaluate_quality_gate
+
+        corpus = load_learning_corpus(args.corpus)
+        gate = read_json(Path(args.gate), max_bytes=MAX_CORPUS_BYTES)
+        result = evaluate_quality_gate(Path(args.model), corpus, gate)
+        write_artifact(Path(args.output), result, overwrite=args.overwrite)
+        _print(
+            {
+                "status": "quality_gate_evaluated",
+                "passed": result["passed"],
+                "failure_reasons": result["failure_reasons"],
+                "output": args.output,
+            }
+        )
+        return 0 if result["passed"] else 1
     return 0
 
 
@@ -283,12 +312,25 @@ def add_parsers(subparsers: Any) -> None:
         "mention-learning", help="train and evaluate open mention/link proposals"
     )
     operations = parser.add_subparsers(dest="learning_operation", required=True)
-    for name in ("train", "evaluate", "propose", "import-corpus"):
+    for name in (
+        "train",
+        "evaluate",
+        "propose",
+        "import-corpus",
+        "freeze-gate",
+        "quality-gate",
+    ):
         command = operations.add_parser(name)
         command.set_defaults(handler=run)
-        if name in {"train", "evaluate", "import-corpus"}:
+        if name in {
+            "train",
+            "evaluate",
+            "import-corpus",
+            "freeze-gate",
+            "quality-gate",
+        }:
             command.add_argument("--corpus", required=True)
-        if name in {"evaluate", "propose"}:
+        if name in {"evaluate", "propose", "quality-gate"}:
             command.add_argument("--model", required=True)
         if name == "train":
             command.add_argument("--output-dir", required=True)
@@ -298,6 +340,8 @@ def add_parsers(subparsers: Any) -> None:
         else:
             command.add_argument("--output", required=name != "propose")
             command.add_argument("--overwrite", action="store_true")
+        if name == "quality-gate":
+            command.add_argument("--gate", required=True)
         if name == "propose":
             command.add_argument("--input", required=True)
             command.add_argument("--language", required=True)
