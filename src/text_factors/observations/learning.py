@@ -301,6 +301,12 @@ def _pair_features(
     punctuation = sum(unicodedata.category(char).startswith("P") for char in between)
     line_breaks = between.count("\n") + between.count("\r")
     left_digits, right_digits = _digit_runs(left_text), _digit_runs(right_text)
+    same_first_token = bool(
+        left_tokens and right_tokens and left_tokens[0] == right_tokens[0]
+    )
+    same_last_token = bool(
+        left_tokens and right_tokens and left_tokens[-1] == right_tokens[-1]
+    )
     features = [
         (f"exact-equal:{left_text == right_text}", 1.0),
         (f"folded-equal:{left_folded == right_folded}", 1.0),
@@ -313,24 +319,8 @@ def _pair_features(
         (f"line-break-gap:{_bucket(line_breaks)}", 1.0),
         (f"left-token-width:{_bucket(len(left_tokens))}", 1.0),
         (f"right-token-width:{_bucket(len(right_tokens))}", 1.0),
-        (
-            "same-first-token:"
-            f"{bool(
-                left_tokens
-                and right_tokens
-                and left_tokens[0] == right_tokens[0]
-            )}",
-            1.0,
-        ),
-        (
-            "same-last-token:"
-            f"{bool(
-                left_tokens
-                and right_tokens
-                and left_tokens[-1] == right_tokens[-1]
-            )}",
-            1.0,
-        ),
+        (f"same-first-token:{same_first_token}", 1.0),
+        (f"same-last-token:{same_last_token}", 1.0),
         (
             "surface-contained:"
             f"{left_folded in right_folded or right_folded in left_folded}",
