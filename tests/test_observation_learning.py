@@ -205,6 +205,39 @@ class ObservationLearningTests(unittest.TestCase):
         self.assertEqual(summary["pair_eligible_negative_examples"], 14)
         self.assertEqual(summary["pair_negative_examples"], 3)
 
+    def test_identity_conflict_negatives_are_never_sampled_away(self):
+        text = "Alex met Alex. Alex saw Alex."
+        starts = []
+        offset = 0
+        while True:
+            offset = text.find("Alex", offset)
+            if offset < 0:
+                break
+            starts.append(offset)
+            offset += 4
+        mentions = [
+            (start, start + 4, entity)
+            for start, entity in zip(starts, ("a", "b", "a", "b"), strict=True)
+        ]
+        model = train_model(
+            [_document("same-name", text, mentions)],
+            replace(self.config, negative_ratio=1),
+        )
+        summary = model.training_summary
+        self.assertGreater(summary["pair_eligible_critical_negative_examples"], 0)
+        self.assertEqual(
+            summary["pair_critical_negative_examples"],
+            summary["pair_eligible_critical_negative_examples"],
+        )
+        self.assertGreaterEqual(
+            summary["pair_negative_examples"],
+            summary["pair_critical_negative_examples"],
+        )
+        self.assertEqual(
+            summary["pair_negative_sampling"],
+            "retain_identity_conflicts_then_hard_similarity_distance_v2",
+        )
+
     def test_resource_limits_reject_oversized_inputs_without_silent_truncation(self):
         doc = _document("small", "A B", [(0, 1, "a")])
         model = train_model(
