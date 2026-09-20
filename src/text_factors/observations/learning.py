@@ -54,7 +54,7 @@ class LearningConfig:
     seed: int = 17
     epochs: int = 12
     feature_dim: int = 8192
-    max_span_tokens: int = 8
+    max_span_tokens: int = 16
     max_tokens: int = 4096
     max_antecedents: int = 64
     negative_ratio: int = 3
