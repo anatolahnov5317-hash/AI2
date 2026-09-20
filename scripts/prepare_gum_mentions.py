@@ -163,16 +163,29 @@ def verify_tsv_tokens(data: str, tokens: list[str], document_id: str) -> None:
 def _source_file(root: Path, record: dict[str, Any]) -> bytes:
     relative = record.get("path")
     checksum = record.get("sha256")
-    if not isinstance(relative, str) or not isinstance(checksum, str):
-        raise ValueError("source record requires path and sha256 strings")
+    blob_sha = record.get("git_blob_sha1")
+    if not isinstance(relative, str):
+        raise ValueError("source record requires path")
+    if (checksum is None) == (blob_sha is None):
+        raise ValueError(
+            "source record requires exactly one of sha256 or git_blob_sha1"
+        )
+    if checksum is not None and not isinstance(checksum, str):
+        raise ValueError("sha256 must be a string")
+    if blob_sha is not None and not isinstance(blob_sha, str):
+        raise ValueError("git_blob_sha1 must be a string")
     if Path(relative).is_absolute() or ".." in Path(relative).parts:
         raise ValueError("source path must stay within the input directory")
     path = root / relative
     if not path.resolve().is_relative_to(root.resolve()):
         raise ValueError("source path escapes the input directory")
     data = read_bounded(path)
-    if hashlib.sha256(data).hexdigest() != checksum:
+    if checksum is not None and hashlib.sha256(data).hexdigest() != checksum:
         raise ValueError(f"source checksum mismatch: {relative}")
+    if blob_sha is not None:
+        material = b"blob " + str(len(data)).encode() + b"\0" + data
+        if hashlib.sha1(material).hexdigest() != blob_sha:
+            raise ValueError(f"source git blob mismatch: {relative}")
     return data
 
 
@@ -223,7 +236,10 @@ def prepare_corpus(
         if metadata.get("partition") != official_split:
             raise ValueError(f"{name}: manifest contradicts the official partition")
         source_url = metadata.get("sourceURL")
-        if not source_url or source_url != entry.get("source_url"):
+        declared_source_url = entry.get("source_url")
+        if not source_url:
+            raise ValueError(f"{name}: XML source URL is missing")
+        if declared_source_url is not None and source_url != declared_source_url:
             raise ValueError(f"{name}: inconsistent source URL")
         text_hash = hashlib.sha256(text.encode("utf-8")).hexdigest()
         if text_hash in seen_text:
