@@ -235,8 +235,26 @@ class ObservationLearningTests(unittest.TestCase):
         )
         self.assertEqual(
             summary["pair_negative_sampling"],
-            "retain_identity_conflicts_then_reservoir_v2",
+            "retain_identity_conflicts_then_hard_similarity_distance_v3",
         )
+
+    def test_hard_negative_mining_keeps_confusing_nonidentical_pairs(self):
+        text = "Alpha unit Alpha unit Alpha unit"
+        mentions: list[tuple[int, int, str | None]] = [
+            (0, 5, "a"),
+            (11, 16, "b"),
+            (22, 27, "a"),
+        ]
+        model = train_model(
+            [_document("hard-negatives", text, mentions)],
+            replace(self.config, negative_ratio=1),
+        )
+        summary = model.training_summary
+        self.assertEqual(
+            summary["pair_negative_sampling"],
+            "retain_identity_conflicts_then_hard_similarity_distance_v3",
+        )
+        self.assertGreaterEqual(summary["pair_negative_examples"], 1)
 
     def test_resource_limits_reject_oversized_inputs_without_silent_truncation(self):
         doc = _document("small", "A B", [(0, 1, "a")])
