@@ -10,6 +10,7 @@ from typing import Any
 
 from ..conversation.persistence import encode_json
 from ..conversation.schema import Budget, BudgetExceeded, ConversationLimits
+from .attention import AttentionState, ReviewCue, memory_token, validate_attention_trace
 from .candidate_search import SearchLimits
 from .candidate_selection import select, validate_trace
 from .hypotheses import Observation, digest
@@ -73,6 +74,7 @@ class LearnedSession:
             max_events=self.limits.max_events, max_entities=self.limits.max_entities
         )
         self.context = DialogueContext()
+        self.attention = AttentionState(self.model_fingerprint)
         self.turn_count = 0
         self._previous_action = ""
         self._last_assertions: list[dict[str, Any]] = []
@@ -91,6 +93,7 @@ class LearnedSession:
             "previous_action": self._previous_action,
             "last_assertions": deepcopy(self._last_assertions),
             "history": deepcopy(self._history),
+            "attention": self.attention.to_dict(),
         }
 
     def to_dict(self) -> dict[str, Any]:
@@ -220,6 +223,7 @@ class LearnedSession:
             processing = True
             turn_id = self.turn_count + 1
             candidate_world = self.world.clone()
+            candidate_attention = self.attention.clone()
             interpretation = self.bundle.understanding.interpret(
                 text, context=self.context
             )
@@ -250,6 +254,20 @@ class LearnedSession:
             )
             budget.check()
             meaning = interpretation.meaning
+            attention_trace = candidate_attention.process(
+                proposals,
+                meaning,
+                self.bundle.dynamics,
+                self.bundle.understanding,
+                seconds=self._remaining(budget, candidate_attention.limits.seconds),
+            )
+            if not attention_trace["complete"]:
+                raise BudgetExceeded(attention_trace["reason"])
+            assert interpretation.diagnostics is not None
+            interpretation.diagnostics["attention"] = attention_trace
+            candidate_attention.remember(
+                interpretation.diagnostics["hypotheses"], self.context, semantic_facts
+            )
             diagnostics: dict[str, Any] = {
                 "understanding": {
                     "score": float(interpretation.score),
@@ -429,6 +447,7 @@ class LearnedSession:
                 "previous_action": action,
                 "last_assertions": last_assertions,
                 "history": history,
+                "attention": candidate_attention.to_dict(),
             }
             try:
                 encode_json(snapshot, max_bytes=self.limits.max_state_bytes)
@@ -447,6 +466,7 @@ class LearnedSession:
                 last_assertions,
                 history,
             )
+            self.attention = candidate_attention
             return deepcopy(response)
         except BudgetExceeded as exc:
             return self._failure("limit", str(exc), started=started)
@@ -503,7 +523,11 @@ class LearnedSession:
         if type(understanding["details"]) is not dict:
             raise ValueError("invalid understanding detail metadata")
         if "hypotheses" in understanding["details"]:
-            validate_trace(understanding["details"]["hypotheses"], meaning)
+            batch = validate_trace(understanding["details"]["hypotheses"], meaning)
+            if "attention" in understanding["details"]:
+                validate_attention_trace(understanding["details"]["attention"], batch)
+        elif "attention" in understanding["details"]:
+            raise ValueError("attention receipt has no observation")
         policy = exact_fields(
             diagnostics["policy"], {"action", "scores"}, "policy receipt"
         )
@@ -614,19 +638,22 @@ class LearnedSession:
 
         if not isinstance(bundle, ModelBundle):
             raise ValueError("expected ModelBundle")
+        fields = {
+            "schema",
+            "model_fingerprint",
+            "limits",
+            "world",
+            "context",
+            "turn_count",
+            "previous_action",
+            "last_assertions",
+            "history",
+        }
+        if type(value) is dict and "attention" in value:
+            fields.add("attention")
         value = exact_fields(
             value,
-            {
-                "schema",
-                "model_fingerprint",
-                "limits",
-                "world",
-                "context",
-                "turn_count",
-                "previous_action",
-                "last_assertions",
-                "history",
-            },
+            fields,
             "learned session",
         )
         limits = ConversationLimits.from_dict(value["limits"])
@@ -893,6 +920,65 @@ class LearnedSession:
         ):
             raise ValueError("saved context or previous answer disagrees with receipts")
         session = cls(bundle, limits)
+        if "attention" in value:
+            session.attention = AttentionState.from_dict(
+                value["attention"], bundle.fingerprint
+            )
+            for record in session.attention.records:
+                observation = Observation.from_dict(record["observation"])
+                if (
+                    observation.turn_id > count
+                    or observation.observation_id != f"turn:{observation.turn_id}"
+                    or observation.source != f"сообщение {observation.turn_id}"
+                ):
+                    raise ValueError("archive turn does not match session")
+                if record["review"] is not None and record["review"][
+                    "memory_version"
+                ] != list(memory_token(bundle.dynamics)):
+                    raise ValueError("archive review uses another memory version")
+                for raw_cue in record["cues"]:
+                    cue = ReviewCue.from_dict(raw_cue)
+                    if (
+                        cue.observation.turn_id > count
+                        or cue.observation.observation_id
+                        != f"turn:{cue.observation.turn_id}"
+                        or cue.observation.source
+                        != f"сообщение {cue.observation.turn_id}"
+                    ):
+                        raise ValueError(
+                            "archive cue is not a prior session observation"
+                        )
+                    origin = session.attention.get(cue.observation.observation_id)
+                    if origin is not None and (
+                        origin["observation"] != cue.observation.to_dict()
+                        or origin["original_meaning"] != cue.meaning.to_dict()
+                    ):
+                        raise ValueError(
+                            "clarification does not match original observation"
+                        )
+                receipt = next(
+                    (
+                        r
+                        for r in history
+                        if r["response"]["turn_id"] == observation.turn_id
+                    ),
+                    None,
+                )
+                if receipt is not None:
+                    trace = receipt["response"]["diagnostics"]["understanding"][
+                        "details"
+                    ].get("hypotheses")
+                    if (
+                        trace is None
+                        or trace["batch"]["observation"] != record["observation"]
+                        or trace["snapshot"] != record["original_snapshot"]
+                    ):
+                        raise ValueError("archive origin disagrees with receipt")
+        elif any(
+            "attention" in r["response"]["diagnostics"]["understanding"]["details"]
+            for r in history
+        ):
+            raise ValueError("attention state missing from new session")
         session.world, session.context, session.turn_count = world, context, count
         session._previous_action, session._last_assertions, session._history = (
             expected_previous,
