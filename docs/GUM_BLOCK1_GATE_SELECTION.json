@@ -1,0 +1,46 @@
+{
+  "schema": "ai2-gum-block1-gate-selection-v1",
+  "repository": "https://github.com/amir-zeldes/gum",
+  "revision": "22fdf87f9c71c96bcc771461d06e689b1f90020d",
+  "frozen_at": "2026-09-20",
+  "selection_policy": "Fixed before fitting the Block 1 quality-gate model: use only GUM academic and biography genres, which do not overlap the original news/interview pilot. Take the first six published train documents from each selected genre, all two published dev documents from each selected genre, and all two published test documents from each selected genre. Preserve complete documents as groups. Selection is independent of model predictions, scores, errors, or test labels.",
+  "test_label_policy": "The test documents and their identity labels may be materialized only for the final frozen evaluation after model weights and validation thresholds are fixed.",
+  "splits": {
+    "train": [
+      "GUM_academic_art",
+      "GUM_academic_census",
+      "GUM_academic_economics",
+      "GUM_academic_enjambment",
+      "GUM_academic_epistemic",
+      "GUM_academic_games",
+      "GUM_bio_bernoulli",
+      "GUM_bio_chao",
+      "GUM_bio_enfant",
+      "GUM_bio_fillmore",
+      "GUM_bio_galois",
+      "GUM_bio_goode"
+    ],
+    "validation": [
+      "GUM_academic_exposure",
+      "GUM_academic_librarians",
+      "GUM_bio_byron",
+      "GUM_bio_emperor"
+    ],
+    "test": [
+      "GUM_academic_discrimination",
+      "GUM_academic_eegimaa",
+      "GUM_bio_dvorak",
+      "GUM_bio_jespersen"
+    ]
+  },
+  "quality_gate": {
+    "max_unsupported_gold_rate": 0.05,
+    "min_mention_f1_delta_from_surface_baseline": 0.0,
+    "require_validation_link_gate": true,
+    "min_validation_link_precision": 0.90,
+    "min_validation_evaluable_links": 10,
+    "min_test_accepted_link_precision": 0.80,
+    "min_test_evaluable_links": 10,
+    "min_oracle_coreference_f1_delta_from_baseline": 0.0
+  }
+}
