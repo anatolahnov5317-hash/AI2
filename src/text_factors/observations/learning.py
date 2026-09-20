@@ -272,9 +272,7 @@ def _pair_features(
     )
     left_set, right_set = set(left_tokens), set(right_tokens)
     token_union = left_set | right_set
-    token_overlap = (
-        len(left_set & right_set) / len(token_union) if token_union else 0.0
-    )
+    token_overlap = len(left_set & right_set) / len(token_union) if token_union else 0.0
     token_gap = (
         max(0, right_indices[0] - left_indices[-1] - 1)
         if left_indices and right_indices
