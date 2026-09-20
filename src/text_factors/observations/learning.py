@@ -315,12 +315,20 @@ def _pair_features(
         (f"right-token-width:{_bucket(len(right_tokens))}", 1.0),
         (
             "same-first-token:"
-            f"{bool(left_tokens and right_tokens and left_tokens[0] == right_tokens[0])}",
+            f"{bool(
+                left_tokens
+                and right_tokens
+                and left_tokens[0] == right_tokens[0]
+            )}",
             1.0,
         ),
         (
             "same-last-token:"
-            f"{bool(left_tokens and right_tokens and left_tokens[-1] == right_tokens[-1])}",
+            f"{bool(
+                left_tokens
+                and right_tokens
+                and left_tokens[-1] == right_tokens[-1]
+            )}",
             1.0,
         ),
         (
