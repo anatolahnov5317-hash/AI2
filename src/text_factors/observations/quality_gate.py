@@ -8,7 +8,6 @@ exception to be hidden by changing the test split after seeing predictions.
 
 from __future__ import annotations
 
-from collections import Counter
 from typing import Any
 
 from .assessment import evaluate_model, propose
@@ -205,7 +204,11 @@ def _same_surface_false_merges(
             if entity is None:
                 continue
             surface_entities.setdefault(_surface(document, mention), set()).add(entity)
-        risky = {surface for surface, entities in surface_entities.items() if len(entities) > 1}
+        risky = {
+            surface
+            for surface, entities in surface_entities.items()
+            if len(entities) > 1
+        }
         risky_surfaces += len(risky)
         risky_gold_mentions += sum(
             _surface(document, mention) in risky for mention in document["mentions"]
