@@ -75,7 +75,7 @@ class RealDataEngine:
         }
 
     @classmethod
-    def from_dict(cls, value: dict[str, object]) -> "RealDataEngine":
+    def from_dict(cls, value: dict[str, object]) -> RealDataEngine:
         expected = {
             "revision",
             "claims",
