@@ -1,18 +1,8 @@
 name: Block 1 Frozen Quality Gate V3
 
+
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - test/block1-quality-gate
-    paths:
-      - ".github/workflows/block1-quality-gate-v3.yml"
-      - "docs/BLOCK1_GUM_FROZEN_SELECTION_V3.json"
-      - "scripts/freeze_gum_block1_selection.py"
-      - "scripts/prepare_gum_mentions.py"
-      - "src/text_factors/observations/**"
-      - "tests/test_block1_quality_gate.py"
-      - "tests/test_observation_learning.py"
 
 permissions:
   contents: read
