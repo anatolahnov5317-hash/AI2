@@ -26,7 +26,6 @@ class EvidenceRoot:
         if type(self.source_version) is not int or self.source_version <= 0:
             raise ValueError("source_version must be positive")
 
-
     def to_dict(self) -> dict[str, Any]:
         return {
             "root_id": self.root_id,
@@ -104,8 +103,7 @@ class EvidenceLedger:
     def to_dict(self) -> dict[str, Any]:
         return {
             "roots": [
-                self._roots[root_id].to_dict()
-                for root_id in sorted(self._roots)
+                self._roots[root_id].to_dict() for root_id in sorted(self._roots)
             ],
             "claim_roots": {
                 claim_id: sorted(root_ids)
