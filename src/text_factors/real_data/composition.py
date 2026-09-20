@@ -29,7 +29,7 @@ class SparseCode:
         if any(type(bit) is not int or not 0 <= bit < self.width for bit in self.bits):
             raise ValueError("bit outside sparse-code width")
 
-    def jaccard(self, other: "SparseCode") -> float:
+    def jaccard(self, other: SparseCode) -> float:
         if self.width != other.width:
             raise ValueError("cannot compare codes with different widths")
         left, right = set(self.bits), set(other.bits)
@@ -80,7 +80,7 @@ class CompositionalEncoder:
     def _atom_bits(self, atom: str) -> tuple[int, ...]:
         bits: set[int] = set()
         counter = 0
-        prefix = f"{self.seed}:{atom}:".encode("utf-8")
+        prefix = f"{self.seed}:{atom}:".encode()
         while len(bits) < self.active_bits_per_atom:
             digest = hashlib.blake2b(
                 prefix + str(counter).encode("ascii"), digest_size=32
