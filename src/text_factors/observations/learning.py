@@ -389,10 +389,7 @@ def _summary(value: Any, config: LearningConfig) -> dict[str, Any]:
         or any(c not in "0123456789abcdef" for c in digest)
     ):
         raise ValueError("invalid train_data_sha256")
-    if (
-        value["pair_negative_sampling"]
-        != "retain_identity_conflicts_then_reservoir_v2"
-    ):
+    if value["pair_negative_sampling"] != "retain_identity_conflicts_then_reservoir_v2":
         raise ValueError("invalid pair negative sampling")
     if value["score_interpretation"] != "uncalibrated_sigmoid":
         raise ValueError("invalid score interpretation")
