@@ -1,0 +1,119 @@
+name: Block 1 Frozen Quality Gate V3
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - test/block1-quality-gate
+    paths:
+      - ".github/workflows/block1-quality-gate-v3.yml"
+      - "docs/BLOCK1_GUM_FROZEN_SELECTION_V3.json"
+      - "scripts/freeze_gum_block1_selection.py"
+      - "scripts/prepare_gum_mentions.py"
+      - "src/text_factors/observations/**"
+      - "tests/test_block1_quality_gate.py"
+      - "tests/test_observation_learning.py"
+
+permissions:
+  contents: read
+
+jobs:
+  frozen-quality-gate-v3:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      OPENBLAS_NUM_THREADS: "1"
+      OMP_NUM_THREADS: "1"
+      GUM_REVISION: "22fdf87f9c71c96bcc771461d06e689b1f90020d"
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install AI2
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+
+      - name: Checkout pinned GUM
+        run: |
+          mkdir -p artifacts/gum-source
+          git -C artifacts/gum-source init
+          git -C artifacts/gum-source remote add origin https://github.com/amir-zeldes/gum.git
+          git -C artifacts/gum-source fetch --depth=1 origin "$GUM_REVISION"
+          git -C artifacts/gum-source checkout --detach FETCH_HEAD
+          test "$(git -C artifacts/gum-source rev-parse HEAD)" = "$GUM_REVISION"
+
+      - name: Materialize V3 manifest
+        run: |
+          python scripts/freeze_gum_block1_selection.py \
+            --selection docs/BLOCK1_GUM_FROZEN_SELECTION_V3.json \
+            --gum-root artifacts/gum-source \
+            --output artifacts/block1-v3-manifest.json
+
+      - name: Build V3 corpus
+        run: |
+          python scripts/prepare_gum_mentions.py \
+            --input-dir artifacts/gum-source \
+            --manifest artifacts/block1-v3-manifest.json \
+            --output artifacts/block1-v3-corpus.json
+
+      - name: Freeze V3 gate
+        run: |
+          text-factors mention-learning freeze-gate \
+            --corpus artifacts/block1-v3-corpus.json \
+            --output artifacts/block1-v3-gate.json
+
+      - name: Train and calibrate without test labels
+        run: |
+          text-factors mention-learning train \
+            --corpus artifacts/block1-v3-corpus.json \
+            --output-dir artifacts/block1-v3-model \
+            --seed 17 \
+            --epochs 8
+
+      - name: Evaluate frozen V3 test
+        continue-on-error: true
+        run: |
+          text-factors mention-learning quality-gate \
+            --corpus artifacts/block1-v3-corpus.json \
+            --model artifacts/block1-v3-model/model.json \
+            --gate artifacts/block1-v3-gate.json \
+            --output artifacts/block1-v3-quality-report.json
+
+      - name: Upload V3 artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: block1-frozen-quality-gate-v3
+          path: |
+            artifacts/block1-v3-manifest.json
+            artifacts/block1-v3-corpus.json
+            artifacts/block1-v3-gate.json
+            artifacts/block1-v3-model/
+            artifacts/block1-v3-quality-report.json
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Enforce V3 gate
+        if: always()
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          path = Path("artifacts/block1-v3-quality-report.json")
+          if not path.exists():
+              raise SystemExit("V3 quality report missing")
+          report = json.loads(path.read_text(encoding="utf-8"))
+          print(json.dumps({
+              "passed": report["passed"],
+              "failure_reasons": report["failure_reasons"],
+              "derived": report["derived"],
+              "slices": report["slices"],
+              "comparison": report["metrics"]["comparison"],
+          }, ensure_ascii=False, indent=2))
+          raise SystemExit(0 if report["passed"] else 1)
+          PY
