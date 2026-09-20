@@ -174,6 +174,18 @@ class ObservationLearningTests(unittest.TestCase):
             0.5,
         )
 
+    def test_default_span_width_represents_eight_token_mentions(self):
+        text = "A B C D E F G H"
+        model = train_model(
+            [_document("wide", text, [(0, len(text), "entity")])],
+            LearningConfig(feature_dim=256, epochs=2, max_char_ngrams=16),
+        )
+        self.assertEqual(model.training_summary["unsupported_gold_spans"], 0)
+        self.assertEqual(
+            model.training_summary["span_candidate_policy"],
+            "contiguous_token_spans_up_to_configured_width",
+        )
+
     def test_gold_candidate_representability_and_antecedent_window_are_reported(self):
         text = "One two three"
         doc = _document(
@@ -204,6 +216,10 @@ class ObservationLearningTests(unittest.TestCase):
         self.assertEqual(summary["pair_eligible_positive_examples"], 1)
         self.assertEqual(summary["pair_eligible_negative_examples"], 14)
         self.assertEqual(summary["pair_negative_examples"], 3)
+        self.assertEqual(
+            summary["pair_negative_sampling"],
+            "hard_surface_shape_similarity_distance_v1",
+        )
 
     def test_resource_limits_reject_oversized_inputs_without_silent_truncation(self):
         doc = _document("small", "A B", [(0, 1, "a")])
