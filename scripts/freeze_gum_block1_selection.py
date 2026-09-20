@@ -20,7 +20,7 @@ from typing import Any
 SELECTION_SCHEMA = "ai2-block1-gum-selection-v1"
 MANIFEST_SCHEMA = "ai2-gum-pilot-manifest-v1"
 MAX_FILE_BYTES = 4 * 1024 * 1024
-GENRE_PREFIXES = ("GUM_academic_", "GUM_conversation_")
+ALLOWED_GENRE = re.compile(r"^[a-z][a-z0-9_]*$")
 
 
 def _canonical_bytes(value: Any) -> bytes:
@@ -76,19 +76,43 @@ def _parse_splits(path: Path) -> dict[str, list[str]]:
     return result
 
 
-def _expected_selection(splits: dict[str, list[str]]) -> list[tuple[str, str]]:
+def _selection_policy(
+    selection: dict[str, Any],
+) -> tuple[tuple[str, ...], int]:
+    genres = selection.get("selected_genres")
+    if (
+        type(genres) is not list
+        or not 1 <= len(genres) <= 8
+        or any(type(genre) is not str or not ALLOWED_GENRE.fullmatch(genre) for genre in genres)
+        or len(set(genres)) != len(genres)
+    ):
+        raise ValueError("selection requires unique selected_genres")
+    train_per_genre = selection.get("train_documents_per_genre", 8)
+    if type(train_per_genre) is not int or not 1 <= train_per_genre <= 32:
+        raise ValueError("invalid train_documents_per_genre")
+    return tuple(genres), train_per_genre
+
+
+def _expected_selection(
+    splits: dict[str, list[str]],
+    genres: tuple[str, ...],
+    train_per_genre: int,
+) -> list[tuple[str, str]]:
     expected: list[tuple[str, str]] = []
-    for prefix in GENRE_PREFIXES:
+    for genre in genres:
+        prefix = f"GUM_{genre}_"
         train = [item for item in splits["train"] if item.startswith(prefix)]
         dev = [item for item in splits["dev"] if item.startswith(prefix)]
         test = [item for item in splits["test"] if item.startswith(prefix)]
-        if len(train) < 8 or len(dev) != 2 or len(test) != 2:
+        if len(train) < train_per_genre or len(dev) != 2 or len(test) != 2:
             raise ValueError(f"unexpected pinned split cardinality for {prefix}")
-        expected.extend((item, "train") for item in train[:8])
-    for prefix in GENRE_PREFIXES:
+        expected.extend((item, "train") for item in train[:train_per_genre])
+    for genre in genres:
+        prefix = f"GUM_{genre}_"
         dev = [item for item in splits["dev"] if item.startswith(prefix)]
         expected.extend((item, "validation") for item in dev)
-    for prefix in GENRE_PREFIXES:
+    for genre in genres:
+        prefix = f"GUM_{genre}_"
         test = [item for item in splits["test"] if item.startswith(prefix)]
         expected.extend((item, "test") for item in test)
     return expected
@@ -105,9 +129,13 @@ def _validate_selection(
         raise ValueError("selection requires a pinned 40-hex GUM revision")
     if selection.get("test_predictions_seen_before_freeze") is not False:
         raise ValueError("selection must be frozen before test predictions")
+    genres, train_per_genre = _selection_policy(selection)
+    expected_count = len(genres) * (train_per_genre + 4)
     documents = selection.get("documents")
-    if type(documents) is not list or len(documents) != 24:
-        raise ValueError("frozen selection must contain exactly 24 documents")
+    if type(documents) is not list or len(documents) != expected_count:
+        raise ValueError(
+            f"frozen selection must contain exactly {expected_count} documents"
+        )
     normalized: list[dict[str, Any]] = []
     seen: set[str] = set()
     for item in documents:
@@ -132,7 +160,7 @@ def _validate_selection(
         normalized.append(dict(item))
 
     splits = _parse_splits(gum_root / "splits.md")
-    expected = _expected_selection(splits)
+    expected = _expected_selection(splits, genres, train_per_genre)
     actual = [(item["document_id"], item["split"]) for item in normalized]
     if actual != expected:
         raise ValueError(
