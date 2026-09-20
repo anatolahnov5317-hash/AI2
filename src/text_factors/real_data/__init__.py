@@ -25,6 +25,7 @@ from .contracts import (
 from .dependencies import DependencyGraph, RevisionCheckpoint, RevisionResult
 from .engine import RealDataEngine
 from .evidence import EvidenceLedger, EvidenceRoot
+from .persistence import load_state, save_state, state_payload
 from .pilot import PilotGateConfig, PilotSample, evaluate_pilot
 from .uncertainty import UncertaintyIndex
 
@@ -59,5 +60,8 @@ __all__ = [
     "evaluate_pilot",
     "evidence_root",
     "jaccard",
+    "load_state",
+    "save_state",
     "source_slice",
+    "state_payload",
 ]
