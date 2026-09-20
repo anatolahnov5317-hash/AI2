@@ -235,7 +235,7 @@ class ObservationLearningTests(unittest.TestCase):
         )
         self.assertEqual(
             summary["pair_negative_sampling"],
-            "retain_identity_conflicts_then_hard_similarity_distance_v2",
+            "retain_identity_conflicts_then_reservoir_v2",
         )
 
     def test_resource_limits_reject_oversized_inputs_without_silent_truncation(self):
