@@ -172,10 +172,22 @@ class BudgetTracker:
         ):
             if type(value) is not int or value < 0:
                 raise ValueError(f"{name} increment must be non-negative")
-        self.steps += steps
-        self.items += items
-        self.bytes_processed += bytes_processed
+        # Wall time is checked before counters move. Capacity checks are made
+        # against prospective values so a rejected unit is never recorded as
+        # successfully processed in a resumable snapshot.
         self.check()
+        next_steps = self.steps + steps
+        next_items = self.items + items
+        next_bytes = self.bytes_processed + bytes_processed
+        if self.budget.max_steps is not None and next_steps > self.budget.max_steps:
+            self._raise("max_steps")
+        if self.budget.max_items is not None and next_items > self.budget.max_items:
+            self._raise("max_items")
+        if self.budget.max_bytes is not None and next_bytes > self.budget.max_bytes:
+            self._raise("max_bytes")
+        self.steps = next_steps
+        self.items = next_items
+        self.bytes_processed = next_bytes
 
     def should_checkpoint(self) -> bool:
         return (
