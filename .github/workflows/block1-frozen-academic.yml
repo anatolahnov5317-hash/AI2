@@ -1,16 +1,7 @@
 name: Block1 Frozen Academic Gate
 
+
 on:
-  push:
-    branches:
-      - test/block1-quality-gate
-    paths:
-      - ".github/workflows/block1-frozen-academic.yml"
-      - "docs/GUM_BLOCK1_ACADEMIC_FROZEN_MANIFEST.json"
-      - "scripts/prepare_gum_mentions.py"
-      - "src/text_factors/observations/**"
-      - "tests/test_block1_quality_gate.py"
-      - "tests/test_observation_learning.py"
   workflow_dispatch:
 
 permissions:
