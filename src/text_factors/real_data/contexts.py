@@ -305,3 +305,77 @@ class ContextRegistry:
             for context in self.contexts
             if context.independent_support >= min_independent_groups
         )
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "width": self.width,
+            "max_contexts": self.max_contexts,
+            "assignment_threshold": self.assignment_threshold,
+            "response_activation_threshold": self.response_activation_threshold,
+            "contexts": [context.to_dict() for context in self.contexts],
+            "active_responses": {
+                context_id: sorted(values)
+                for context_id, values in sorted(self._active_responses.items())
+            },
+        }
+
+    @classmethod
+    def from_dict(cls, value: dict[str, Any]) -> "ContextRegistry":
+        expected = {
+            "width",
+            "max_contexts",
+            "assignment_threshold",
+            "response_activation_threshold",
+            "contexts",
+            "active_responses",
+        }
+        if type(value) is not dict or set(value) != expected:
+            raise ValueError("invalid context registry")
+        registry = cls(
+            width=value["width"],
+            max_contexts=value["max_contexts"],
+            assignment_threshold=value["assignment_threshold"],
+            response_activation_threshold=value["response_activation_threshold"],
+        )
+        contexts = value["contexts"]
+        responses = value["active_responses"]
+        if type(contexts) is not list or type(responses) is not dict:
+            raise ValueError("invalid context registry collections")
+        for raw in contexts:
+            required = {"context_id", "group_ids", "episode_ids", "transform"}
+            if type(raw) is not dict or set(raw) != required:
+                raise ValueError("invalid context candidate")
+            context_id = raw["context_id"]
+            if type(context_id) is not str or not context_id:
+                raise ValueError("invalid context_id")
+            if context_id in registry._contexts:
+                raise ValueError("duplicate context_id")
+            group_ids = raw["group_ids"]
+            episode_ids = raw["episode_ids"]
+            if (
+                type(group_ids) is not list
+                or type(episode_ids) is not list
+                or any(type(item) is not str or not item for item in group_ids)
+                or any(type(item) is not str or not item for item in episode_ids)
+            ):
+                raise ValueError("invalid context support IDs")
+            transform = SparseTransform.from_dict(raw["transform"])
+            if transform.width != registry.width:
+                raise ValueError("context transform width mismatch")
+            registry._contexts[context_id] = ContextCandidate(
+                context_id,
+                transform,
+                set(group_ids),
+                set(episode_ids),
+            )
+        if len(registry._contexts) > registry.max_contexts:
+            raise ValueError("persisted contexts exceed max_contexts")
+        if set(responses) != set(registry._contexts):
+            raise ValueError("active response keys must match context IDs")
+        for context_id, raw_ids in responses.items():
+            if type(raw_ids) is not list or any(
+                type(item) is not str or not item for item in raw_ids
+            ):
+                raise ValueError("invalid active response IDs")
+            registry._active_responses[context_id] = set(raw_ids)
+        return registry
