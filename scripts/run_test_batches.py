@@ -11,6 +11,7 @@ import subprocess
 import sys
 import time
 import unittest
+from importlib.metadata import version
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -103,6 +104,8 @@ def main():
     parser.add_argument("--worker", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("names", nargs="*")
     args = parser.parse_args()
+    if os.name != "posix":
+        parser.error("bounded process supervision requires Linux, macOS or WSL")
     sys.path[:0] = [str(ROOT / "src"), str(ROOT / "tests")]
     if args.worker:
         return worker(args.output, args.names)
@@ -136,6 +139,9 @@ def main():
         "groups": groups,
         "timeout": args.timeout,
         "python": sys.version,
+        "numpy": version("numpy"),
+        "runner_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+        "address_space_bytes": 4 * 1024**3,
     }
     manifest = args.output / "manifest.json"
     if manifest.exists():
@@ -190,14 +196,30 @@ def main():
             if events_path.exists()
             else []
         )
+        recorded = [event["id"] for event in events]
+        missing = sorted(set(names) - set(recorded))
+        complete = len(recorded) == len(names) and set(recorded) == set(names)
         result = {
             "batch": index,
             "requested": names,
             "tests": events,
-            "status": "timeout" if timed_out else "passed" if code == 0 else "failed",
+            "status": "timeout"
+            if timed_out
+            else "failed"
+            if code != 0
+            else "passed"
+            if complete
+            else "incomplete",
+            "not_completed": missing,
             "returncode": code,
             "seconds": time.perf_counter() - started,
         }
+        usage_path = prefix.with_suffix(".usage.json")
+        result["peak_worker_rss_kib"] = (
+            json.loads(usage_path.read_text())["peak_rss_kib"]
+            if usage_path.exists()
+            else None
+        )
         write_json(receipt, result)
         totals.append(result)
         write_json(

@@ -23,7 +23,12 @@ import numpy as np
 from ..config import ModelConfig
 from ..conversation.persistence import _encode_json
 from ..memory import Cluster, ClusterStatus, CombinatorialMemory
-from ..recognition import ClusterEvidence, ContextView, RecognitionLimits
+from ..recognition import (
+    ClusterEvidence,
+    ContextView,
+    InterpretationClaim,
+    RecognitionLimits,
+)
 from ..scene_recognition import (
     FactorPortrait,
     FactorSceneReader,
@@ -443,7 +448,13 @@ class LearnedDynamics:
         }
 
     def _compatibility(
-        self, before: list[dict[str, Any]], event: Event, check: Callable[[], None]
+        self,
+        before: list[dict[str, Any]],
+        event: Event,
+        check: Callable[[], None],
+        *,
+        observation_id: str = "input",
+        source_positions: tuple[int, ...] = (),
     ) -> dict[str, Any]:
         if self._experience is None:
             return {
@@ -461,11 +472,39 @@ class LearnedDynamics:
                 )
             )
         scored = []
+        claims: list[InterpretationClaim] = []
+
+        def describe(node: Event, path: str = "event") -> None:
+            for key, value in node.to_dict().items():
+                if key not in {"content", "condition"} and value != "":
+                    claims.append(
+                        InterpretationClaim(observation_id, path, key, str(value))
+                    )
+            for key in ("content", "condition"):
+                child = getattr(node, key)
+                if child is not None:
+                    describe(child, path + "." + key)
+
+        describe(event)
+
+        def check_read_budget() -> bool:
+            check()
+            return False
+
         for name, transformed in contexts:
             check()
             bits = _sdr(_features(before, transformed), self.seed)
             result = self._experience.recognize_views(
-                [ContextView(name, name, bits, ())],
+                [
+                    ContextView(
+                        name,
+                        name,
+                        bits,
+                        source_positions,
+                        observation_id,
+                        tuple(claims),
+                    )
+                ],
                 total_views=1,
                 limits=RecognitionLimits(
                     max_views=1,
@@ -473,6 +512,7 @@ class LearnedDynamics:
                     max_evidence=8192,
                     seconds=1.0,
                 ),
+                cancelled=check_read_budget,
             )
             check()
             if not result.complete:
@@ -486,6 +526,21 @@ class LearnedDynamics:
                     "memory_namespace": self._experience.encoding_id,
                     "input_sha256": hashlib.sha256(bits.tobytes()).hexdigest(),
                     "kind": "fixed role-coordinate transform; shared factor experience",
+                    "memory_step": result.recognition.memory_step,
+                    "complete": result.complete,
+                    "observation_id": observation_id,
+                    "source_positions": list(source_positions),
+                    "portraits": [
+                        {
+                            "portrait_id": p.portrait_id,
+                            "support": p.support,
+                            "coverage": p.coverage,
+                        }
+                        for p in sorted(
+                            result.proposals, key=lambda p: (-p.coverage, p.portrait_id)
+                        )[:8]
+                    ],
+                    "response_count": len(result.recognition.responses),
                 }
             )
         return {
@@ -503,16 +558,42 @@ class LearnedDynamics:
         return self._compatibility(checked_facts(before), _event(event), check)
 
     def score_interpretations(
-        self, before: list[dict[str, Any]], events: list[Event], *, seconds: float = 2.0
+        self,
+        before: list[dict[str, Any]],
+        events: list[Event],
+        *,
+        seconds: float = 2.0,
+        observation_id: str = "input",
+        source_positions: tuple[int, ...] = (),
     ) -> tuple[dict[str, Any], ...]:
         _, check = _budget(seconds)
         if type(events) is not list or not 1 <= len(events) <= 8:
             raise ValueError("one to eight interpretation candidates required")
         checked = checked_facts(before)
-        return tuple(
-            {"candidate": i, **self._compatibility(checked, _event(event), check)}
-            for i, event in enumerate(events)
-        )
+        # A full batch has one memory version and one before-state. An incomplete
+        # batch raises, so a faster candidate cannot win by timeout ordering.
+        bank = self._experience
+        step = bank.memory.step if bank is not None else None
+        rows = []
+        for i, event in enumerate(events):
+            rows.append(
+                {
+                    "candidate": i,
+                    **self._compatibility(
+                        checked,
+                        _event(event),
+                        check,
+                        observation_id=observation_id,
+                        source_positions=source_positions,
+                    ),
+                }
+            )
+            check()
+            if self._experience is not bank or (
+                bank is not None and bank.memory.step != step
+            ):
+                raise ValueError("experience changed during candidate comparison")
+        return tuple(rows)
 
     def predict(
         self, before: list[dict[str, Any]], event: Event, *, seconds: float = 1.0
