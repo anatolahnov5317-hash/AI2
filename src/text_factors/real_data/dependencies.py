@@ -112,10 +112,7 @@ class DependencyGraph:
             if (
                 type(node_id) is not str
                 or type(raw_dependents) is not list
-                or any(
-                    type(dependent) is not str
-                    for dependent in raw_dependents
-                )
+                or any(type(dependent) is not str for dependent in raw_dependents)
             ):
                 raise ValueError("invalid dependency entry")
             graph.add_node(node_id)
