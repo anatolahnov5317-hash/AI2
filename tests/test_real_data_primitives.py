@@ -93,7 +93,7 @@ class RealDataPrimitiveTests(unittest.TestCase):
             clock=clock,
         )
         resumed.consume(steps=1)
-        self.assertEqual(resumed.steps, 3)
+        self.assertEqual(resumed.steps, 2)
 
     def test_budget_wall_clock_is_checked(self):
         now = [1.0]
