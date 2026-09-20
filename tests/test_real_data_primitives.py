@@ -69,7 +69,10 @@ class RealDataPrimitiveTests(unittest.TestCase):
 
     def test_budget_stops_and_snapshot_resumes(self):
         now = [100.0]
-        clock = lambda: now[0]
+
+        def clock() -> float:
+            return now[0]
+
         tracker = BudgetTracker(
             ResourceBudget(
                 max_steps=1,
