@@ -1,0 +1,119 @@
+name: Block1 Frozen Academic Gate
+
+on:
+  push:
+    branches:
+      - test/block1-quality-gate
+    paths:
+      - ".github/workflows/block1-frozen-academic.yml"
+      - "docs/GUM_BLOCK1_ACADEMIC_FROZEN_MANIFEST.json"
+      - "scripts/prepare_gum_mentions.py"
+      - "src/text_factors/observations/**"
+      - "tests/test_block1_quality_gate.py"
+      - "tests/test_observation_learning.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  frozen-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      OPENBLAS_NUM_THREADS: "1"
+      OMP_NUM_THREADS: "1"
+    steps:
+      - name: Checkout AI2
+        uses: actions/checkout@v4
+
+      - name: Checkout pinned GUM
+        uses: actions/checkout@v4
+        with:
+          repository: amir-zeldes/gum
+          ref: 22fdf87f9c71c96bcc771461d06e689b1f90020d
+          path: vendor/gum
+          fetch-depth: 1
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - run: python -m pip install --upgrade pip
+      - run: python -m pip install -e ".[dev]"
+
+      - name: Convert pre-frozen academic corpus
+        run: |
+          python scripts/prepare_gum_mentions.py \
+            --input-dir vendor/gum \
+            --manifest docs/GUM_BLOCK1_ACADEMIC_FROZEN_MANIFEST.json \
+            --output artifacts/block1-academic-corpus.json
+
+      - name: Freeze quality gate before model evaluation
+        run: |
+          text-factors mention-learning freeze-gate \
+            --corpus artifacts/block1-academic-corpus.json \
+            --output artifacts/block1-academic-gate.json
+
+      - name: Train on frozen train split and calibrate on validation only
+        run: |
+          text-factors mention-learning train \
+            --corpus artifacts/block1-academic-corpus.json \
+            --output-dir artifacts/block1-academic-model \
+            --seed 17 \
+            --epochs 6
+
+      - name: Evaluate frozen held-out test
+        id: gate
+        continue-on-error: true
+        run: |
+          text-factors mention-learning quality-gate \
+            --corpus artifacts/block1-academic-corpus.json \
+            --model artifacts/block1-academic-model/model.json \
+            --gate artifacts/block1-academic-gate.json \
+            --output artifacts/block1-academic-quality-report.json
+
+      - name: Publish concise gate summary
+        if: always()
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          report_path = Path("artifacts/block1-academic-quality-report.json")
+          if not report_path.exists():
+              print("Quality report was not produced.")
+              raise SystemExit(0)
+
+          report = json.loads(report_path.read_text(encoding="utf-8"))
+          metrics = report["metrics"]
+          slices = report["slices"]
+          print("BLOCK1_FROZEN_ACADEMIC_GATE")
+          print("passed=", report["passed"])
+          print("failure_reasons=", report["failure_reasons"])
+          print("mention_f1=", metrics["mentions"]["f1"])
+          print("coreference_f1=", metrics["coreference_end_to_end"]["f1"])
+          print("accepted_links=", metrics["accepted_links"])
+          print("unseen_surfaces=", slices["unseen_surfaces"])
+          print("same_surface_multiple_entities=", slices["same_surface_multiple_entities"])
+          print("unsupported_gold_rate=", report["derived"]["unsupported_gold_rate"])
+          PY
+
+      - name: Upload frozen-gate artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: block1-frozen-academic-gate
+          path: |
+            artifacts/block1-academic-corpus.json
+            artifacts/block1-academic-gate.json
+            artifacts/block1-academic-model/
+            artifacts/block1-academic-quality-report.json
+          if-no-files-found: warn
+
+      - name: Enforce frozen gate result
+        if: steps.gate.outcome == 'failure'
+        run: |
+          echo "Frozen Block-1 quality gate did not pass."
+          exit 1
