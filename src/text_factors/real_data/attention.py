@@ -93,7 +93,9 @@ class HashedAttentionRanker:
         sign = 1.0 if digest[8] & 1 else -1.0
         return slot, sign
 
-    def vector(self, features: dict[str, float]) -> np.ndarray[Any, np.dtype[np.float64]]:
+    def vector(
+        self, features: dict[str, float]
+    ) -> np.ndarray[Any, np.dtype[np.float64]]:
         checked = _feature_map(features)
         vector = np.zeros(self.dimension, dtype=np.float64)
         bias_slot, bias_sign = self._slot("__bias__")
