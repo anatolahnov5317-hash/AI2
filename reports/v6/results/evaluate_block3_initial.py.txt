@@ -1,0 +1,1409 @@
+"""Evaluate the frozen v6 block 3 stories without fitting or changing weights.
+
+Raw-language stories, supplied-structure controls and provenance observations
+have separate totals. Mechanism exclusions are evaluation-only interventions;
+none replaces the learned encoder, increases its candidates or supplies answers.
+The manifest predates the first evaluation and must not be edited after results.
+"""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import resource
+import sys
+from collections import defaultdict
+from contextlib import contextmanager
+from copy import deepcopy
+from dataclasses import replace
+from importlib.metadata import version
+from pathlib import Path
+from time import perf_counter
+from typing import TYPE_CHECKING, Any
+from unittest.mock import patch
+
+from text_factors.learning.agreement import Claim, EvidenceLedger, Scope, exchange
+from text_factors.learning.attention import (
+    AttentionLimits,
+    AttentionState,
+    ReviewCue,
+    Work,
+)
+from text_factors.learning.attention_ranker import AttentionRanker
+from text_factors.learning.candidate_selection import select
+from text_factors.learning.hypotheses import (
+    CandidateSet,
+    Hypothesis,
+    Observation,
+    digest,
+)
+from text_factors.learning.language_data import ENTITY_BY_NAME
+from text_factors.learning.model import ModelBundle
+from text_factors.learning.persistence import read_artifact
+from text_factors.learning.schema import (
+    DialogueContext,
+    Event,
+    Interpretation,
+    Meaning,
+    Query,
+)
+from text_factors.learning.world import ExperienceWorld
+
+if TYPE_CHECKING:
+    from text_factors.learning.session import LearnedSession
+
+ROOT = Path(__file__).resolve().parents[1]
+MANIFEST = ROOT / "tests/fixtures/v6_block3_manifest.json"
+FROZEN_MANIFEST_SHA256 = (
+    "3740a45376e551084b40d348487888c5c905fa786014bd7de70b69cd5f6733b5"
+)
+FACT_KEYS = ("subject", "relation", "value", "negated", "spatial")
+ADDITIONAL_MODES = {
+    "no_agreement": (
+        "Evaluation-only replacement of attention.exchange with its initial "
+        "root sets; no links propagate provenance. Encoder, selection and "
+        "all weights remain unchanged."
+    ),
+    "no_duplicate": (
+        "Evaluation-only replacement of attention.EvidenceLedger.observe: "
+        "each completed read gets its own row instead of coalescing a root. "
+        "Repeat-tagged row IDs index repeated reads, not real independent "
+        "witnesses. No scoring or candidate-selection rule is replaced."
+    ),
+}
+LANGUAGE_CHECKS = {
+    "candidate_contains",
+    "archive_selection",
+    "archive_unchanged",
+    "archive_batch_evicted",
+    "answer_fact",
+    "visible_correction",
+    "no_assertions",
+    "qualified_or_abstained",
+    "world_contains",
+    "world_not_contains",
+    "facts_unchanged",
+    "distinct_instance_answers",
+    "identical_prefix_semantics",
+    "no_prefix_future_roles",
+    "no_prefix_facts",
+    "completion_roles",
+}
+
+
+def file_sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def source_sha256() -> str:
+    state = hashlib.sha256()
+    paths = sorted(
+        {
+            *ROOT.glob("src/**/*.py"),
+            *ROOT.glob("src/**/*.json"),
+            *ROOT.glob("tests/**/*.py"),
+            MANIFEST,
+            Path(__file__).resolve(),
+        }
+    )
+    for path in paths:
+        state.update(str(path.relative_to(ROOT)).encode() + b"\0" + path.read_bytes())
+    return state.hexdigest()
+
+
+def read_manifest(path: Path) -> dict[str, Any]:
+    if file_sha256(path) != FROZEN_MANIFEST_SHA256:
+        raise ValueError("frozen manifest fingerprint mismatch")
+    manifest = json.loads(path.read_text())
+    if manifest["schema"] != "ai2-v6-block3-frozen-cases-v1":
+        raise ValueError("unsupported manifest schema")
+    language, structured = manifest["language_cases"], manifest["structured_cases"]
+    if len(language) != 12 or len(structured) != 8:
+        raise ValueError("frozen case count mismatch")
+    identities = [case["id"] for case in [*language, *structured]]
+    if len(identities) != len(set(identities)):
+        raise ValueError("duplicate manifest identity")
+    for case in language:
+        for item in case["checks"]:
+            if item["kind"] not in LANGUAGE_CHECKS:
+                raise ValueError("unknown language oracle")
+            for field in ("turn", "before", "after", "first", "second"):
+                if field in item and not 1 <= item[field] <= len(case["turns"]):
+                    raise ValueError("oracle turn outside the frozen story")
+    return manifest
+
+
+def checked(name: str, passed: Any, **details: Any) -> dict[str, Any]:
+    return {"name": name, "passed": bool(passed), "applicable": True, **details}
+
+
+def semantic_fact(fact: dict[str, Any]) -> dict[str, Any]:
+    return {key: fact[key] for key in FACT_KEYS}
+
+
+def semantic_facts(facts: Any) -> list[dict[str, Any]]:
+    return sorted((semantic_fact(fact) for fact in facts), key=digest)
+
+
+def contains_fact(facts: Any, expected: dict[str, Any]) -> bool:
+    return any(
+        all(fact.get(key) == value for key, value in expected.items()) for fact in facts
+    )
+
+
+def event_matches(meaning: Any, expected: dict[str, Any]) -> bool:
+    event = meaning.get("event") if isinstance(meaning, dict) else None
+    return bool(
+        event and all(event.get(key) == value for key, value in expected.items())
+    )
+
+
+def hypothesis_trace(response: dict[str, Any]) -> dict[str, Any]:
+    return (
+        response.get("diagnostics", {})
+        .get("understanding", {})
+        .get("details", {})
+        .get("hypotheses", {})
+    )
+
+
+def session_snapshot(session: LearnedSession) -> dict[str, Any]:
+    archive = {}
+    for record in session.attention.records:
+        original = {
+            key: record[key]
+            for key in (
+                "observation",
+                "original_snapshot",
+                "original_selected",
+                "original_meaning",
+                "initial_suppressed",
+            )
+        }
+        archive[record["observation"]["observation_id"]] = {
+            "original_digest": digest(original),
+            "observation": deepcopy(record["observation"]),
+            "selected_id": record["selected_id"],
+            "selected_meaning": deepcopy(record["selected_meaning"]),
+            "revision": record["revision"],
+            "batch_retained": record["batch"] is not None,
+        }
+    return {
+        "turn_count": session.turn_count,
+        "facts": list(session.world.facts()),
+        "archive": archive,
+        "context_turns": list(session.context.turns),
+        "evicted_sources": session.attention.evicted_sources,
+    }
+
+
+@contextmanager
+def intervention(mode: str):
+    original = AttentionState.process
+
+    def process(state, batch, meaning, dynamics, understanding, *, seconds, **kwargs):
+        if mode == "no_attention":
+            return {
+                "complete": True,
+                "reason": "evaluation_attention_disabled",
+                "snapshot_id": state.snapshot_id,
+                "retrieved": [],
+                "reviews": [],
+                "work": dict.fromkeys(
+                    ("scanned", "retrieved", "rounds", "memory_calls", "expansions"),
+                    0,
+                ),
+            }
+        if mode == "no_archive" and state.records:
+            state.evicted_sources += len(state.records)
+            state.records.clear()
+            state.generation += 1
+        return original(
+            state,
+            batch,
+            meaning,
+            dynamics,
+            understanding,
+            seconds=seconds,
+            **kwargs,
+        )
+
+    if mode == "full":
+        yield
+    elif mode in {"no_attention", "no_archive"}:
+        with patch.object(AttentionState, "process", process):
+            yield
+    elif mode == "no_agreement":
+
+        def initial_roots(claims, links, *, max_rounds=4):
+            return {
+                "complete": True,
+                "rounds": 1,
+                "roots": {
+                    claim.claim_id: sorted(claim.roots)
+                    for claim in sorted(claims, key=lambda claim: claim.claim_id)
+                },
+                "reason": "",
+            }
+
+        with patch("text_factors.learning.attention.exchange", initial_roots):
+            yield
+    elif mode == "no_duplicate":
+
+        class SeparateReadLedger(EvidenceLedger):
+            def __init__(self, snapshot_id):
+                super().__init__(snapshot_id)
+                self.read_counts: dict[str, int] = {}
+
+            def observe(self, root, channel, value, *, snapshot_id, complete):
+                count = self.read_counts.get(root, 0)
+                row = root if count == 0 else f"{root}:repeat:{count}"
+                super().observe(
+                    row, channel, value, snapshot_id=snapshot_id, complete=complete
+                )
+                if complete:
+                    self.read_counts[root] = count + 1
+
+        with patch(
+            "text_factors.learning.attention.EvidenceLedger", SeparateReadLedger
+        ):
+            yield
+    else:
+        raise ValueError("unknown evaluation intervention")
+
+
+def qualified_or_abstained(response: dict[str, Any]) -> bool:
+    if response["action"] in {"clarify", "unknown"} and not response["assertions"]:
+        return True
+    # A qualified last-confirmed fact is allowed by the specification, but the
+    # qualification has to reach the user; a hidden diagnostic is insufficient.
+    text = response.get("text", "").casefold()
+    explicit = any(
+        term in text
+        for term in (
+            "последняя подтвержд",
+            "последнее подтвержд",
+            "не смог разобрать",
+            "не удалось разобрать",
+            "актуальность неизвест",
+            "актуальность не подтвержд",
+            "не уверен",
+            "неопредел",
+        )
+    )
+    return response["action"] not in {"error", "limit"} and explicit
+
+
+def language_check(item: dict[str, Any], turns: list[dict[str, Any]]) -> dict[str, Any]:
+    kind = item["kind"]
+
+    def at(number):
+        return turns[number - 1]
+
+    current = at(item["turn"]) if "turn" in item else None
+    response = current["response"] if current else None
+    snapshot = current["snapshot"] if current else None
+    details: dict[str, Any] = {"oracle": item}
+    if kind in {"world_contains", "world_not_contains", "answer_fact"}:
+        facts = response["assertions"] if kind == "answer_fact" else snapshot["facts"]
+        exists = contains_fact(facts, item["fact"])
+        passed = not exists if kind == "world_not_contains" else exists
+        if kind == "answer_fact":
+            passed &= response["action"] == "answer"
+        details["actual_facts"] = semantic_facts(facts)
+    elif kind == "candidate_contains":
+        candidates = hypothesis_trace(response).get("batch", {}).get("candidates", [])
+        passed = any(event_matches(c.get("meaning"), item["event"]) for c in candidates)
+        details["candidate_count"] = len(candidates)
+    elif kind == "archive_selection":
+        record = snapshot["archive"].get(item["target"])
+        passed = bool(
+            record and event_matches(record["selected_meaning"], item["event"])
+        )
+        details["record"] = record
+    elif kind == "archive_unchanged":
+        old = at(item["before"])["snapshot"]["archive"].get(item["target"])
+        new = at(item["after"])["snapshot"]["archive"].get(item["target"])
+        passed = bool(old and new and old["selected_id"] == new["selected_id"])
+        details.update(before=old, after=new)
+    elif kind == "archive_batch_evicted":
+        record = snapshot["archive"].get(item["target"])
+        passed = bool(record and not record["batch_retained"])
+    elif kind == "facts_unchanged":
+        old = semantic_facts(at(item["before"])["snapshot"]["facts"])
+        new = semantic_facts(at(item["after"])["snapshot"]["facts"])
+        passed = old == new
+        details.update(before=old, after=new)
+    elif kind == "no_assertions":
+        passed = not response["assertions"] and response["action"] not in {
+            "error",
+            "limit",
+        }
+    elif kind == "qualified_or_abstained":
+        passed = qualified_or_abstained(response)
+        details.update(action=response["action"], text=response["text"])
+    elif kind == "distinct_instance_answers":
+        first, second = (at(item[key])["response"] for key in ("first", "second"))
+        left, right = first["assertions"], second["assertions"]
+        passed = (
+            first["action"] == second["action"] == "answer"
+            and len(left) == len(right) == 1
+            and left[0]["subject"] != right[0]["subject"]
+            and [left[0]["value"], right[0]["value"]] == item["values"]
+        )
+        details.update(first=semantic_facts(left), second=semantic_facts(right))
+    elif kind == "visible_correction":
+        previous = at(item["prior_answer_turn"])["response"]
+        meaning = response.get("meaning") or {}
+        event = meaning.get("event") or {}
+        contradicted = [
+            fact
+            for fact in previous["assertions"]
+            if fact["subject"] == event.get("object")
+            and fact["value"] != event.get("place")
+        ]
+        if previous["action"] != "answer" or not contradicted:
+            return checked(
+                kind,
+                True,
+                applicable=False,
+                reason="No earlier conflicting answer; notification not exercised.",
+                **details,
+            )
+        text = response["text"].casefold()
+        passed = "исправ" in text and any(
+            term in text for term in ("ответ", "ранее", "прежн", "раньше")
+        )
+        details.update(text=response["text"], prior_assertions=contradicted)
+    else:
+        raise ValueError(f"unexpected story oracle: {kind}")
+    return checked(kind, passed, **details)
+
+
+def story_invariants(turns: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    originals: dict[str, str] = {}
+    immutable = True
+    for turn in turns:
+        for target, record in turn["snapshot"]["archive"].items():
+            immutable &= (
+                originals.setdefault(target, record["original_digest"])
+                == record["original_digest"]
+            )
+    failed = [
+        index
+        for index, turn in enumerate(turns, 1)
+        if turn["response"]["action"] in {"error", "limit"}
+        or turn["response"]["turn_id"] != index
+    ]
+    return [
+        checked("all_turns_processed", not failed, failed_turns=failed),
+        checked("immutable_observations_and_original_versions", immutable),
+    ]
+
+
+def turn_measurements(turns: list[dict[str, Any]]) -> dict[str, Any]:
+    elapsed = sorted(turn["response"]["elapsed_seconds"] for turn in turns)
+    work: dict[str, int] = defaultdict(int)
+    evidence_rows, distinct_roots, reviews = 0, 0, 0
+    candidates = []
+    for turn in turns:
+        details = (
+            turn["response"]
+            .get("diagnostics", {})
+            .get("understanding", {})
+            .get("details", {})
+        )
+        attention = details.get("attention", {})
+        candidates.append(
+            len(details.get("hypotheses", {}).get("batch", {}).get("candidates", []))
+        )
+        for name, count in attention.get("work", {}).items():
+            work[name] += count
+        for reviewed in attention.get("reviews", []):
+            roots = reviewed.get("evidence", {})
+            evidence_rows += len(roots)
+            distinct_roots += len({root.split(":repeat:", 1)[0] for root in roots})
+            reviews += 1
+    return {
+        "turns": len(turns),
+        "respond_seconds_total": sum(elapsed),
+        "respond_seconds_median": elapsed[len(elapsed) // 2] if elapsed else 0,
+        "respond_seconds_p95": elapsed[min(len(elapsed) - 1, int(len(elapsed) * 0.95))]
+        if elapsed
+        else 0,
+        "respond_seconds_max": elapsed[-1] if elapsed else 0,
+        "candidate_counts": candidates,
+        "attention_work": dict(work),
+        "review_count": reviews,
+        "review_evidence_rows": evidence_rows,
+        "review_distinct_original_roots": distinct_roots,
+    }
+
+
+def run_language(case: dict[str, Any], bundle: ModelBundle) -> dict[str, Any]:
+    from text_factors.learning.session import LearnedSession
+
+    if case["interface"] == "raw_language_prefix":
+        return run_prefix(case, bundle)
+    session = LearnedSession(bundle)
+    turns = []
+    for text in case["turns"]:
+        response = session.respond(text)
+        turns.append(
+            {"input": text, "response": response, "snapshot": session_snapshot(session)}
+        )
+    checks = [language_check(item, turns) for item in case["checks"]]
+    checks.extend(story_invariants(turns))
+    try:
+        restored = LearnedSession.from_dict(session.to_dict(), bundle)
+        checks.append(
+            checked(
+                "session_roundtrip",
+                session_snapshot(restored) == session_snapshot(session),
+            )
+        )
+    except Exception as exc:
+        checks.append(
+            checked("session_roundtrip", False, error=f"{type(exc).__name__}: {exc}")
+        )
+    return {"checks": checks, "turns": turns, "measurements": turn_measurements(turns)}
+
+
+def run_prefix(case: dict[str, Any], bundle: ModelBundle) -> dict[str, Any]:
+    from text_factors.learning.session import LearnedSession
+
+    branches = []
+    for completion in case["completions"]:
+        session = LearnedSession(bundle)
+        response = session.respond(case["prefix"])
+        prefix = {"response": response, "snapshot": session_snapshot(session)}
+        completed = session.respond(completion)
+        branches.append(
+            {
+                "prefix_input": case["prefix"],
+                "prefix": prefix,
+                "completion_input": completion,
+                "completion": {
+                    "response": completed,
+                    "snapshot": session_snapshot(session),
+                },
+            }
+        )
+    batches = [
+        hypothesis_trace(branch["prefix"]["response"]).get("batch")
+        for branch in branches
+    ]
+    candidates = [
+        candidate for batch in batches if batch for candidate in batch["candidates"]
+    ]
+    no_future = all(
+        not any(
+            ((candidate.get("meaning") or {}).get("event") or {}).get(role)
+            for role in ("object", "recipient", "place")
+        )
+        for candidate in candidates
+    )
+    checks = [
+        checked(
+            "identical_prefix_semantics",
+            batches[0] is not None and batches[0] == batches[1],
+        ),
+        checked("no_prefix_future_roles", bool(candidates) and no_future),
+        checked(
+            "no_prefix_facts",
+            all(
+                not branch["prefix"]["snapshot"]["facts"]
+                and not branch["prefix"]["response"]["assertions"]
+                for branch in branches
+            ),
+        ),
+        checked(
+            "completion_roles",
+            all(
+                event_matches(branch["completion"]["response"].get("meaning"), expected)
+                for branch, expected in zip(
+                    branches, case["expected_events"], strict=True
+                )
+            ),
+        ),
+        checked(
+            "all_turns_processed",
+            all(
+                branch[part]["response"]["action"] not in {"error", "limit"}
+                for branch in branches
+                for part in ("prefix", "completion")
+            ),
+        ),
+    ]
+    return {"checks": checks, "branches": branches}
+
+
+def api_context(names: list[str] | tuple[str, ...]) -> DialogueContext:
+    return DialogueContext(
+        entities=tuple(ENTITY_BY_NAME[name].entity for name in names),
+        focus=tuple(names),
+    )
+
+
+def transfer(case: dict[str, Any], actor: str, *, time: str = "past") -> Meaning:
+    return Meaning(
+        "inform",
+        Event(
+            "give",
+            actor=actor,
+            object=case["object"],
+            recipient=case["recipient"],
+            time=time,
+        ),
+    )
+
+
+def remember_supplied(
+    state: AttentionState,
+    bundle: ModelBundle,
+    context: DialogueContext,
+    turn: int,
+    meanings: list[Meaning],
+    text: str,
+    *,
+    before: list[dict[str, Any]] | None = None,
+    dependency_event_ids: tuple[int, ...] = (),
+) -> None:
+    observation = Observation(f"turn:{turn}", text, turn)
+    batch = CandidateSet(
+        observation,
+        digest(context.to_dict()),
+        tuple(
+            Hypothesis.create(observation.observation_id, meaning, index * 0.09)
+            for index, meaning in enumerate(meanings)
+        ),
+    )
+    before = before or []
+    result = select(
+        batch,
+        Interpretation(None),
+        bundle.dynamics,
+        before,
+        model_fingerprint=bundle.fingerprint,
+        seconds=1,
+        dependency_event_ids=dependency_event_ids,
+    )
+    state.remember(result.diagnostics["hypotheses"], context, before)
+
+
+def api_setup(case: dict[str, Any], bundle: ModelBundle, limits=None):
+    names = case.get(
+        "context_names", [case["object"], *case["actors"], case["recipient"], "шкаф"]
+    )
+    context = api_context(names)
+    state = AttentionState(bundle.fingerprint, limits)
+    remember_supplied(
+        state,
+        bundle,
+        context,
+        1,
+        [
+            transfer(case, actor, time=case.get("initial_time", "past"))
+            for actor in case["actors"]
+        ],
+        case.get("source_text", "Он передал паспорт Оле"),
+    )
+    return state, context
+
+
+def api_cue(case: dict[str, Any], turn=10, **kwargs) -> ReviewCue:
+    return ReviewCue(
+        "turn:1",
+        Observation(f"turn:{turn}", "Адресное структурное уточнение", turn),
+        transfer(case, case["actors"][1], time=case.get("cue_time", "past")),
+        speaker=kwargs.get("speaker", "user"),
+    )
+
+
+def supplied_location(
+    world: ExperienceWorld,
+    subject: str,
+    place: str,
+    turn: int,
+    *,
+    act="inform",
+    spatial="in",
+):
+    return world.apply(
+        Meaning(
+            act,
+            Event(
+                "locate", object=subject, place=place, spatial=spatial, time="present"
+            ),
+        ),
+        [
+            {
+                "op": "set",
+                "subject": subject,
+                "relation": "location",
+                "value": place,
+                "spatial": spatial,
+            }
+        ],
+        turn_id=turn,
+        source=f"api:{turn}",
+    )
+
+
+def transfer_world(case: dict[str, Any]) -> ExperienceWorld:
+    """Supply the declared original transition; no language is inferred here."""
+    world = ExperienceWorld()
+    world.apply(
+        transfer(case, case["actors"][0]),
+        [
+            {
+                "op": "set",
+                "subject": case["object"],
+                "relation": "holder",
+                "value": case["recipient"],
+                "spatial": "in",
+            }
+        ],
+        turn_id=1,
+        source="input",
+    )
+    return world
+
+
+def dependent_fixture(case: dict[str, Any], bundle: ModelBundle):
+    from text_factors.learning.revision import Reinterpretation
+
+    context = api_context(
+        ("паспорт", "телефон", "письмо", "катя", "анна", "полка", "шкаф")
+    )
+    world = ExperienceWorld()
+    before_archive = AttentionState(bundle.fingerprint)
+    for turn, fact in enumerate(case["initial_facts"], 1):
+        meaning = Meaning(
+            "inform",
+            Event(
+                "locate",
+                object=fact["subject"],
+                place=fact["value"],
+                spatial=fact["spatial"],
+                time="present",
+            ),
+        )
+        remember_supplied(
+            before_archive,
+            bundle,
+            context,
+            turn,
+            [meaning],
+            f"Структурное исходное наблюдение {turn}",
+            before=semantic_facts(world.facts()),
+        )
+        world.apply(
+            meaning,
+            [{"op": "set", **{k: fact[k] for k in FACT_KEYS if k != "negated"}}],
+            turn_id=turn,
+            source="input",
+        )
+    old_root, new_root = (
+        Meaning(
+            "inform",
+            Event("locate", object=obj, place="полка", spatial="on", time="present"),
+        )
+        for obj in (case["initial_object"], case["revised_object"])
+    )
+    remember_supplied(
+        before_archive,
+        bundle,
+        context,
+        4,
+        [old_root, new_root],
+        case["source_text"],
+        before=semantic_facts(world.facts()),
+        dependency_event_ids=(1,),
+    )
+    world.apply(
+        old_root,
+        [
+            {
+                "op": "set",
+                "subject": case["initial_object"],
+                "relation": "location",
+                "value": "полка",
+                "spatial": "on",
+            }
+        ],
+        turn_id=4,
+        source="input",
+    )
+    dependent = Meaning(
+        "inform",
+        Event("give", actor="катя", object=case["initial_object"], recipient="анна"),
+    )
+    remember_supplied(
+        before_archive,
+        bundle,
+        context,
+        5,
+        [dependent],
+        case["dependent_text"],
+        before=semantic_facts(world.facts()),
+        dependency_event_ids=(4,),
+    )
+    world.apply(
+        dependent,
+        [
+            {
+                "op": "set",
+                "subject": case["initial_object"],
+                "relation": "holder",
+                "value": "анна",
+                "spatial": "in",
+            }
+        ],
+        turn_id=5,
+        source="input",
+    )
+    old_answer = world.query(Query("who_has", subject=case["initial_object"]))
+    after_archive = before_archive.clone()
+    cue = ReviewCue(
+        "turn:4",
+        Observation("turn:7", "Структурное уточнение экземпляра", 7),
+        new_root,
+    )
+    proposal = after_archive.prepare_review(cue, bundle.dynamics, bundle.understanding)
+    if proposal["complete"]:
+        after_archive.commit_reviews([proposal], bundle.dynamics)
+
+    def reparse(observation, old_meaning, before, revised_event_ids):
+        if observation.observation_id != "turn:5":
+            return None
+        return Reinterpretation(
+            replace(
+                old_meaning,
+                event=replace(old_meaning.event, object=case["revised_object"]),
+            ),
+            (4,),
+        )
+
+    return world, before_archive, after_archive, proposal, reparse, old_answer
+
+
+def run_structured(case: dict[str, Any], bundle: ModelBundle) -> dict[str, Any]:
+    kind = case["kind"]
+    checks: list[dict[str, Any]] = []
+    trace: dict[str, Any] = {}
+    if kind == "dependent_revision":
+        from text_factors.learning.revision import (
+            commit_revision,
+            prepare_archive_revision,
+        )
+
+        world, before, after, review, reparse, answer = dependent_fixture(case, bundle)
+        originals, old_archive = world.events, before.to_dict()
+        plan = prepare_archive_revision(
+            world,
+            before,
+            after,
+            bundle.dynamics,
+            turn_id=7,
+            source="input",
+            reparse=reparse,
+        )
+        unchanged_preparation = (
+            world.events == originals and before.to_dict() == old_archive
+        )
+        if plan.complete and plan.applicable:
+            commit_revision(world, plan)
+        dependent = next(
+            event for event in world.effective_events if event["turn_id"] == 5
+        )
+        answer_events = {fact["event_id"] for fact in answer["assertions"]}
+        checks = [
+            checked(
+                "original_structured_selection",
+                event_matches(
+                    before.get("turn:4")["selected_meaning"],
+                    {"object": case["initial_object"]},
+                ),
+            ),
+            checked(
+                "dependent_revision_complete",
+                review["complete"] and plan.complete and plan.applicable,
+            ),
+            checked(
+                "dependent_reference_rebound",
+                event_matches(dependent["meaning"], {"object": case["revised_object"]}),
+            ),
+            checked(
+                "recomputed_facts_and_independent_branch",
+                semantic_facts(world.facts())
+                == semantic_facts(case["expected_final_facts"]),
+            ),
+            checked(
+                "old_answer_dependency_identified",
+                bool(answer_events & set(plan.affected_event_ids)),
+            ),
+            checked(
+                "originals_unchanged",
+                unchanged_preparation
+                and world.events == originals
+                and before.to_dict() == old_archive,
+            ),
+        ]
+        trace = {
+            "review": review,
+            "plan": plan.to_dict(),
+            "plan_complete": plan.complete,
+            "plan_reason": plan.reason,
+            "old_answer": answer,
+            "world": world.to_dict(),
+            "effects_and_reference_dependency_were_supplied": True,
+        }
+    elif kind == "provenance_invariants":
+        snapshot = digest({"case": case["id"]})
+        ledger = EvidenceLedger(snapshot)
+        for _ in range(case["copies"]):
+            for channel in case["channels"]:
+                ledger.observe(
+                    "original", channel, 0.7, snapshot_id=snapshot, complete=True
+                )
+        scope = Scope("episode", "past")
+        claims = tuple(
+            Claim(
+                name,
+                scope,
+                "actor",
+                "иван",
+                frozenset({"original"}) if name == "a" else frozenset(),
+            )
+            for name in ("a", "b", "c")
+        )
+        links = (("a", "b"), ("b", "c"), ("c", "a"))
+        normal = exchange(claims, links)
+        permuted = exchange(tuple(reversed(claims)), tuple(reversed(links)))
+        initial_roots = {claim.claim_id: sorted(claim.roots) for claim in claims}
+        checks = [
+            checked("copies_keep_one_root", len(ledger.to_dict()) == 1),
+            checked(
+                "cycle_does_not_manufacture_roots",
+                normal["complete"]
+                and all(roots == ["original"] for roots in normal["roots"].values()),
+            ),
+            checked("order_invariance", normal == permuted),
+        ]
+        trace = {
+            "raw_feature_observations": case["copies"] * len(case["channels"]),
+            "unique_evidence_rows": len(ledger.to_dict()),
+            "ledger": ledger.to_dict(),
+            "exchange": normal,
+            "without_exchange_initial_roots": initial_roots,
+            "selection_consumes_exchange_or_ledger_numbers": False,
+            "disclosure": (
+                "Root bookkeeping only; no synthetic vote baseline "
+                "or language-performance claim."
+            ),
+        }
+    elif kind == "instance_identity":
+        world = ExperienceWorld()
+        for turn, instance in enumerate(case["instances"], 1):
+            supplied_location(world, instance["id"], instance["place"], turn)
+        supplied_location(
+            world,
+            case["corrected_id"],
+            case["corrected_place"],
+            3,
+            act="correct",
+            spatial="on",
+        )
+        outcomes = [
+            world.query(Query("where", subject=instance["id"]))
+            for instance in case["instances"]
+        ]
+        checks = [
+            checked(
+                "corrected_instance",
+                contains_fact(
+                    outcomes[0]["assertions"],
+                    {"subject": case["corrected_id"], "value": case["corrected_place"]},
+                ),
+            ),
+            checked(
+                "independent_instance",
+                contains_fact(
+                    outcomes[1]["assertions"],
+                    {
+                        "subject": case["instances"][1]["id"],
+                        "value": case["instances"][1]["place"],
+                    },
+                ),
+            ),
+        ]
+        trace = {
+            "world": world.to_dict(),
+            "queries": outcomes,
+            "effects_were_supplied": True,
+        }
+    elif kind in {"time_scope", "source_scope"}:
+        state, _ = api_setup(case, bundle)
+        before = state.to_dict()
+        proposal = state.prepare_review(
+            api_cue(case, speaker=case.get("cue_speaker", "user")),
+            bundle.dynamics,
+            bundle.understanding,
+        )
+        if proposal["complete"]:
+            state.commit_reviews([proposal], bundle.dynamics)
+        checks = [
+            checked(
+                "different_scope_rejected",
+                proposal["complete"] and proposal["reason"] == "inapplicable_scope",
+            ),
+            checked("archive_unchanged", state.to_dict() == before),
+        ]
+        trace = {"proposal": proposal}
+        if kind == "source_scope":
+            world = ExperienceWorld()
+            supplied_location(world, case["object"], "рюкзак", 1)
+            previous = semantic_facts(world.facts())
+            for turn, wrapper in enumerate(("report", "promise"), 2):
+                world.apply(
+                    Meaning(
+                        "inform",
+                        Event(
+                            wrapper, actor="саша", content=transfer(case, "иван").event
+                        ),
+                    ),
+                    (),
+                    turn_id=turn,
+                )
+            checks.append(
+                checked(
+                    "nonactual_scopes_do_not_project",
+                    semantic_facts(world.facts()) == previous,
+                )
+            )
+            trace["scoped_world"] = world.to_dict()
+    elif kind == "revision_roundtrip":
+        from text_factors.learning.revision import (
+            commit_revision,
+            prepare_archive_revision,
+        )
+
+        state, _ = api_setup(case, bundle)
+        before_archive = state.clone()
+        original = deepcopy(state.get("turn:1"))
+        proposal = state.prepare_review(
+            api_cue(case), bundle.dynamics, bundle.understanding
+        )
+        if proposal["complete"]:
+            state.commit_reviews([proposal], bundle.dynamics)
+        after = state.get("turn:1")
+        restored = AttentionState.from_dict(state.to_dict(), bundle.fingerprint)
+        world = transfer_world(case)
+        original_events = world.events
+        plan = prepare_archive_revision(
+            world, before_archive, state, bundle.dynamics, turn_id=10, source="input"
+        )
+        if plan.complete and plan.applicable:
+            commit_revision(world, plan)
+        restored_world = ExperienceWorld.from_dict(world.to_dict())
+        checks = [
+            checked(
+                "new_version_selects_revised_actor",
+                proposal["complete"]
+                and after["revision"] == 1
+                and event_matches(
+                    after["selected_meaning"], {"actor": case["actors"][1]}
+                ),
+            ),
+            checked(
+                "immutable_original",
+                all(
+                    after[key] == original[key]
+                    for key in (
+                        "observation",
+                        "original_selected",
+                        "original_meaning",
+                        "initial_suppressed",
+                    )
+                ),
+            ),
+            checked("archive_roundtrip", restored.to_dict() == state.to_dict()),
+            checked(
+                "world_version_and_dependencies_roundtrip",
+                plan.complete
+                and plan.applicable
+                and restored_world.to_dict() == world.to_dict()
+                and restored_world.revision_trace(10) == plan.to_dict(),
+            ),
+            checked("world_original_events_immutable", world.events == original_events),
+            checked(
+                "historical_snapshot_retains_original_actor",
+                event_matches(
+                    world.at_turn(9).effective_events[0]["meaning"],
+                    {"actor": case["actors"][0]},
+                ),
+            ),
+            checked(
+                "current_projection_has_revised_actor",
+                event_matches(
+                    world.effective_events[0]["meaning"], {"actor": case["actors"][1]}
+                ),
+            ),
+        ]
+        trace = {
+            "proposal": proposal,
+            "record": after,
+            "revision_plan": plan.to_dict(),
+            "plan_reason": plan.reason,
+            "world": world.to_dict(),
+        }
+    elif kind == "atomic_budget":
+        from text_factors.conversation.schema import Budget
+        from text_factors.learning.revision import (
+            commit_revision,
+            prepare_archive_revision,
+        )
+
+        state, context = api_setup(case, bundle)
+        before = state.to_dict()
+        incomplete = state.prepare_review(
+            api_cue(case),
+            bundle.dynamics,
+            bundle.understanding,
+            work=Work(state.limits, seconds=1e-12),
+        )
+        rejected = False
+        try:
+            state.commit_reviews([incomplete], bundle.dynamics)
+        except ValueError:
+            rejected = True
+        checks = [
+            checked(
+                "incomplete_rejected_atomically",
+                not incomplete["complete"] and rejected and state.to_dict() == before,
+            )
+        ]
+        ready = state.prepare_review(
+            api_cue(case), bundle.dynamics, bundle.understanding
+        )
+        remember_supplied(state, bundle, context, 2, [Meaning("greet")], "Привет")
+        changed = state.to_dict()
+        rejected = False
+        try:
+            state.commit_reviews([ready], bundle.dynamics)
+        except ValueError:
+            rejected = True
+        checks.append(
+            checked(
+                "stale_rejected_atomically",
+                ready["complete"] and rejected and state.to_dict() == changed,
+            )
+        )
+        world = transfer_world(case)
+        archive_before, _ = api_setup(case, bundle)
+        archive_after = archive_before.clone()
+        reviewed = archive_after.prepare_review(
+            api_cue(case), bundle.dynamics, bundle.understanding
+        )
+        if reviewed["complete"]:
+            archive_after.commit_reviews([reviewed], bundle.dynamics)
+        original_world, original_archive = world.to_dict(), archive_before.to_dict()
+        limited_plan = prepare_archive_revision(
+            world,
+            archive_before,
+            archive_after,
+            bundle.dynamics,
+            turn_id=10,
+            source="input",
+            budget=Budget(1e-12),
+        )
+        rejected = False
+        try:
+            commit_revision(world, limited_plan)
+        except ValueError:
+            rejected = True
+        checks.append(
+            checked(
+                "world_and_archive_budget_atomicity",
+                not limited_plan.complete
+                and rejected
+                and world.to_dict() == original_world
+                and archive_before.to_dict() == original_archive,
+            )
+        )
+        world_plan = prepare_archive_revision(
+            world,
+            archive_before,
+            archive_after,
+            bundle.dynamics,
+            turn_id=10,
+            source="input",
+        )
+        supplied_location(world, "письмо", "шкаф", 2)
+        intervening_world = world.to_dict()
+        rejected = False
+        try:
+            commit_revision(world, world_plan)
+        except ValueError:
+            rejected = True
+        checks.append(
+            checked(
+                "stale_world_and_archive_atomicity",
+                world_plan.complete
+                and world_plan.applicable
+                and rejected
+                and world.to_dict() == intervening_world
+                and archive_before.to_dict() == original_archive,
+            )
+        )
+        trace = {
+            "incomplete": incomplete,
+            "stale_proposal": ready,
+            "world_budget_reason": limited_plan.reason,
+            "stale_world_plan": world_plan.to_dict(),
+        }
+    elif kind == "archive_reconstruction":
+        limits = AttentionLimits(
+            max_sources=case["max_sources"], max_archives=case["max_archives"]
+        )
+        state, context = api_setup(case, bundle, limits)
+        for turn in (2, 3):
+            remember_supplied(
+                state, bundle, context, turn, [Meaning("greet")], "Привет"
+            )
+        batch_evicted = state.get("turn:1")["batch"] is None
+        proposal = state.prepare_review(
+            api_cue(case, turn=4), bundle.dynamics, bundle.understanding
+        )
+        if proposal["complete"]:
+            state.commit_reviews([proposal], bundle.dynamics)
+        record = state.get("turn:1")
+        checks = [
+            checked(
+                "retained_source_reconstructed",
+                batch_evicted
+                and proposal["complete"]
+                and proposal["summary"]
+                and proposal["summary"]["regenerated"]
+                and event_matches(
+                    record["selected_meaning"], {"actor": case["actors"][1]}
+                ),
+            )
+        ]
+        for turn in (5, 6, 7):
+            remember_supplied(
+                state, bundle, context, turn, [Meaning("greet")], "Спасибо"
+            )
+        before = state.to_dict()
+        missing = state.prepare_review(
+            api_cue(case, turn=8), bundle.dynamics, bundle.understanding
+        )
+        checks.append(
+            checked(
+                "missing_source_not_invented",
+                missing["complete"]
+                and missing["reason"] == "source_not_retained"
+                and state.get("turn:1") is None
+                and before == state.to_dict(),
+            )
+        )
+        trace = {"reconstruction": proposal, "missing": missing}
+    else:
+        raise ValueError(f"unknown structured case: {kind}")
+    return {"checks": checks, "trace": trace}
+
+
+def totals(records: list[dict[str, Any]]) -> dict[str, Any]:
+    grouped: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for record in records:
+        grouped[f"{record['interface']}:{record['mode']}"].append(record)
+    result = {}
+    for group, cases in sorted(grouped.items()):
+        checks = [
+            check
+            for case in cases
+            for check in case["checks"]
+            if check.get("applicable", True)
+        ]
+        by_kind: dict[str, dict[str, int]] = {}
+        for case in cases:
+            for check in case["checks"]:
+                counters = by_kind.setdefault(
+                    check["name"], {"passed": 0, "total": 0, "not_applicable": 0}
+                )
+                if check.get("applicable", True):
+                    counters["total"] += 1
+                    counters["passed"] += int(check["passed"])
+                else:
+                    counters["not_applicable"] += 1
+        result[group] = {
+            "cases_passed": sum(case["passed"] for case in cases),
+            "cases_total": len(cases),
+            "checks_passed": sum(check["passed"] for check in checks),
+            "checks_total": len(checks),
+            "failed_case_ids": [case["id"] for case in cases if not case["passed"]],
+            "checks_by_kind": by_kind,
+        }
+    return result
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--manifest", type=Path, default=MANIFEST)
+    parser.add_argument("--output", type=Path)
+    parser.add_argument("--validate-only", action="store_true")
+    parser.add_argument(
+        "--modes",
+        nargs="+",
+        choices=("full", "no_attention", "no_archive", "no_agreement", "no_duplicate"),
+        default=("full", "no_attention", "no_archive", "no_agreement", "no_duplicate"),
+    )
+    parser.add_argument("--cases", nargs="+")
+    parser.add_argument("--resume", action="store_true")
+    args = parser.parse_args()
+    manifest = read_manifest(args.manifest)
+    if args.validate_only:
+        print(
+            json.dumps(
+                {
+                    "manifest_sha256": file_sha256(args.manifest),
+                    "language_cases": len(manifest["language_cases"]),
+                    "structured_cases": len(manifest["structured_cases"]),
+                    "histories_executed": 0,
+                }
+            )
+        )
+        return 0
+    if args.output is None:
+        parser.error("--output is required unless --validate-only is used")
+    selected = set(args.cases) if args.cases else None
+    all_ids = {
+        case["id"]
+        for case in [*manifest["language_cases"], *manifest["structured_cases"]]
+    }
+    if selected and not selected <= all_ids:
+        parser.error("unknown --cases identity")
+    checkpoint = ROOT / manifest["model"]
+    if (
+        file_sha256(checkpoint) != manifest["model_sha256"]
+        or file_sha256(ROOT / "src/text_factors/learning/attention_weights.json")
+        != manifest["ranker_sha256"]
+    ):
+        raise ValueError("model or ranker weights changed after manifest freeze")
+    bundle = ModelBundle.from_dict(read_artifact(checkpoint, kind="model"))
+    ranker = AttentionRanker.load()
+    metadata = {
+        "schema": "ai2-v6-block3-evaluation-v1",
+        "manifest_sha256": file_sha256(args.manifest),
+        "source_sha256": source_sha256(),
+        "model_sha256": file_sha256(checkpoint),
+        "model_fingerprint": bundle.fingerprint,
+        "ranker_fingerprint": ranker.fingerprint,
+        "python": sys.version,
+        "numpy": version("numpy"),
+        "configuration": {
+            "modes": list(args.modes),
+            "cases": sorted(selected) if selected else None,
+        },
+        "disclosure": manifest["disclosure"],
+        "mode_definitions": {**manifest["modes"], **ADDITIONAL_MODES},
+        "mechanism_observations": manifest["mechanism_observations"],
+    }
+    data = {**metadata, "cases": [], "complete": False}
+    if args.resume and args.output.exists():
+        previous = json.loads(args.output.read_text())
+        if any(previous.get(key) != value for key, value in metadata.items()):
+            raise ValueError(
+                "resume requires identical code, weights, manifest and configuration"
+            )
+        data = previous
+    completed = {(case["id"], case["mode"]) for case in data["cases"]}
+
+    def save():
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        temporary = args.output.with_suffix(args.output.suffix + ".tmp")
+        temporary.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n")
+        temporary.replace(args.output)
+
+    save()
+    jobs = [(case, mode) for case in manifest["language_cases"] for mode in args.modes]
+    jobs.extend((case, "full") for case in manifest["structured_cases"])
+    for case, mode in jobs:
+        if (selected is not None and case["id"] not in selected) or (
+            case["id"],
+            mode,
+        ) in completed:
+            continue
+        started = perf_counter()
+        try:
+            with intervention(mode):
+                result = (
+                    run_language(case, bundle)
+                    if case["interface"].startswith("raw_language")
+                    else run_structured(case, bundle)
+                )
+        except Exception as exc:
+            result = {
+                "checks": [
+                    checked(
+                        "case_completed", False, error=f"{type(exc).__name__}: {exc}"
+                    )
+                ],
+                "exception": f"{type(exc).__name__}: {exc}",
+            }
+        result["checks"].append(
+            checked(
+                "model_fingerprint_unchanged",
+                bundle.fingerprint == metadata["model_fingerprint"],
+            )
+        )
+        record = {
+            "id": case["id"],
+            "interface": case["interface"],
+            "title": case["title"],
+            "mode": mode,
+            "seconds": perf_counter() - started,
+            **result,
+        }
+        record["passed"] = all(check["passed"] for check in record["checks"])
+        data["cases"].append(record)
+        data["totals"] = totals(data["cases"])
+        data["peak_self_rss_kib"] = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+        save()
+        print(
+            json.dumps(
+                {
+                    "id": case["id"],
+                    "mode": mode,
+                    "passed": record["passed"],
+                    "seconds": round(record["seconds"], 3),
+                }
+            ),
+            flush=True,
+        )
+    data["source_unchanged"] = source_sha256() == metadata["source_sha256"]
+    data["weights_unchanged"] = (
+        file_sha256(checkpoint) == manifest["model_sha256"]
+        and file_sha256(ROOT / "src/text_factors/learning/attention_weights.json")
+        == manifest["ranker_sha256"]
+        and bundle.fingerprint == metadata["model_fingerprint"]
+    )
+    data["complete"] = not any(
+        case.get("status") == "pending_adapter" for case in data["cases"]
+    )
+    save()
+    print(json.dumps(data["totals"], ensure_ascii=False))
+    return (
+        0
+        if data["complete"]
+        and data["source_unchanged"]
+        and data["weights_unchanged"]
+        and all(case["passed"] for case in data["cases"])
+        else 1
+    )
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
