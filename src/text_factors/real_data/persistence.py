@@ -157,8 +157,6 @@ def load_state(
     if raw_contexts is not None and type(raw_contexts) is not dict:
         raise ValueError("invalid persisted contexts")
     contexts = (
-        ContextRegistry.from_dict(raw_contexts)
-        if raw_contexts is not None
-        else None
+        ContextRegistry.from_dict(raw_contexts) if raw_contexts is not None else None
     )
     return engine, contexts, model_version
