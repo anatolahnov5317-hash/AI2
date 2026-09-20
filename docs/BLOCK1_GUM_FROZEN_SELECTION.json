@@ -1,0 +1,171 @@
+{
+  "schema": "ai2-block1-gum-selection-v1",
+  "frozen_at": "2026-09-20",
+  "repository": "https://github.com/amir-zeldes/gum",
+  "revision": "22fdf87f9c71c96bcc771461d06e689b1f90020d",
+  "selection_policy": "Frozen before model predictions: unseen GUM genres relative to the prior news/interview pilot. Use the first eight official train documents from academic and conversation in splits.md order, all two official dev documents from each genre as validation, and all two official test documents from each genre as test. Whole documents are groups. No document is selected or removed using model scores, errors, or predictions.",
+  "prior_pilot_excluded_genres": [
+    "news",
+    "interview"
+  ],
+  "selected_genres": [
+    "academic",
+    "conversation"
+  ],
+  "requirements": {
+    "max_unsupported_gold_rate": 0.1,
+    "min_unseen_surface_recall": 0.25,
+    "max_same_surface_false_merges": 0,
+    "min_accepted_link_precision": 0.9,
+    "min_accepted_link_decisions": 10,
+    "min_mention_f1_delta_from_baseline": 0,
+    "min_coreference_f1_delta_from_baseline": 0
+  },
+  "documents": [
+    {
+      "document_id": "GUM_academic_art",
+      "group_id": "GUM_academic_art",
+      "split": "train",
+      "language": "en"
+    },
+    {
+      "document_id": "GUM_academic_census",
+      "group_id": "GUM_academic_census",
+      "split": "train",
+      "language": "en"
+    },
+    {
+      "document_id": "GUM_academic_economics",
+      "group_id": "GUM_academic_economics",
+      "split": "train",
+      "language": "en"
+    },
+    {
+      "document_id": "GUM_academic_enjambment",
+      "group_id": "GUM_academic_enjambment",
+      "split": "train",
+      "language": "en"
+    },
+    {
+      "document_id": "GUM_academic_epistemic",
+      "group_id": "GUM_academic_epistemic",
+      "split": "train",
+      "language": "en"
+    },
+    {
+      "document_id": "GUM_academic_games",
+      "group_id": "GUM_academic_games",
+      "split": "train",
+      "language": "en"
+    },
+    {
+      "document_id": "GUM_academic_huh",
+      "group_id": "GUM_academic_huh",
+      "split": "train",
+      "language": "en"
+    },
+    {
+      "document_id": "GUM_academic_implicature",
+      "group_id": "GUM_academic_implicature",
+      "split": "train",
+      "language": "en"
+    },
+    {
+      "document_id": "GUM_conversation_artist",
+      "group_id": "GUM_conversation_artist",
+      "split": "train",
+      "language": "en"
+    },
+    {
+      "document_id": "GUM_conversation_atoms",
+      "group_id": "GUM_conversation_atoms",
+      "split": "train",
+      "language": "en"
+    },
+    {
+      "document_id": "GUM_conversation_blacksmithing",
+      "group_id": "GUM_conversation_blacksmithing",
+      "split": "train",
+      "language": "en"
+    },
+    {
+      "document_id": "GUM_conversation_christmas",
+      "group_id": "GUM_conversation_christmas",
+      "split": "train",
+      "language": "en"
+    },
+    {
+      "document_id": "GUM_conversation_erasmus",
+      "group_id": "GUM_conversation_erasmus",
+      "split": "train",
+      "language": "en"
+    },
+    {
+      "document_id": "GUM_conversation_family",
+      "group_id": "GUM_conversation_family",
+      "split": "train",
+      "language": "en"
+    },
+    {
+      "document_id": "GUM_conversation_gossip",
+      "group_id": "GUM_conversation_gossip",
+      "split": "train",
+      "language": "en"
+    },
+    {
+      "document_id": "GUM_conversation_scientist",
+      "group_id": "GUM_conversation_scientist",
+      "split": "train",
+      "language": "en"
+    },
+    {
+      "document_id": "GUM_academic_exposure",
+      "group_id": "GUM_academic_exposure",
+      "split": "validation",
+      "language": "en"
+    },
+    {
+      "document_id": "GUM_academic_librarians",
+      "group_id": "GUM_academic_librarians",
+      "split": "validation",
+      "language": "en"
+    },
+    {
+      "document_id": "GUM_conversation_grounded",
+      "group_id": "GUM_conversation_grounded",
+      "split": "validation",
+      "language": "en"
+    },
+    {
+      "document_id": "GUM_conversation_risk",
+      "group_id": "GUM_conversation_risk",
+      "split": "validation",
+      "language": "en"
+    },
+    {
+      "document_id": "GUM_academic_discrimination",
+      "group_id": "GUM_academic_discrimination",
+      "split": "test",
+      "language": "en"
+    },
+    {
+      "document_id": "GUM_academic_eegimaa",
+      "group_id": "GUM_academic_eegimaa",
+      "split": "test",
+      "language": "en"
+    },
+    {
+      "document_id": "GUM_conversation_lambada",
+      "group_id": "GUM_conversation_lambada",
+      "split": "test",
+      "language": "en"
+    },
+    {
+      "document_id": "GUM_conversation_retirement",
+      "group_id": "GUM_conversation_retirement",
+      "split": "test",
+      "language": "en"
+    }
+  ],
+  "test_predictions_seen_before_freeze": false
+}
