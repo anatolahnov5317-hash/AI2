@@ -17,6 +17,7 @@ from text_factors.real_data import (
     DependencyGraph,
     EvidenceLedger,
     EvidenceRoot,
+    HashedAttentionRanker,
     LearningEpisode,
     PilotSample,
     RealDataEngine,
@@ -110,6 +111,27 @@ class RealDataPrimitiveTests(unittest.TestCase):
         with self.assertRaises(BudgetExceeded) as raised:
             tracker.check()
         self.assertEqual(raised.exception.reason, "max_wall_seconds")
+
+    def test_open_attention_learns_without_domain_feature_names(self):
+        ranker = HashedAttentionRanker(dimension=128, seed=3)
+        ranker.fit(
+            [
+                AttentionExample("g1", "a", {"signal-x": 1.0}, 1),
+                AttentionExample("g1", "b", {"signal-y": 1.0}, 0),
+                AttentionExample("g2", "c", {"signal-x": 1.0}, 1),
+                AttentionExample("g2", "d", {"signal-y": 1.0}, 0),
+            ],
+            steps=200,
+        )
+        ranked = ranker.rank(
+            [
+                AttentionCandidate("positive", {"signal-x": 1.0}),
+                AttentionCandidate("negative", {"signal-y": 1.0}),
+            ]
+        )
+        self.assertEqual(ranked[0][0], "positive")
+        restored = HashedAttentionRanker.from_dict(ranker.to_dict())
+        self.assertEqual(restored.to_dict(), ranker.to_dict())
 
     def test_context_registry_learns_reusable_and_distinct_transforms(self):
         registry = ContextRegistry(width=64, assignment_threshold=0.5)
