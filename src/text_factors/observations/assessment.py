@@ -133,7 +133,12 @@ def _ranked(
     spans: list[dict[str, Any]],
     pair_cache: dict[tuple[int, int, int, int], float] | None = None,
 ) -> list[dict[str, Any]]:
-    """Compute each bounded pair once; gold annotations never enter this path."""
+    """Rank pairs using learned link response and mention confidence.
+
+    The learned pair response is cached independently from endpoint confidence.
+    On oracle gold spans the endpoint score is exactly one, so oracle diagnostics
+    continue to measure the pair model itself. No gold identity enters ranking.
+    """
     budget = model.config.max_antecedents
     if type(budget) is not int or budget < 1:
         raise ValueError("max_antecedents must be a positive integer")
@@ -147,12 +152,15 @@ def _ranked(
             pair = (antecedent["start"], antecedent["end"], span["start"], span["end"])
             if pair not in pair_cache:
                 pair_cache[pair] = _score(model.link_score(text, antecedent, span))
+            endpoint_confidence = math.sqrt(
+                _score(antecedent["score"]) * _score(span["score"])
+            )
             candidates.append(
                 {
                     "mention_id": f"m{previous:06d}",
                     "start": antecedent["start"],
                     "end": antecedent["end"],
-                    "score": pair_cache[pair],
+                    "score": pair_cache[pair] * endpoint_confidence,
                     "order": previous,
                 }
             )
@@ -424,7 +432,7 @@ def calibrate_model(
         "link_tie_break": (
             "most_evaluable_decisions_then_precision_then_endpoint_and_pair_thresholds"
         ),
-        "score_semantics": "uncalibrated_sigmoid_response",
+        "score_semantics": "pair_sigmoid_times_geometric_endpoint_confidence",
         "calibration_scope": "predicted_validation_spans",
         "archive_mutation": False,
     }
@@ -482,7 +490,7 @@ def propose(
         "schema": "ai2-open-candidate-proposals-v1",
         "mentions": mentions,
         "mention_id_scope": "this_proposal_only",
-        "score_semantics": "uncalibrated_sigmoid_response",
+        "score_semantics": "pair_sigmoid_times_geometric_endpoint_confidence",
         "policy_sha256": policy["policy_sha256"],
         "archive_mutation": False,
         "entity_creation": False,
