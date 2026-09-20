@@ -358,12 +358,76 @@ def _add_model_size_options(parser: argparse.ArgumentParser) -> None:
 
 
 def _train(args: argparse.Namespace) -> int:
+    from .real_data.budget import BudgetExceeded, ResourceBudget
+
     text = _read_training_text(args)
     model = TextFactorModel(_config_from_args(args), alphabet=args.alphabet)
-    model.fit_text(text, epochs=args.epochs, stride=args.stride)
-    destination = model.save(args.model)
+    budget = ResourceBudget(
+        max_steps=args.max_windows,
+        max_items=args.max_windows,
+        max_bytes=args.max_training_bytes,
+        max_wall_seconds=args.max_wall_seconds,
+        max_artifact_bytes=args.max_artifact_bytes,
+        max_clusters_total=args.max_clusters_total,
+        checkpoint_every_steps=args.progress_every,
+    )
+
+    def progress(event: dict[str, Any]) -> None:
+        if args.progress:
+            print(
+                json.dumps(
+                    event,
+                    ensure_ascii=False,
+                    sort_keys=True,
+                    allow_nan=False,
+                ),
+                file=sys.stderr,
+                flush=True,
+            )
+
+    try:
+        model.fit_text(
+            text,
+            epochs=args.epochs,
+            stride=args.stride,
+            budget=budget,
+            progress=progress,
+        )
+    except BudgetExceeded as error:
+        report = model.summary(factor_limit=args.top)
+        report.update(
+            {
+                "status": "incomplete",
+                "saved_to": None,
+                "stop_reason": error.reason,
+                "budget": error.snapshot.to_dict(),
+                "scope": (
+                    "training stopped before the rejected unit; no partial model "
+                    "artifact was published"
+                ),
+            }
+        )
+        _print_json(report)
+        return 1
+
+    destination = model.save(
+        args.model,
+        max_file_bytes=args.max_artifact_bytes,
+    )
     report = model.summary(factor_limit=args.top)
-    report["saved_to"] = str(destination)
+    report.update(
+        {
+            "status": "complete",
+            "saved_to": str(destination),
+            "training_budget": {
+                "max_windows": args.max_windows,
+                "max_training_bytes": args.max_training_bytes,
+                "max_wall_seconds": args.max_wall_seconds,
+                "max_clusters_total": args.max_clusters_total,
+                "max_artifact_bytes": args.max_artifact_bytes,
+            },
+        }
+    )
     _print_json(report)
     return 0
 
@@ -448,6 +512,47 @@ def build_parser() -> argparse.ArgumentParser:
     train.add_argument("--epochs", type=int, default=1)
     train.add_argument("--stride", type=int, default=1)
     train.add_argument("--top", type=int, default=10)
+    train.add_argument(
+        "--max-windows",
+        type=int,
+        default=100_000,
+        help="maximum successfully processed training windows",
+    )
+    train.add_argument(
+        "--max-training-bytes",
+        type=int,
+        default=256 * 1024 * 1024,
+        help="maximum cumulative UTF-8 window bytes processed",
+    )
+    train.add_argument(
+        "--max-wall-seconds",
+        type=float,
+        default=300.0,
+        help="maximum wall-clock seconds for training",
+    )
+    train.add_argument(
+        "--max-clusters-total",
+        type=int,
+        default=3_000_000,
+        help="global cluster budget across all memory points",
+    )
+    train.add_argument(
+        "--max-artifact-bytes",
+        type=int,
+        default=2 * 1024**3,
+        help="maximum persisted NPZ model size",
+    )
+    train.add_argument(
+        "--progress-every",
+        type=int,
+        default=1000,
+        help="emit a progress checkpoint after this many accepted windows",
+    )
+    train.add_argument(
+        "--progress",
+        action="store_true",
+        help="write JSON training checkpoints to stderr",
+    )
     _add_model_size_options(train)
     train.set_defaults(handler=_train)
 
