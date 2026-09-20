@@ -41,7 +41,19 @@ python -m text_factors learned-chat --model learned-model.json --state learned-s
 Команды `learned-export-data`, `learned-freeze` и `learned-evaluate`
 предназначены для воспроизводимого обучения и независимой оценки.
 Подробнее: [архитектура, запуск и ограничения](docs/V05_LEARNED_DIALOGUE.md),
-[протокол проверки](docs/V05_EVALUATION_PROTOCOL.md).
+[протокол проверки](docs/V05_EVALUATION_PROTOCOL.md),
+[измеренные результаты](docs/V05_RESULTS.md).
+
+Сохранённая обученная модель включена в репозиторий. Её можно сразу запустить:
+
+```bash
+python -m text_factors learned-chat --model docs/results/v05_model_42.json --state learned-session.json
+```
+
+Независимая проверка v0.5 выявила слабый перенос языка: точный смысл —
+4/17 и 4/19 фраз; сквозной диалог — 24/29 и 0/29 реплик на двух наборах.
+Есть смысловые ошибки в утверждениях. Шесть этапов реализованы как
+экспериментальная архитектура; качество полноценного чата пока не достигнуто.
 
 ## v0.4.0a1: связный диалог с заданной грамматикой
 

@@ -1,0 +1,125 @@
+{
+  "schema": "ai2-v05-verification-v1",
+  "recorded_at_utc": "2026-09-20T01:18:15.460624+00:00",
+  "remote_source_commit": "f056777937cd34268714c58a06c30ad77a387d19",
+  "remote_source_tree": "36d55cd77895a428c48c872b5d00d31b53d1bb80",
+  "local_source_commit": "9231cff",
+  "local_history_note": "Local checkout has synthetic history; remote commits preserve the original remote base tree.",
+  "environment": {
+    "python": "3.12.14",
+    "numpy": "2.3.5",
+    "platform": "Linux-6.18.44-x86_64-with-glibc2.39",
+    "OPENBLAS_NUM_THREADS": "1",
+    "OMP_NUM_THREADS": "1"
+  },
+  "source_digest": "d0f9e2a7b361a0ff4a305e12aed8b051da33b033a9bde18cfbffaae2a61f3acc",
+  "bundle_fingerprint": "885c07a4d8514355b5459f06fd442a60b77b8d7f4f76d6469c0a0c03df0ef2c5",
+  "freeze_file_sha256": "2098124de3547fde09fb685e195d9dc63b32acf75eaea4013b5f36a64778264c",
+  "model_file_bytes": 970364,
+  "training_supervisor_elapsed_seconds": 7.39238,
+  "checks": [
+    {
+      "command": "python -m unittest discover -s tests -q",
+      "outer_timeout_seconds": 300,
+      "exit_code": 0,
+      "tests": 657,
+      "test_elapsed_seconds": 128.281
+    },
+    {
+      "command": "python -m ruff check .",
+      "exit_code": 0
+    },
+    {
+      "command": "python -m ruff format --check .",
+      "exit_code": 0,
+      "files": 137
+    },
+    {
+      "command": "python -m pyright",
+      "exit_code": 0,
+      "errors": 0,
+      "warnings": 0
+    },
+    {
+      "command": "python -m compileall -q src tests",
+      "exit_code": 0
+    },
+    {
+      "command": "python -m unittest discover -s tests -p test_learned_integration.py -k test_real_worker_commits_success_and_discards_timed_out_child_mutation -v",
+      "outer_timeout_seconds": 60,
+      "exit_code": 0,
+      "tests": 1,
+      "test_elapsed_seconds": 23.607,
+      "note": "After increasing only test cold-start allowance from2s to10s; synthetic child delay remains30s, production source/model unchanged."
+    }
+  ],
+  "saved_model_demo": {
+    "command": "python -m text_factors learned-chat --model docs/results/v05_model_42.json --demo --json",
+    "exit_code": 0,
+    "turns": 12,
+    "completed_workers": 12,
+    "all_responses_complete": true,
+    "max_warm_response_seconds": 0.02429,
+    "timing_note": "Warm response time excludes worker startup and numeric model/session restoration. No claim about full cold-turn latency distribution.",
+    "artifact": "v05_demo_42.jsonl"
+  },
+  "robustness_coverage": [
+    "real supervised worker timeout leaves parent state unchanged",
+    "cooperative component timeout rolls back candidate changes",
+    "numeric checkpoint restore without training replay",
+    "request-id retries are idempotent",
+    "input, nesting, event, state and decoder bounds",
+    "historical evidence and receipt validation",
+    "nonactual, negated and reported events cannot imply unlicensed world changes"
+  ],
+  "limits": {
+    "validated_platform": "Linux",
+    "windows_process_cleanup_verified": false,
+    "generator_grounding_note": "Checks agree with memory; incorrect input understanding can still lead to semantic errors.",
+    "training_scope": "bounded synthetic Russian situation dialogue; not open-domain language training"
+  },
+  "ci": {
+    "status": "completed",
+    "conclusion": "success",
+    "run_id": 35481205312,
+    "run_url": "https://github.com/anatolahnov5317-hash/AI2/actions/runs/35481205312",
+    "tested_commit": "62ff4d6e0459099ae41fd96879bc5c9c35a5cd85",
+    "python_versions": {
+      "3.10": "success",
+      "3.11": "success",
+      "3.12": "success"
+    },
+    "source_run_id": 35480959075,
+    "source_run_url": "https://github.com/anatolahnov5317-hash/AI2/actions/runs/35480959075",
+    "source_run_outcome": "3.11 and3.12 passed;3.10 timeout-test fixture killed coldworker before mutation marker; fixture allowance corrected2s to10s, injected delay30s preserved. No production/model/evaluator/corpus changes."
+  },
+  "evaluations": [
+    {
+      "split": "development",
+      "status": "completed",
+      "complete": true,
+      "freeze_identical": true,
+      "artifact": "v05_development_42.json",
+      "timed_out": 0,
+      "execution_failed": 0
+    },
+    {
+      "split": "held_out",
+      "status": "completed",
+      "complete": true,
+      "freeze_identical": true,
+      "artifact": "v05_held_out_42.json",
+      "timed_out": 0,
+      "execution_failed": 0
+    },
+    {
+      "split": "challenge",
+      "status": "completed",
+      "complete": true,
+      "freeze_identical": true,
+      "artifact": "v05_challenge_42.json",
+      "timed_out": 0,
+      "execution_failed": 0
+    }
+  ]
+}

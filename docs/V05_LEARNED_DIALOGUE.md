@@ -17,6 +17,11 @@ python -m text_factors learned-chat --model learned-model.json --demo
 python -m text_factors learned-chat --model learned-model.json --state learned-session.json
 ```
 
+Для запуска уже обученной версии используйте
+`--model docs/results/v05_model_42.json` вместо `--model learned-model.json`.
+Её независимые результаты и границы переноса опубликованы в
+[V05_RESULTS.md](V05_RESULTS.md).
+
 `/quit` завершает разговор. Повтор последней команды продолжает сохранённую
 сессию. Модель обучается отдельной командой: обычные сообщения пользователя
 меняют память разговора, но не обученные параметры. Новый файл модели нельзя
