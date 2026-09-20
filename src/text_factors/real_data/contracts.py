@@ -191,7 +191,11 @@ class Claim:
             valid_from=value["valid_from"],
             valid_to=value["valid_to"],
             speaker_id=value["speaker_id"],
-            source=SourceSlice.from_dict(raw_source) if raw_source is not None else None,
+            source=(
+                SourceSlice.from_dict(raw_source)
+                if raw_source is not None
+                else None
+            ),
             evidence_roots=tuple(raw_roots),
             model_version=value["model_version"],
         )
