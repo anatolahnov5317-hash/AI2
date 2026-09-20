@@ -431,8 +431,7 @@ def _summary(value: Any, config: LearningConfig) -> dict[str, Any]:
         raise ValueError("training token count exceeds model budget")
     if (
         value["pair_positive_examples"] != value["pair_eligible_positive_examples"]
-        or value["pair_all_same_entity_examples"]
-        < value["pair_positive_examples"]
+        or value["pair_all_same_entity_examples"] < value["pair_positive_examples"]
         or value["pair_nonpreferred_positive_examples_ignored"]
         != value["pair_all_same_entity_examples"] - value["pair_positive_examples"]
         or value["pair_negative_examples"] > value["pair_eligible_negative_examples"]
@@ -850,9 +849,7 @@ def train_model(
                 else:
                     known_previous.append(left)
             same = [
-                left
-                for left in known_previous
-                if left["entity_id"] == right_entity
+                left for left in known_previous if left["entity_id"] == right_entity
             ]
             if same:
                 pair_positives += 1
@@ -943,9 +940,7 @@ def train_model(
         "pair_eligible_positive_examples": eligible_pair_positives,
         "pair_eligible_negative_examples": eligible_pair_negatives,
         "pair_all_same_entity_examples": all_same_entity_pairs,
-        "pair_nonpreferred_positive_examples_ignored": (
-            ignored_nonpreferred_positives
-        ),
+        "pair_nonpreferred_positive_examples_ignored": (ignored_nonpreferred_positives),
         "pair_critical_negative_examples": retained_critical_negatives,
         "pair_eligible_critical_negative_examples": eligible_critical_negatives,
         "pair_negative_sampling": "retain_identity_conflicts_then_reservoir_v2",
