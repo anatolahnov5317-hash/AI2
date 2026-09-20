@@ -66,8 +66,7 @@ class RealDataEngine:
         return {
             "revision": self._revision,
             "claims": [
-                self.claims[claim_id].to_dict()
-                for claim_id in sorted(self.claims)
+                self.claims[claim_id].to_dict() for claim_id in sorted(self.claims)
             ],
             "evidence": self.evidence.to_dict(),
             "uncertainty": self.uncertainty.to_dict(),
