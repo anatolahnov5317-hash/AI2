@@ -327,8 +327,7 @@ def _pair_features(
             1.0,
         ),
         (
-            "digit-pattern-equal:"
-            f"{bool(left_digits) and left_digits == right_digits}",
+            f"digit-pattern-equal:{bool(left_digits) and left_digits == right_digits}",
             1.0,
         ),
         (f"both-have-digits:{bool(left_digits) and bool(right_digits)}", 1.0),
