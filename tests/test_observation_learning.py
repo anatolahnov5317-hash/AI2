@@ -215,7 +215,7 @@ class ObservationLearningTests(unittest.TestCase):
                 break
             starts.append(offset)
             offset += 4
-        mentions = [
+        mentions: list[tuple[int, int, str | None]] = [
             (start, start + 4, entity)
             for start, entity in zip(starts, ("a", "b", "a", "b"), strict=True)
         ]
