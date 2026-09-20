@@ -313,10 +313,26 @@ def _pair_features(
         (f"line-break-gap:{_bucket(line_breaks)}", 1.0),
         (f"left-token-width:{_bucket(len(left_tokens))}", 1.0),
         (f"right-token-width:{_bucket(len(right_tokens))}", 1.0),
-        (f"same-first-token:{bool(left_tokens and right_tokens and left_tokens[0] == right_tokens[0])}", 1.0),
-        (f"same-last-token:{bool(left_tokens and right_tokens and left_tokens[-1] == right_tokens[-1])}", 1.0),
-        (f"surface-contained:{left_folded in right_folded or right_folded in left_folded}", 1.0),
-        (f"digit-pattern-equal:{bool(left_digits) and left_digits == right_digits}", 1.0),
+        (
+            "same-first-token:"
+            f"{bool(left_tokens and right_tokens and left_tokens[0] == right_tokens[0])}",
+            1.0,
+        ),
+        (
+            "same-last-token:"
+            f"{bool(left_tokens and right_tokens and left_tokens[-1] == right_tokens[-1])}",
+            1.0,
+        ),
+        (
+            "surface-contained:"
+            f"{left_folded in right_folded or right_folded in left_folded}",
+            1.0,
+        ),
+        (
+            "digit-pattern-equal:"
+            f"{bool(left_digits) and left_digits == right_digits}",
+            1.0,
+        ),
         (f"both-have-digits:{bool(left_digits) and bool(right_digits)}", 1.0),
         (f"overlapping:{max(left[0], right[0]) < min(left[1], right[1])}", 1.0),
         (f"rightward:{left[0] <= right[0]}", 1.0),
@@ -344,7 +360,8 @@ def _hard_negative_priority(
 ) -> tuple[float, int]:
     left_text, right_text = text[slice(*left)], text[slice(*right)]
     left_folded, right_folded = left_text.casefold(), right_text.casefold()
-    left_grams, right_grams = set(_grams(left_text, config)), set(_grams(right_text, config))
+    left_grams = set(_grams(left_text, config))
+    right_grams = set(_grams(right_text, config))
     overlap = len(left_grams & right_grams) / max(1, len(left_grams | right_grams))
     left_indices = _overlapping_token_indices(tokens, left)
     right_indices = _overlapping_token_indices(tokens, right)
@@ -454,7 +471,10 @@ def _summary(value: Any, config: LearningConfig) -> dict[str, Any]:
         or any(c not in "0123456789abcdef" for c in digest)
     ):
         raise ValueError("invalid train_data_sha256")
-    if value["span_candidate_policy"] != "contiguous_token_spans_up_to_configured_width":
+    if (
+        value["span_candidate_policy"]
+        != "contiguous_token_spans_up_to_configured_width"
+    ):
         raise ValueError("invalid span candidate policy")
     if value["pair_negative_sampling"] != "hard_surface_shape_similarity_distance_v1":
         raise ValueError("invalid pair negative sampling")
