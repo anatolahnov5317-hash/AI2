@@ -8,6 +8,8 @@ from pathlib import Path
 
 from text_factors.observations import ObservationArchive
 from text_factors.real_data import (
+    AttentionCandidate,
+    AttentionExample,
     BudgetExceeded,
     BudgetTracker,
     Claim,
