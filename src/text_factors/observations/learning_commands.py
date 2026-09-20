@@ -241,7 +241,14 @@ def propose_bundle(bundle_path: Path, text: str, *, language: str) -> dict[str, 
 def run(args: argparse.Namespace) -> int:
     if args.learning_operation == "train":
         corpus = load_learning_corpus(args.corpus)
-        config = LearningConfig(seed=args.seed, epochs=args.epochs)
+        config = LearningConfig(
+            seed=args.seed,
+            epochs=args.epochs,
+            feature_dim=args.feature_dim,
+            max_span_tokens=args.max_span_tokens,
+            max_antecedents=args.max_antecedents,
+            negative_ratio=args.negative_ratio,
+        )
         train_stages(corpus, Path(args.output_dir), config, resume=args.resume)
     elif args.learning_operation == "evaluate":
         result = evaluate_bundle(Path(args.model), load_learning_corpus(args.corpus))
@@ -294,6 +301,10 @@ def add_parsers(subparsers: Any) -> None:
             command.add_argument("--output-dir", required=True)
             command.add_argument("--seed", type=int, default=17)
             command.add_argument("--epochs", type=int, default=6)
+            command.add_argument("--feature-dim", type=int, default=8192)
+            command.add_argument("--max-span-tokens", type=int, default=8)
+            command.add_argument("--max-antecedents", type=int, default=64)
+            command.add_argument("--negative-ratio", type=int, default=3)
             command.add_argument("--resume", action="store_true")
         else:
             command.add_argument("--output", required=name != "propose")
