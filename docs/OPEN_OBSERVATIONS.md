@@ -76,29 +76,34 @@ with ObservationArchive("observations.sqlite", create=True) as archive:
     )
     first = text.index("ключ")
     second = text.index("ключ", first + 1)
-    result = archive.annotate({
-        "schema": "ai2-open-annotations-v1",
-        "source_id": source.source_id,
-        "source_version": source.version,
-        "annotator": "human-example",
-        "evidence": "Explicitly marked first and second objects",
-        "instances": [
-            {"ref": "a", "external_key": "key-1", "label": "ключ"},
-            {"ref": "b", "external_key": "key-2", "label": "ключ"},
-        ],
-        "mentions": [
-            {
-                "start": start,
-                "end": start + 4,
-                "surface": "ключ",
-                "candidates": [ref],
-                "selected": ref,
-                "expected_version": 0,
-            }
-            for start, ref in [(first, "a"), (second, "b")]
-        ],
-    })
-    assert result["instances"]["a"]["instance_id"] != result["instances"]["b"]["instance_id"]
+    result = archive.annotate(
+        {
+            "schema": "ai2-open-annotations-v1",
+            "source_id": source.source_id,
+            "source_version": source.version,
+            "annotator": "human-example",
+            "evidence": "Explicitly marked first and second objects",
+            "instances": [
+                {"ref": "a", "external_key": "key-1", "label": "ключ"},
+                {"ref": "b", "external_key": "key-2", "label": "ключ"},
+            ],
+            "mentions": [
+                {
+                    "start": start,
+                    "end": start + 4,
+                    "surface": "ключ",
+                    "candidates": [ref],
+                    "selected": ref,
+                    "expected_version": 0,
+                }
+                for start, ref in [(first, "a"), (second, "b")]
+            ],
+        }
+    )
+    assert (
+        result["instances"]["a"]["instance_id"]
+        != result["instances"]["b"]["instance_id"]
+    )
     print(result)
 ```
 
