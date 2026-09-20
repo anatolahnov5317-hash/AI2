@@ -1,0 +1,356 @@
+{
+  "schema": "ai2-gum-pilot-manifest-v1",
+  "repository": "https://github.com/amir-zeldes/gum",
+  "revision": "22fdf87f9c71c96bcc771461d06e689b1f90020d",
+  "source_commit_url": "https://github.com/amir-zeldes/gum/commit/22fdf87f9c71c96bcc771461d06e689b1f90020d",
+  "licenses": {
+    "texts": {
+      "id": "CC-BY-2.5",
+      "url": "https://creativecommons.org/licenses/by/2.5/"
+    },
+    "annotations": {
+      "id": "CC-BY-4.0",
+      "url": "https://creativecommons.org/licenses/by/4.0/"
+    }
+  },
+  "selection_policy": "DEVELOPMENT ONLY, NO TEST DOCUMENTS: all 14 academic documents in the official GUM train split are train; both academic documents in official dev are validation. This manifest contains no held-out test documents and must not be used to make an independent test claim.",
+  "freeze_note": "Used only to improve coreference from train/validation evidence after the first academic held-out test was opened. No GUM official test document is included.",
+  "documents": [
+    {
+      "document_id": "GUM_academic_art",
+      "group_id": "GUM_academic_art",
+      "split": "train",
+      "language": "en",
+      "license": "Texts: CC-BY-2.5; annotations: CC-BY-4.0",
+      "files": {
+        "conll": {
+          "path": "coref/gum/conll/GUM_academic_art.conll",
+          "git_blob_sha1": "b48892f9d9271cd0e23475708f24c18424125ba1"
+        },
+        "tsv": {
+          "path": "coref/gum/tsv/GUM_academic_art.tsv",
+          "git_blob_sha1": "35238aeda0d819c6a5977a4172c3616a1248ff2d"
+        },
+        "xml": {
+          "path": "xml/GUM_academic_art.xml",
+          "git_blob_sha1": "25953ba015e8ca20578f4707d8dbff8a6798114f"
+        }
+      }
+    },
+    {
+      "document_id": "GUM_academic_census",
+      "group_id": "GUM_academic_census",
+      "split": "train",
+      "language": "en",
+      "license": "Texts: CC-BY-2.5; annotations: CC-BY-4.0",
+      "files": {
+        "conll": {
+          "path": "coref/gum/conll/GUM_academic_census.conll",
+          "git_blob_sha1": "c581b3635209c12643f87249aa67a482c8090226"
+        },
+        "tsv": {
+          "path": "coref/gum/tsv/GUM_academic_census.tsv",
+          "git_blob_sha1": "98db015e841067f520e82b85d1f175c93917aa38"
+        },
+        "xml": {
+          "path": "xml/GUM_academic_census.xml",
+          "git_blob_sha1": "069b9dbf22b712af4a30377374d1429a0603ea15"
+        }
+      }
+    },
+    {
+      "document_id": "GUM_academic_economics",
+      "group_id": "GUM_academic_economics",
+      "split": "train",
+      "language": "en",
+      "license": "Texts: CC-BY-2.5; annotations: CC-BY-4.0",
+      "files": {
+        "conll": {
+          "path": "coref/gum/conll/GUM_academic_economics.conll",
+          "git_blob_sha1": "f51f6ce5a083be0d626a52cfd5933b0ece00cb4e"
+        },
+        "tsv": {
+          "path": "coref/gum/tsv/GUM_academic_economics.tsv",
+          "git_blob_sha1": "ac0e75359913b6013ee68dbc3d44eb6885c01899"
+        },
+        "xml": {
+          "path": "xml/GUM_academic_economics.xml",
+          "git_blob_sha1": "747ca3dfaa227701fa26b987b5ad5f527030eaa7"
+        }
+      }
+    },
+    {
+      "document_id": "GUM_academic_enjambment",
+      "group_id": "GUM_academic_enjambment",
+      "split": "train",
+      "language": "en",
+      "license": "Texts: CC-BY-2.5; annotations: CC-BY-4.0",
+      "files": {
+        "conll": {
+          "path": "coref/gum/conll/GUM_academic_enjambment.conll",
+          "git_blob_sha1": "ed5c78254271051e6d4c3f0fd1a7dc1c0a1cd606"
+        },
+        "tsv": {
+          "path": "coref/gum/tsv/GUM_academic_enjambment.tsv",
+          "git_blob_sha1": "68f901f4d46cf8e3dd085dc20ef4271a7fc71b32"
+        },
+        "xml": {
+          "path": "xml/GUM_academic_enjambment.xml",
+          "git_blob_sha1": "cc07f73441ed41dc3a3ee04617f39cdbd61dac43"
+        }
+      }
+    },
+    {
+      "document_id": "GUM_academic_epistemic",
+      "group_id": "GUM_academic_epistemic",
+      "split": "train",
+      "language": "en",
+      "license": "Texts: CC-BY-2.5; annotations: CC-BY-4.0",
+      "files": {
+        "conll": {
+          "path": "coref/gum/conll/GUM_academic_epistemic.conll",
+          "git_blob_sha1": "5205ee3c6fcd79b3e85fdeb77eb4487800507a37"
+        },
+        "tsv": {
+          "path": "coref/gum/tsv/GUM_academic_epistemic.tsv",
+          "git_blob_sha1": "4cbd98701f10d507f06f289c537cc2c1a01c5dbc"
+        },
+        "xml": {
+          "path": "xml/GUM_academic_epistemic.xml",
+          "git_blob_sha1": "f3ab3e61fef5cd2dd0a794a3642ca13a9eb5ffc8"
+        }
+      }
+    },
+    {
+      "document_id": "GUM_academic_games",
+      "group_id": "GUM_academic_games",
+      "split": "train",
+      "language": "en",
+      "license": "Texts: CC-BY-2.5; annotations: CC-BY-4.0",
+      "files": {
+        "conll": {
+          "path": "coref/gum/conll/GUM_academic_games.conll",
+          "git_blob_sha1": "8949aa4256842f088a8d8ddbfee76d195814cb30"
+        },
+        "tsv": {
+          "path": "coref/gum/tsv/GUM_academic_games.tsv",
+          "git_blob_sha1": "d4c179f727c51b3f13eb181a54a3c1ca0f8c2bda"
+        },
+        "xml": {
+          "path": "xml/GUM_academic_games.xml",
+          "git_blob_sha1": "660fc0365b049589fc556a69bfa5feba328c5a50"
+        }
+      }
+    },
+    {
+      "document_id": "GUM_academic_huh",
+      "group_id": "GUM_academic_huh",
+      "split": "train",
+      "language": "en",
+      "license": "Texts: CC-BY-2.5; annotations: CC-BY-4.0",
+      "files": {
+        "conll": {
+          "path": "coref/gum/conll/GUM_academic_huh.conll",
+          "git_blob_sha1": "9de4c7ebbcd1b1516b29575fffe5a6f9de9080b6"
+        },
+        "tsv": {
+          "path": "coref/gum/tsv/GUM_academic_huh.tsv",
+          "git_blob_sha1": "5cc52cc7fb0b246cee405cd11e6371f7c4e845ae"
+        },
+        "xml": {
+          "path": "xml/GUM_academic_huh.xml",
+          "git_blob_sha1": "65998544160186d41c46df546ccb85588f1ef660"
+        }
+      }
+    },
+    {
+      "document_id": "GUM_academic_implicature",
+      "group_id": "GUM_academic_implicature",
+      "split": "train",
+      "language": "en",
+      "license": "Texts: CC-BY-2.5; annotations: CC-BY-4.0",
+      "files": {
+        "conll": {
+          "path": "coref/gum/conll/GUM_academic_implicature.conll",
+          "git_blob_sha1": "b97ab0db9b14dd424c61c9dbf05d19932014fcae"
+        },
+        "tsv": {
+          "path": "coref/gum/tsv/GUM_academic_implicature.tsv",
+          "git_blob_sha1": "562df906b5140cf05ae7011bde91395f68277faf"
+        },
+        "xml": {
+          "path": "xml/GUM_academic_implicature.xml",
+          "git_blob_sha1": "a5a73f4c33e7f00e8cb6662c869189bd1f6a94a6"
+        }
+      }
+    },
+    {
+      "document_id": "GUM_academic_lighting",
+      "group_id": "GUM_academic_lighting",
+      "split": "train",
+      "language": "en",
+      "license": "Texts: CC-BY-2.5; annotations: CC-BY-4.0",
+      "files": {
+        "conll": {
+          "path": "coref/gum/conll/GUM_academic_lighting.conll",
+          "git_blob_sha1": "2161988c10314bd1dd09ae22320552318ea4e082"
+        },
+        "tsv": {
+          "path": "coref/gum/tsv/GUM_academic_lighting.tsv",
+          "git_blob_sha1": "37986f61f19e7dd8e573fe99e61c8a9b1bea100b"
+        },
+        "xml": {
+          "path": "xml/GUM_academic_lighting.xml",
+          "git_blob_sha1": "509730d97ac5919979d4a9af9d1442e822e97607"
+        }
+      }
+    },
+    {
+      "document_id": "GUM_academic_mutation",
+      "group_id": "GUM_academic_mutation",
+      "split": "train",
+      "language": "en",
+      "license": "Texts: CC-BY-2.5; annotations: CC-BY-4.0",
+      "files": {
+        "conll": {
+          "path": "coref/gum/conll/GUM_academic_mutation.conll",
+          "git_blob_sha1": "d808888412afeb88d83f77bb7001741268d97dfa"
+        },
+        "tsv": {
+          "path": "coref/gum/tsv/GUM_academic_mutation.tsv",
+          "git_blob_sha1": "ba1435f13156c0daed24688b24569b62e7c41db3"
+        },
+        "xml": {
+          "path": "xml/GUM_academic_mutation.xml",
+          "git_blob_sha1": "c6ac3b4bf883107675c664fb196755056d06c97f"
+        }
+      }
+    },
+    {
+      "document_id": "GUM_academic_replication",
+      "group_id": "GUM_academic_replication",
+      "split": "train",
+      "language": "en",
+      "license": "Texts: CC-BY-2.5; annotations: CC-BY-4.0",
+      "files": {
+        "conll": {
+          "path": "coref/gum/conll/GUM_academic_replication.conll",
+          "git_blob_sha1": "79c76f26ba9376a8629ca6890c3adb95ab791f07"
+        },
+        "tsv": {
+          "path": "coref/gum/tsv/GUM_academic_replication.tsv",
+          "git_blob_sha1": "298050b738af648ebea3ae7bf25aa12d07235c74"
+        },
+        "xml": {
+          "path": "xml/GUM_academic_replication.xml",
+          "git_blob_sha1": "882b65615000fe09acb723895905fbe4b3f62bc5"
+        }
+      }
+    },
+    {
+      "document_id": "GUM_academic_salinity",
+      "group_id": "GUM_academic_salinity",
+      "split": "train",
+      "language": "en",
+      "license": "Texts: CC-BY-2.5; annotations: CC-BY-4.0",
+      "files": {
+        "conll": {
+          "path": "coref/gum/conll/GUM_academic_salinity.conll",
+          "git_blob_sha1": "0dc7a39b0d077a29cc04f8d3e11567547c52ecc5"
+        },
+        "tsv": {
+          "path": "coref/gum/tsv/GUM_academic_salinity.tsv",
+          "git_blob_sha1": "d6ebbfe9c7266ba24f2c608f6ac49f45ff6c6525"
+        },
+        "xml": {
+          "path": "xml/GUM_academic_salinity.xml",
+          "git_blob_sha1": "088b9413391447303b04ec21459d0f0c015855ea"
+        }
+      }
+    },
+    {
+      "document_id": "GUM_academic_theropod",
+      "group_id": "GUM_academic_theropod",
+      "split": "train",
+      "language": "en",
+      "license": "Texts: CC-BY-2.5; annotations: CC-BY-4.0",
+      "files": {
+        "conll": {
+          "path": "coref/gum/conll/GUM_academic_theropod.conll",
+          "git_blob_sha1": "8b8d975641f978eabc2baba27e7e01cd28e657ef"
+        },
+        "tsv": {
+          "path": "coref/gum/tsv/GUM_academic_theropod.tsv",
+          "git_blob_sha1": "d1c8c7b30774efb60c0772a25b76b2c609dec089"
+        },
+        "xml": {
+          "path": "xml/GUM_academic_theropod.xml",
+          "git_blob_sha1": "f24c81a0d06f8bb93d14751f6d6f1e3160edd995"
+        }
+      }
+    },
+    {
+      "document_id": "GUM_academic_thrones",
+      "group_id": "GUM_academic_thrones",
+      "split": "train",
+      "language": "en",
+      "license": "Texts: CC-BY-2.5; annotations: CC-BY-4.0",
+      "files": {
+        "conll": {
+          "path": "coref/gum/conll/GUM_academic_thrones.conll",
+          "git_blob_sha1": "15cde5c7e247dcea04e5d091f52bd26d264fb6f5"
+        },
+        "tsv": {
+          "path": "coref/gum/tsv/GUM_academic_thrones.tsv",
+          "git_blob_sha1": "7bf739322383735645739ce714518488ca1491f9"
+        },
+        "xml": {
+          "path": "xml/GUM_academic_thrones.xml",
+          "git_blob_sha1": "3ea84a002c8fa386fc65f683977fa15ce6108aaa"
+        }
+      }
+    },
+    {
+      "document_id": "GUM_academic_exposure",
+      "group_id": "GUM_academic_exposure",
+      "split": "validation",
+      "language": "en",
+      "license": "Texts: CC-BY-2.5; annotations: CC-BY-4.0",
+      "files": {
+        "conll": {
+          "path": "coref/gum/conll/GUM_academic_exposure.conll",
+          "git_blob_sha1": "cc689895dede99bcc7802c4636690015f2bba596"
+        },
+        "tsv": {
+          "path": "coref/gum/tsv/GUM_academic_exposure.tsv",
+          "git_blob_sha1": "77175292a22fc6d9dcd995d0bde5e9d8f149f686"
+        },
+        "xml": {
+          "path": "xml/GUM_academic_exposure.xml",
+          "git_blob_sha1": "96c95e3bae4edaa5cd1fa1a57284c62e42a4058b"
+        }
+      }
+    },
+    {
+      "document_id": "GUM_academic_librarians",
+      "group_id": "GUM_academic_librarians",
+      "split": "validation",
+      "language": "en",
+      "license": "Texts: CC-BY-2.5; annotations: CC-BY-4.0",
+      "files": {
+        "conll": {
+          "path": "coref/gum/conll/GUM_academic_librarians.conll",
+          "git_blob_sha1": "4d23726c78cbd23a385b793df092aa6046f1cb9f"
+        },
+        "tsv": {
+          "path": "coref/gum/tsv/GUM_academic_librarians.tsv",
+          "git_blob_sha1": "6589556fe03a6ba2fab6ccca2d6717541e7696b8"
+        },
+        "xml": {
+          "path": "xml/GUM_academic_librarians.xml",
+          "git_blob_sha1": "f1210c94d84afa805e24518555e6885cde89beb3"
+        }
+      }
+    }
+  ]
+}
