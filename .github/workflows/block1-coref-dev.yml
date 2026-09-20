@@ -1,0 +1,122 @@
+name: Block1 Coreference Dev
+
+on:
+  push:
+    branches:
+      - test/block1-quality-gate
+    paths:
+      - ".github/workflows/block1-coref-dev.yml"
+      - "docs/GUM_BLOCK1_ACADEMIC_DEV_MANIFEST.json"
+      - "scripts/prepare_gum_mentions.py"
+      - "src/text_factors/observations/learning.py"
+      - "src/text_factors/observations/assessment.py"
+      - "src/text_factors/observations/learning_commands.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validation-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      OPENBLAS_NUM_THREADS: "1"
+      OMP_NUM_THREADS: "1"
+    steps:
+      - name: Checkout AI2
+        uses: actions/checkout@v4
+
+      - name: Checkout pinned GUM
+        uses: actions/checkout@v4
+        with:
+          repository: amir-zeldes/gum
+          ref: 22fdf87f9c71c96bcc771461d06e689b1f90020d
+          path: vendor/gum
+          fetch-depth: 1
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - run: python -m pip install --upgrade pip
+      - run: python -m pip install -e ".[dev]"
+
+      - name: Convert development corpus without test documents
+        run: |
+          python scripts/prepare_gum_mentions.py \
+            --input-dir vendor/gum \
+            --manifest docs/GUM_BLOCK1_ACADEMIC_DEV_MANIFEST.json \
+            --output artifacts/block1-academic-dev-corpus.json
+
+      - name: Train on train and calibrate on validation only
+        run: |
+          text-factors mention-learning train \
+            --corpus artifacts/block1-academic-dev-corpus.json \
+            --output-dir artifacts/block1-academic-dev-model \
+            --seed 17 \
+            --epochs 8
+
+      - name: Print validation-only coreference diagnostics
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          bundle = json.loads(
+              Path("artifacts/block1-academic-dev-model/model.json").read_text(
+                  encoding="utf-8"
+              )
+          )["payload"]
+          policy = bundle["policy"]
+          gate = policy["link_gate"]
+          print("BLOCK1_COREF_VALIDATION_ONLY")
+          print("mention_threshold=", policy["mention_threshold"])
+          print("link_gate=", gate)
+
+          def ranked(rows):
+              rows = [row for row in rows if row["precision"] is not None]
+              return sorted(
+                  rows,
+                  key=lambda row: (
+                      -row["precision"],
+                      -row["evaluable_accepted_count"],
+                      -row.get("coverage", 0.0),
+                      row["score_threshold"],
+                      row["margin_threshold"],
+                  ),
+              )
+
+          for label, rows in (
+              ("predicted", policy["link_grid"]),
+              ("oracle", policy["oracle_link_grid"]),
+          ):
+              print(label + "_top=")
+              for row in ranked(rows)[:12]:
+                  print(
+                      json.dumps(
+                          {
+                              "score_threshold": row["score_threshold"],
+                              "margin_threshold": row["margin_threshold"],
+                              "mention_score_threshold": row.get(
+                                  "mention_score_threshold"
+                              ),
+                              "evaluable": row["evaluable_accepted_count"],
+                              "correct": row["correct_count"],
+                              "precision": row["precision"],
+                              "coverage": row["coverage"],
+                              "wrong_boundary": row["wrong_boundary_count"],
+                          },
+                          sort_keys=True,
+                      )
+                  )
+          PY
+
+      - name: Upload validation development artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: block1-coreference-dev
+          path: |
+            artifacts/block1-academic-dev-corpus.json
+            artifacts/block1-academic-dev-model/
