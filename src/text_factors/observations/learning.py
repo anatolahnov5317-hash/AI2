@@ -11,7 +11,6 @@ only two explicitly known entity identities.
 from __future__ import annotations
 
 import hashlib
-import heapq
 import json
 import math
 import random
@@ -28,7 +27,7 @@ from numpy.typing import NDArray
 from .schema import canonical_json, fields, text_field
 
 MODEL_SCHEMA = "ai2-open-candidate-model-v1"
-_ALGORITHM = "unicode-char-shape-sparse-logistic-v3"
+_ALGORITHM = "unicode-char-shape-sparse-logistic-v2"
 
 
 def _integer(value: Any, name: str, low: int, high: int) -> int:
@@ -350,60 +349,6 @@ def _digit_runs(value: str) -> tuple[str, ...]:
     return tuple(runs)
 
 
-def _hard_negative_priority(
-    text: str,
-    tokens: list[_Token],
-    left: tuple[int, int],
-    right: tuple[int, int],
-    config: LearningConfig,
-) -> tuple[float, int]:
-    """Prefer negatives that most resemble plausible antecedents."""
-
-    left_text, right_text = text[slice(*left)], text[slice(*right)]
-    left_folded, right_folded = left_text.casefold(), right_text.casefold()
-    left_grams = set(_grams(left_text, config))
-    right_grams = set(_grams(right_text, config))
-    gram_union = left_grams | right_grams
-    gram_overlap = (
-        len(left_grams & right_grams) / len(gram_union) if gram_union else 0.0
-    )
-    left_indices = _overlapping_token_indices(tokens, left)
-    right_indices = _overlapping_token_indices(tokens, right)
-    left_tokens = {
-        text[tokens[index].start : tokens[index].end].casefold()
-        for index in left_indices
-    }
-    right_tokens = {
-        text[tokens[index].start : tokens[index].end].casefold()
-        for index in right_indices
-    }
-    token_union = left_tokens | right_tokens
-    token_overlap = (
-        len(left_tokens & right_tokens) / len(token_union) if token_union else 0.0
-    )
-    token_gap = (
-        max(0, right_indices[0] - left_indices[-1] - 1)
-        if left_indices and right_indices
-        else 0
-    )
-    hardness = (
-        5.0 * float(left_folded == right_folded)
-        + 2.0 * float(_shape(left_text) == _shape(right_text))
-        + 3.0 * gram_overlap
-        + 2.0 * token_overlap
-        + float(left_folded in right_folded or right_folded in left_folded)
-        + 2.0 / (1.0 + token_gap)
-    )
-    tie = int.from_bytes(
-        hashlib.blake2s(
-            f"{left[0]}:{left[1]}:{right[0]}:{right[1]}".encode(),
-            digest_size=8,
-        ).digest(),
-        "little",
-    )
-    return hardness, tie
-
-
 def _critical_negative(
     text: str,
     left: tuple[int, int],
@@ -511,10 +456,7 @@ def _summary(value: Any, config: LearningConfig) -> dict[str, Any]:
         or any(c not in "0123456789abcdef" for c in digest)
     ):
         raise ValueError("invalid train_data_sha256")
-    if (
-        value["pair_negative_sampling"]
-        != "retain_identity_conflicts_then_hard_similarity_distance_v3"
-    ):
+    if value["pair_negative_sampling"] != "retain_identity_conflicts_then_reservoir_v2":
         raise ValueError("invalid pair negative sampling")
     if value["score_interpretation"] != "uncalibrated_sigmoid":
         raise ValueError("invalid score interpretation")
@@ -806,9 +748,8 @@ def train_model(
     total gold span count, including unsupported gold spans. Pair negatives that
     represent explicit identity conflicts with the same surface, or with the same
     non-digit identifier skeleton and different digit runs, are always retained.
-    Remaining pair negatives are hard-mined by surface/shape/token similarity
-    and distance up to negative_ratio times the eligible positive pair count.
-    Pair eligible counts remain in the summary.
+    Remaining pair negatives are reservoir sampled up to negative_ratio times the
+    eligible positive pair count. Pair eligible counts remain in the summary.
     Unaligned gold spans are counted, not relabelled as negatives. Pair labels
     are generated only within a document and the configured antecedent window.
     No corpus-wide feature matrix is materialized: SGD computes one sparse vector
@@ -908,7 +849,9 @@ def train_model(
         ):
             raise ValueError("corpus exceeds max_pair_examples")
 
-        hard_negatives: list[tuple[float, int, tuple]] = []
+        sampled_negatives = []
+        negative_seen = 0
+        rng = random.Random(f"{config.seed}:{document.document_id}:pair")
         for left, right in _antecedent_pairs(document.mentions, config):
             if left["entity_id"] is None or right["entity_id"] is None:
                 continue
@@ -922,25 +865,14 @@ def train_model(
                 pair_examples.append(entry)
                 retained_critical_negatives += 1
             else:
-                priority, tie = _hard_negative_priority(
-                    document.text,
-                    document.tokens,
-                    left_span,
-                    right_span,
-                    config,
-                )
-                ranked = (priority, tie, entry)
-                if len(hard_negatives) < ordinary_limit:
-                    heapq.heappush(hard_negatives, ranked)
-                elif ordinary_limit and ranked[:2] > hard_negatives[0][:2]:
-                    heapq.heapreplace(hard_negatives, ranked)
-        pair_examples.extend(
-            item[2]
-            for item in sorted(
-                hard_negatives,
-                key=lambda item: (-item[0], -item[1]),
-            )
-        )
+                negative_seen += 1
+                if len(sampled_negatives) < ordinary_limit:
+                    sampled_negatives.append(entry)
+                elif ordinary_limit:
+                    replace = rng.randrange(negative_seen)
+                    if replace < ordinary_limit:
+                        sampled_negatives[replace] = entry
+        pair_examples.extend(sampled_negatives)
     summary: dict[str, Any] = {
         "train_document_count": len(documents),
         "train_token_count": sum(len(document.tokens) for document in documents),
@@ -953,9 +885,7 @@ def train_model(
         "pair_eligible_negative_examples": eligible_pair_negatives,
         "pair_critical_negative_examples": retained_critical_negatives,
         "pair_eligible_critical_negative_examples": eligible_critical_negatives,
-        "pair_negative_sampling": (
-            "retain_identity_conflicts_then_hard_similarity_distance_v3"
-        ),
+        "pair_negative_sampling": "retain_identity_conflicts_then_reservoir_v2",
         "score_interpretation": "uncalibrated_sigmoid",
     }
     for kind, examples in (("span", span_examples), ("pair", pair_examples)):
