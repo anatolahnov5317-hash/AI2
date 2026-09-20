@@ -43,7 +43,7 @@ class RevisionCheckpoint:
         return value
 
     @classmethod
-    def from_dict(cls, value: dict[str, Any]) -> "RevisionCheckpoint":
+    def from_dict(cls, value: dict[str, Any]) -> RevisionCheckpoint:
         if type(value) is not dict:
             raise ValueError("revision checkpoint must be an object")
         expected = {"state_version", "changed_ids", "queue", "cursor", "processed_ids"}
@@ -100,7 +100,7 @@ class DependencyGraph:
         }
 
     @classmethod
-    def from_dict(cls, value: dict[str, Any]) -> "DependencyGraph":
+    def from_dict(cls, value: dict[str, Any]) -> DependencyGraph:
         if (
             type(value) is not dict
             or set(value) != {"dependents"}
