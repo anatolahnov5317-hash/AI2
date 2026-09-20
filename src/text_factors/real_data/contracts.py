@@ -70,6 +70,20 @@ class SourceSlice:
             "access_scope": self.access_scope,
         }
 
+    @classmethod
+    def from_dict(cls, value: dict[str, Any]) -> "SourceSlice":
+        expected = {
+            "source_id",
+            "source_version",
+            "start",
+            "end",
+            "sha256",
+            "access_scope",
+        }
+        if type(value) is not dict or set(value) != expected:
+            raise ValueError("invalid source slice")
+        return cls(**value)
+
 
 @dataclass(frozen=True, slots=True)
 class RoleValue:
@@ -91,6 +105,13 @@ class RoleValue:
             "value_type": self.value_type,
             "mention_id": self.mention_id,
         }
+
+    @classmethod
+    def from_dict(cls, value: dict[str, Any]) -> "RoleValue":
+        expected = {"role", "value_id", "value_type", "mention_id"}
+        if type(value) is not dict or set(value) != expected:
+            raise ValueError("invalid role value")
+        return cls(**value)
 
 
 @dataclass(frozen=True, slots=True)
@@ -134,6 +155,46 @@ class Claim:
             "evidence_roots": list(self.evidence_roots),
             "model_version": self.model_version,
         }
+
+    @classmethod
+    def from_dict(cls, value: dict[str, Any]) -> "Claim":
+        expected = {
+            "claim_id",
+            "relation_id",
+            "arguments",
+            "status",
+            "valid_from",
+            "valid_to",
+            "speaker_id",
+            "source",
+            "evidence_roots",
+            "model_version",
+        }
+        if type(value) is not dict or set(value) != expected:
+            raise ValueError("invalid claim")
+        raw_arguments = value["arguments"]
+        raw_roots = value["evidence_roots"]
+        if type(raw_arguments) is not list or type(raw_roots) is not list:
+            raise ValueError("invalid claim collections")
+        raw_source = value["source"]
+        if raw_source is not None and type(raw_source) is not dict:
+            raise ValueError("invalid claim source")
+        try:
+            status = ClaimStatus(value["status"])
+        except (TypeError, ValueError) as exc:
+            raise ValueError("invalid claim status") from exc
+        return cls(
+            claim_id=value["claim_id"],
+            relation_id=value["relation_id"],
+            arguments=tuple(RoleValue.from_dict(item) for item in raw_arguments),
+            status=status,
+            valid_from=value["valid_from"],
+            valid_to=value["valid_to"],
+            speaker_id=value["speaker_id"],
+            source=SourceSlice.from_dict(raw_source) if raw_source is not None else None,
+            evidence_roots=tuple(raw_roots),
+            model_version=value["model_version"],
+        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -207,6 +268,51 @@ class UncertaintyScope:
             return True
         return False
 
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "uncertainty_id": self.uncertainty_id,
+            "reason": self.reason,
+            "affected_claim_ids": list(self.affected_claim_ids),
+            "affected_instance_ids": list(self.affected_instance_ids),
+            "relation_id": self.relation_id,
+            "valid_from": self.valid_from,
+            "valid_to": self.valid_to,
+            "source_id": self.source_id,
+            "confidence": self.confidence,
+        }
+
+    @classmethod
+    def from_dict(cls, value: dict[str, Any]) -> "UncertaintyScope":
+        expected = {
+            "uncertainty_id",
+            "reason",
+            "affected_claim_ids",
+            "affected_instance_ids",
+            "relation_id",
+            "valid_from",
+            "valid_to",
+            "source_id",
+            "confidence",
+        }
+        if type(value) is not dict or set(value) != expected:
+            raise ValueError("invalid uncertainty scope")
+        if (
+            type(value["affected_claim_ids"]) is not list
+            or type(value["affected_instance_ids"]) is not list
+        ):
+            raise ValueError("invalid uncertainty ID lists")
+        return cls(
+            uncertainty_id=value["uncertainty_id"],
+            reason=value["reason"],
+            affected_claim_ids=tuple(value["affected_claim_ids"]),
+            affected_instance_ids=tuple(value["affected_instance_ids"]),
+            relation_id=value["relation_id"],
+            valid_from=value["valid_from"],
+            valid_to=value["valid_to"],
+            source_id=value["source_id"],
+            confidence=value["confidence"],
+        )
+
 
 @dataclass(frozen=True, slots=True)
 class LearningEpisode:
@@ -251,3 +357,45 @@ class AnswerReceipt:
     @property
     def grounded(self) -> bool:
         return not self.claim_ids or bool(self.evidence_roots)
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "question_id": self.question_id,
+            "answer_text": self.answer_text,
+            "claim_ids": list(self.claim_ids),
+            "evidence_roots": list(self.evidence_roots),
+            "model_version": self.model_version,
+            "state_version": self.state_version,
+            "complete": self.complete,
+            "reason": self.reason,
+        }
+
+    @classmethod
+    def from_dict(cls, value: dict[str, Any]) -> "AnswerReceipt":
+        expected = {
+            "question_id",
+            "answer_text",
+            "claim_ids",
+            "evidence_roots",
+            "model_version",
+            "state_version",
+            "complete",
+            "reason",
+        }
+        if type(value) is not dict or set(value) != expected:
+            raise ValueError("invalid answer receipt")
+        if (
+            type(value["claim_ids"]) is not list
+            or type(value["evidence_roots"]) is not list
+        ):
+            raise ValueError("invalid answer receipt IDs")
+        return cls(
+            question_id=value["question_id"],
+            answer_text=value["answer_text"],
+            claim_ids=tuple(value["claim_ids"]),
+            evidence_roots=tuple(value["evidence_roots"]),
+            model_version=value["model_version"],
+            state_version=value["state_version"],
+            complete=value["complete"],
+            reason=value["reason"],
+        )
