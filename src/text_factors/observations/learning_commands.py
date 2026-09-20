@@ -313,7 +313,7 @@ def add_parsers(subparsers: Any) -> None:
             command.add_argument("--seed", type=int, default=17)
             command.add_argument("--epochs", type=int, default=6)
             command.add_argument("--feature-dim", type=int, default=8192)
-            command.add_argument("--max-span-tokens", type=int, default=8)
+            command.add_argument("--max-span-tokens", type=int, default=16)
             command.add_argument("--max-antecedents", type=int, default=64)
             command.add_argument("--negative-ratio", type=int, default=3)
             command.add_argument("--resume", action="store_true")
