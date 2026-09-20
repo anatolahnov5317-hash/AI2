@@ -138,7 +138,14 @@ class CombinatorialMemory:
             set() for _ in range(config.output_bits)
         ]
         self._nonempty_points: set[int] = set()
+        self._cluster_count = 0
         self.step = 0
+
+    @property
+    def cluster_count(self) -> int:
+        """Return the exact current cluster count in O(1)."""
+
+        return self._cluster_count
 
     def _validate_bits(
         self,
@@ -277,6 +284,7 @@ class CombinatorialMemory:
             self._signatures[output_bit].add(signature)
             self._nonempty_points.add(point_index)
             created += 1
+        self._cluster_count += created
         return created
 
     def _has_excess_error(self, cluster: Cluster) -> bool:
@@ -341,11 +349,13 @@ class CombinatorialMemory:
             if not retained:
                 self._nonempty_points.discard(point_index)
         after = sum(len(clusters) for clusters in self.clusters)
+        self._cluster_count = after
         return {"removed_clusters": before - after, "removed_bits": removed_bits}
 
     def _consolidate(self) -> None:
         for point_index in tuple(self._nonempty_points):
             output_bit = int(self.output_map[point_index])
+            before_count = len(self.clusters[point_index])
             retained: list[Cluster] = []
 
             for cluster in self.clusters[point_index]:
@@ -379,6 +389,7 @@ class CombinatorialMemory:
                 retained.append(cluster)
 
             self.clusters[point_index] = retained
+            self._cluster_count -= before_count - len(retained)
             if not retained:
                 self._nonempty_points.discard(point_index)
 
@@ -611,6 +622,7 @@ class CombinatorialMemory:
             raise ValueError("persisted model exceeds max_clusters_per_point")
 
         self.clusters[int(point_index)].append(cluster)
+        self._cluster_count += 1
         self._signatures[output_bit].add(cluster.signature)
         self._nonempty_points.add(int(point_index))
 
