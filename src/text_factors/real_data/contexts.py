@@ -78,7 +78,10 @@ class SparseTransform:
             "width": self.width,
             "episodes": self.episodes,
             "counts": {
-                str(source): {str(target): count for target, count in sorted(row.items())}
+                str(source): {
+                    str(target): count
+                    for target, count in sorted(row.items())
+                }
                 for source, row in sorted(self._counts.items())
             },
         }
@@ -292,7 +295,9 @@ class ContextRegistry:
                 break
         return tuple(selected)
 
-    def reliable_context_ids(self, *, min_independent_groups: int = 2) -> tuple[str, ...]:
+    def reliable_context_ids(
+        self, *, min_independent_groups: int = 2
+    ) -> tuple[str, ...]:
         if type(min_independent_groups) is not int or min_independent_groups <= 0:
             raise ValueError("min_independent_groups must be positive")
         return tuple(
