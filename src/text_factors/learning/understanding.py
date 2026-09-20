@@ -691,7 +691,17 @@ class LearnedUnderstanding:
             role_margins[role] = margin
             span = spans[best]
             minimum = min(minimum, margin)
-            if margin < _CONFIG["role_margin"] or span.index == -1:
+            # The ontology permits explanation of an entire preceding answer.
+            # Its empty subject is selected by learned NULL role scores, never
+            # by checking a surface phrase or choosing a context entity.
+            optional_subject = (
+                predictions["act"] == "ask"
+                and predictions["query"] == "why"
+                and role == "query_subject"
+            )
+            if margin < _CONFIG["role_margin"] or (
+                span.index == -1 and not optional_subject
+            ):
                 diagnostics["role_margins"] = role_margins
                 return Interpretation(
                     None,
@@ -699,6 +709,8 @@ class LearnedUnderstanding:
                     reason="uncertain_or_missing_role",
                     diagnostics=diagnostics,
                 )
+            if span.index == -1:
+                continue
             if span.entity is not None:
                 entity = span.entity
             else:

@@ -274,7 +274,23 @@ def learned_evaluate(args: argparse.Namespace) -> int:
             {
                 "saved_to": str(path),
                 "status": report.get("status"),
-                "metrics": report.get("metrics", report.get("summary", {})),
+                "metrics": [
+                    {
+                        "component": run.get("component"),
+                        "control": run.get("control"),
+                        **{
+                            key: run.get("metrics", {}).get(key)
+                            for key in (
+                                "correct",
+                                "requested",
+                                "completed",
+                                "timed_out",
+                                "skipped",
+                            )
+                        },
+                    }
+                    for run in report.get("runs", [])
+                ],
             }
         )
     return 0 if report.get("status") == "completed" else 1

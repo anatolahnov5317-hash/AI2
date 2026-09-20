@@ -148,16 +148,35 @@ class LearnedUnderstandingTests(unittest.TestCase):
                 self.assertIsNone(result.meaning)
                 self.assertEqual(result.reason, "ambiguous_or_missing_reference")
 
-    def test_provenance_followup_uses_most_recent_focus_in_taught_contexts(
+    def test_noun_free_provenance_refers_to_previous_answer_without_binding_entity(
         self,
     ) -> None:
-        for names in (("книга", "маша"), ("маша", "книга")):
-            with self.subTest(focus=names):
-                self.assertEqual(
-                    self.meaning("почему?", context(*names)).query,
-                    Query("why", subject=names[0]),
-                )
-        self.assertIsNone(self.model.interpret("почему?").meaning)
+        demo_context = replace(
+            context("книга", "петя", "маша", "ящик"),
+            turns=("Маша передала книгу Пете.", "У кого книга?"),
+        )
+        for previous in (
+            DialogueContext(),
+            context("книга", "маша"),
+            context("маша", "книга"),
+            demo_context,
+        ):
+            for text in ("Почему?", "почему ты так считаешь?", "откуда ты знаешь?"):
+                with (
+                    self.subTest(focus=previous.focus, text=text),
+                    patch.object(
+                        self.model,
+                        "_reference",
+                        side_effect=AssertionError(
+                            "answer-level why must not bind an entity"
+                        ),
+                    ),
+                ):
+                    self.assertEqual(self.meaning(text, previous).query, Query("why"))
+        self.assertEqual(
+            self.meaning("почему книга?", demo_context).query,
+            Query("why", subject="книга"),
+        )
 
     def test_unsupported_lexemes_and_incomplete_clauses_do_not_become_facts(
         self,

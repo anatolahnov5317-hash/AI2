@@ -26,7 +26,7 @@ from .schema import (
     exact_fields,
 )
 
-TRAIN_DATA_VERSION = "v05-understanding-train-v2"
+TRAIN_DATA_VERSION = "v05-understanding-train-v3"
 _EMPTY_CONTEXT = DialogueContext()
 TRAIN_FAMILIES = (
     "location_bare",
@@ -602,21 +602,21 @@ def training_examples(seed: int = 42) -> list[TrainingUtterance]:
             "provenance_explicit",
             context=context,
             act="ask",
-            query=Query("why", subject=thing_name),
+            query=Query("why"),
         )
         add(
             "почему ты так считаешь?",
             "provenance_explicit",
             context=context,
             act="ask",
-            query=Query("why", subject=thing_name),
+            query=Query("why"),
         )
         add(
             "откуда ты знаешь?",
             "provenance_explicit",
             context=context,
             act="ask",
-            query=Query("why", subject=thing_name),
+            query=Query("why"),
         )
     # Terminal full stops are presentation, not a new semantic phrasal family.
     # Keep query '?' when it is the only evidence distinguishing verification.
@@ -772,7 +772,9 @@ def reference_examples() -> list[ReferenceExample]:
             samples.append(ReferenceExample(pronoun, "query_subject", context, person))
             opposite = "она" if pronoun == "он" else "он"
             samples.append(ReferenceExample(opposite, "query_subject", context, ""))
-    # A provenance follow-up with no explicit noun links to the focused entity.
+    # An unanchored implicit reference must not invent an entity. Answer-level
+    # provenance is represented by an omitted query subject, not by a person
+    # or thing selected from the dialogue's current entity focus.
     for first, second in (
         ("ключ", "миша"),
         ("миша", "ключ"),
@@ -786,7 +788,7 @@ def reference_examples() -> list[ReferenceExample]:
         context = DialogueContext(
             entities=(by_name[first], by_name[second]), focus=(first, second)
         )
-        samples.append(ReferenceExample("<implicit>", "query_subject", context, first))
+        samples.append(ReferenceExample("<implicit>", "query_subject", context, ""))
         samples.append(
             ReferenceExample(
                 "<implicit>",
