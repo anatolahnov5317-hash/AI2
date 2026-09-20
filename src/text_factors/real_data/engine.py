@@ -62,6 +62,61 @@ class RealDataEngine:
             self._changed()
         return changed
 
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "revision": self._revision,
+            "claims": [
+                self.claims[claim_id].to_dict()
+                for claim_id in sorted(self.claims)
+            ],
+            "evidence": self.evidence.to_dict(),
+            "uncertainty": self.uncertainty.to_dict(),
+            "dependencies": self.dependencies.to_dict(),
+        }
+
+    @classmethod
+    def from_dict(cls, value: dict[str, object]) -> "RealDataEngine":
+        expected = {
+            "revision",
+            "claims",
+            "evidence",
+            "uncertainty",
+            "dependencies",
+        }
+        if type(value) is not dict or set(value) != expected:
+            raise ValueError("invalid real-data engine state")
+        revision = value["revision"]
+        raw_claims = value["claims"]
+        if type(revision) is not int or revision < 0 or type(raw_claims) is not list:
+            raise ValueError("invalid engine revision or claims")
+        engine = cls()
+        for raw in raw_claims:
+            if type(raw) is not dict:
+                raise ValueError("invalid persisted claim")
+            claim = Claim.from_dict(raw)
+            if claim.claim_id in engine.claims:
+                raise ValueError("duplicate persisted claim ID")
+            engine.claims[claim.claim_id] = claim
+        raw_evidence = value["evidence"]
+        raw_uncertainty = value["uncertainty"]
+        raw_dependencies = value["dependencies"]
+        if (
+            type(raw_evidence) is not dict
+            or type(raw_uncertainty) is not dict
+            or type(raw_dependencies) is not dict
+        ):
+            raise ValueError("invalid persisted engine components")
+        engine.evidence = EvidenceLedger.from_dict(raw_evidence)
+        engine.uncertainty = UncertaintyIndex.from_dict(raw_uncertainty)
+        engine.dependencies = DependencyGraph.from_dict(raw_dependencies)
+        for claim in engine.claims.values():
+            roots = set(engine.evidence.claim_roots(claim.claim_id))
+            if not set(claim.evidence_roots) <= roots:
+                raise ValueError("claim evidence does not match persisted ledger")
+            engine.dependencies.add_node(claim.claim_id)
+        engine._revision = revision
+        return engine
+
     def receipt(
         self,
         *,
