@@ -297,6 +297,7 @@ def calibrate_model(
     oracle_ranked_cache = []
     for index, (document, spans) in enumerate(cache, 1):
         gold = _gold(document)
+        pair_cache: dict[tuple[int, int, int, int], float] = {}
         ranked_cache.append(
             (
                 gold,
@@ -304,6 +305,7 @@ def calibrate_model(
                     model,
                     document["text"],
                     [span for span in spans if span["score"] >= threshold],
+                    pair_cache,
                 ),
             )
         )
@@ -317,6 +319,7 @@ def calibrate_model(
                         {"start": start, "end": end, "score": 1.0}
                         for start, end in sorted(gold)
                     ],
+                    pair_cache,
                 ),
             )
         )
