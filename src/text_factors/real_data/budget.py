@@ -14,9 +14,7 @@ def _positive_int(value: int | None, name: str) -> None:
 
 
 def _positive_float(value: float | None, name: str) -> None:
-    if value is not None and (
-        type(value) not in (int, float) or float(value) <= 0.0
-    ):
+    if value is not None and (type(value) not in (int, float) or float(value) <= 0.0):
         raise ValueError(f"{name} must be positive or None")
 
 
@@ -141,24 +139,17 @@ class BudgetTracker:
         raise BudgetExceeded(reason, self.snapshot(stop_reason=reason))
 
     def check(self) -> None:
-        if (
-            self.budget.max_steps is not None
-            and self.steps > self.budget.max_steps
-        ):
+        if self.budget.max_steps is not None and self.steps > self.budget.max_steps:
             self._raise("max_steps")
-        if (
-            self.budget.max_items is not None
-            and self.items > self.budget.max_items
-        ):
+        if self.budget.max_items is not None and self.items > self.budget.max_items:
             self._raise("max_items")
         if (
             self.budget.max_bytes is not None
             and self.bytes_processed > self.budget.max_bytes
         ):
             self._raise("max_bytes")
-        if (
-            self.budget.max_wall_seconds is not None
-            and self.elapsed_seconds > float(self.budget.max_wall_seconds)
+        if self.budget.max_wall_seconds is not None and self.elapsed_seconds > float(
+            self.budget.max_wall_seconds
         ):
             self._raise("max_wall_seconds")
 
@@ -191,8 +182,7 @@ class BudgetTracker:
 
     def should_checkpoint(self) -> bool:
         return (
-            self.steps - self.last_checkpoint_step
-            >= self.budget.checkpoint_every_steps
+            self.steps - self.last_checkpoint_step >= self.budget.checkpoint_every_steps
         )
 
     def mark_checkpoint(self) -> BudgetSnapshot:
