@@ -431,10 +431,14 @@ def build_parser() -> argparse.ArgumentParser:
     from .conversation.commands import add_parsers as add_conversation_parsers
     from .learning.commands import add_parsers as add_learning_parsers
     from .observations.commands import add_parsers as add_observation_parsers
+    from .observations.learning_commands import (
+        add_parsers as add_mention_learning_parsers,
+    )
 
     add_conversation_parsers(subparsers)
     add_learning_parsers(subparsers)
     add_observation_parsers(subparsers)
+    add_mention_learning_parsers(subparsers)
 
     train = subparsers.add_parser("train", help="train a model from UTF-8 text")
     source = train.add_mutually_exclusive_group(required=True)
