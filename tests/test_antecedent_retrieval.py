@@ -2,12 +2,24 @@
 
 from __future__ import annotations
 
+import importlib.util
 import unittest
+from pathlib import Path
 from types import SimpleNamespace
 
-from scripts.diagnose_identity_retrieval_dev import _public_documents
 from text_factors.observations.antecedent_retrieval import BoundedSurfaceRetrieval
 from text_factors.observations.assessment import _ranked
+
+SCRIPT = (
+    Path(__file__).resolve().parents[1]
+    / "scripts"
+    / "diagnose_identity_retrieval_dev.py"
+)
+SPEC = importlib.util.spec_from_file_location("diagnose_identity_retrieval_dev", SCRIPT)
+assert SPEC is not None and SPEC.loader is not None
+diagnostic_script = importlib.util.module_from_spec(SPEC)
+SPEC.loader.exec_module(diagnostic_script)
+_public_documents = diagnostic_script._public_documents
 
 
 def spans(text: str, words: list[str]) -> list[dict]:
