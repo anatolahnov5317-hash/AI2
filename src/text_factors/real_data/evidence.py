@@ -5,6 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from .contracts import SourceSlice
+
 
 def _nonempty(value: str, name: str) -> str:
     if type(value) is not str or not value or len(value) > 4096:
@@ -18,6 +20,9 @@ class EvidenceRoot:
     group_id: str
     source_id: str
     source_version: int
+    # None means this root predates scope pinning or has not been verified.
+    access_scope: str | None = None
+    source: SourceSlice | None = None
 
     def __post_init__(self) -> None:
         _nonempty(self.root_id, "root_id")
@@ -25,6 +30,14 @@ class EvidenceRoot:
         _nonempty(self.source_id, "source_id")
         if type(self.source_version) is not int or self.source_version <= 0:
             raise ValueError("source_version must be positive")
+        if self.access_scope is not None:
+            _nonempty(self.access_scope, "access_scope")
+        if self.source is not None and (
+            self.source.source_id != self.source_id
+            or self.source.source_version != self.source_version
+            or self.source.access_scope != self.access_scope
+        ):
+            raise ValueError("evidence root source slice differs from root")
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -32,18 +45,31 @@ class EvidenceRoot:
             "group_id": self.group_id,
             "source_id": self.source_id,
             "source_version": self.source_version,
+            "access_scope": self.access_scope,
+            "source": self.source.to_dict() if self.source is not None else None,
         }
 
     @classmethod
     def from_dict(cls, value: dict[str, Any]) -> EvidenceRoot:
         expected = {"root_id", "group_id", "source_id", "source_version"}
-        if type(value) is not dict or set(value) != expected:
+        if (
+            type(value) is not dict
+            or not expected <= set(value)
+            or set(value) - expected - {"access_scope", "source"}
+        ):
             raise ValueError("invalid evidence root")
+        raw_source = value.get("source")
+        if raw_source is not None and type(raw_source) is not dict:
+            raise ValueError("invalid evidence root source slice")
         return cls(
             root_id=value["root_id"],
             group_id=value["group_id"],
             source_id=value["source_id"],
             source_version=value["source_version"],
+            access_scope=value.get("access_scope"),
+            source=SourceSlice.from_dict(raw_source)
+            if raw_source is not None
+            else None,
         )
 
 

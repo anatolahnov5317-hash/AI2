@@ -28,6 +28,16 @@ from .engine import RealDataEngine
 from .evidence import EvidenceLedger, EvidenceRoot
 from .persistence import load_state, save_state, state_payload
 from .pilot import PilotGateConfig, PilotSample, evaluate_pilot
+from .recognition import (
+    ObservedReadout,
+    PrequentialStep,
+    ProspectiveReadout,
+    ProspectiveResponse,
+    evaluate_frozen_transfer,
+    prequential_step,
+    prospective_read,
+    recognize_observation,
+)
 from .uncertainty import UncertaintyIndex
 
 __all__ = [
@@ -49,8 +59,12 @@ __all__ = [
     "HashedAttentionRanker",
     "Interpretation",
     "LearningEpisode",
+    "ObservedReadout",
+    "PrequentialStep",
     "PilotGateConfig",
     "PilotSample",
+    "ProspectiveReadout",
+    "ProspectiveResponse",
     "RealDataEngine",
     "ResourceBudget",
     "RevisionCheckpoint",
@@ -62,9 +76,13 @@ __all__ = [
     "UncertaintyIndex",
     "UncertaintyScope",
     "evaluate_pilot",
+    "evaluate_frozen_transfer",
     "evidence_root",
     "jaccard",
     "load_state",
+    "prequential_step",
+    "prospective_read",
+    "recognize_observation",
     "save_state",
     "source_slice",
     "state_payload",
