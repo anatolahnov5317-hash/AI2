@@ -27,6 +27,7 @@ jobs:
           cache: pip
       - run: python -m pip install --upgrade pip
       - run: python -m pip install -e ".[dev]"
+      - run: python scripts/validate_pilot_contract.py docs/real_data/pilot_contract.yaml
       - run: ruff check .
       - run: ruff format --check .
       - run: pyright --pythonpath "$(command -v python)"
