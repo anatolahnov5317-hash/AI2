@@ -184,9 +184,10 @@ def validate_contract(document: Any) -> tuple[list[str], list[str]]:
     ):
         errors.append("English baseline cannot be Russian pilot evidence")
     operations = field(document, "operations")
-    if field(operations, "rollback_required") is not True or field(
-        operations, "checkpoint_and_progress_required"
-    ) is not True:
+    if (
+        field(operations, "rollback_required") is not True
+        or field(operations, "checkpoint_and_progress_required") is not True
+    ):
         errors.append("rollback and resumable progress are required")
     for path in REQUIRED_DECISIONS:
         if not is_filled(field(document, *path)):

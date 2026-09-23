@@ -61,8 +61,10 @@ class PilotContractTests(unittest.TestCase):
             target = contract
             for key in path[:-1]:
                 target = target[key]
-            target[path[-1]] = 1 if path[-1].endswith(("gib", "seconds")) else (
-                "synthetic-example-reference"
+            target[path[-1]] = (
+                1
+                if path[-1].endswith(("gib", "seconds"))
+                else ("synthetic-example-reference")
             )
         for source in contract["data"]["sources"]:
             source["status"] = "available"
