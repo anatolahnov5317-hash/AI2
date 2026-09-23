@@ -1,0 +1,283 @@
+{
+  "schema": "ai2-p04-public-retrieval-ablation-v1",
+  "purpose": "exploratory validation ablation, not independent held-out evidence",
+  "splits_read": [
+    "train",
+    "validation"
+  ],
+  "sealed_test_accessed": false,
+  "train_document_count": 20,
+  "validation_document_count": 4,
+  "train_sha256": "ef13eeafe7bfe2ab479c087bdec9de0fbc05618d46acd081c7ea74e1f122995a",
+  "validation_sha256": "754190cea7125d0806d4a028a2c04901e148a0e5dc7ac64cd470844e1c4fa144",
+  "model_sha256": "66ffd53d51511e5ba1a8e5e65cc83750fb0c2a3b38c1fef79894eeff627acd08",
+  "policy_sha256": "06dbde20787fe39b3a1b333af2860d2909c6b842fd4e667ce2be475865e63956",
+  "config": {
+    "seed": 17,
+    "epochs": 6,
+    "feature_dim": 4096,
+    "max_span_tokens": 4,
+    "max_tokens": 4096,
+    "max_antecedents": 32,
+    "negative_ratio": 3,
+    "max_documents": 128,
+    "max_document_chars": 262144,
+    "max_training_tokens": 100000,
+    "max_candidates": 65536,
+    "max_training_examples": 100000,
+    "max_pair_examples": 200000,
+    "max_feature_chars": 128,
+    "max_char_ngrams": 128,
+    "learning_rate": 0.25,
+    "l2": 0.0001
+  },
+  "unchanged_requirements": {
+    "minimum_empirical_precision": 0.9,
+    "minimum_evaluable_decisions": 10
+  },
+  "mention_threshold": 0.5,
+  "strategies": {
+    "recency": {
+      "counts": {
+        "gold_mentions": 926,
+        "known_identity_mentions": 926,
+        "unknown_identity_mentions": 0,
+        "missing_predicted_boundaries": 517,
+        "anaphoric_known_mentions": 502,
+        "distant_only_mentions": 69,
+        "gold_antecedent_inside_window": 433,
+        "oracle_top3_retrieval_hits": 278,
+        "oracle_top3_ranking_misses": 155,
+        "predicted_top3_retrieval_hits": 113,
+        "same_surface_different_entity_pairs": 275,
+        "same_surface_false_merge_pairs": 0,
+        "different_surface_same_entity_pairs": 2829,
+        "different_surface_false_split_pairs": 2829,
+        "false_merge_pairs": 0,
+        "false_split_pairs": 3748
+      },
+      "oracle_top3_recall": 0.5537848605577689,
+      "predicted_top3_recall": 0.2250996015936255,
+      "gate_enabled_by_validation": false,
+      "best_eligible_gate": null,
+      "best_supported_precision_gate": {
+        "enabled": true,
+        "score_threshold": 0.6,
+        "margin_threshold": 0.0,
+        "mention_score_threshold": 0.9,
+        "mention_count": 930,
+        "candidate_bearing_mentions": 926,
+        "accepted_count": 11,
+        "evaluable_accepted_count": 11,
+        "correct_count": 8,
+        "unknown_gold_excluded_count": 0,
+        "wrong_boundary_count": 0,
+        "precision": 0.7272727272727273,
+        "coverage": 0.011879049676025918
+      },
+      "elapsed_seconds": 18.11,
+      "document_scoring": [
+        {
+          "document_id": "GUM_news_homeopathic",
+          "characters": 3548,
+          "predicted_mentions": 204,
+          "scoring_seconds": 3.475,
+          "process_peak_rss_kib": 54060
+        },
+        {
+          "document_id": "GUM_news_iodine",
+          "characters": 5931,
+          "predicted_mentions": 275,
+          "scoring_seconds": 6.448,
+          "process_peak_rss_kib": 54060
+        },
+        {
+          "document_id": "GUM_interview_cyclone",
+          "characters": 4656,
+          "predicted_mentions": 243,
+          "scoring_seconds": 4.618,
+          "process_peak_rss_kib": 54060
+        },
+        {
+          "document_id": "GUM_interview_gaming",
+          "characters": 3253,
+          "predicted_mentions": 208,
+          "scoring_seconds": 3.319,
+          "process_peak_rss_kib": 54060
+        }
+      ]
+    },
+    "exact": {
+      "counts": {
+        "gold_mentions": 926,
+        "known_identity_mentions": 926,
+        "unknown_identity_mentions": 0,
+        "missing_predicted_boundaries": 517,
+        "anaphoric_known_mentions": 502,
+        "distant_only_mentions": 69,
+        "gold_antecedent_inside_window": 433,
+        "oracle_top3_retrieval_hits": 329,
+        "oracle_top3_ranking_misses": 133,
+        "predicted_top3_retrieval_hits": 145,
+        "same_surface_different_entity_pairs": 275,
+        "same_surface_false_merge_pairs": 0,
+        "different_surface_same_entity_pairs": 2829,
+        "different_surface_false_split_pairs": 2829,
+        "false_merge_pairs": 0,
+        "false_split_pairs": 3748
+      },
+      "oracle_top3_recall": 0.6553784860557769,
+      "predicted_top3_recall": 0.28884462151394424,
+      "gate_enabled_by_validation": true,
+      "best_eligible_gate": {
+        "enabled": true,
+        "score_threshold": 0.7,
+        "margin_threshold": 0.0,
+        "mention_score_threshold": 0.5,
+        "mention_count": 930,
+        "candidate_bearing_mentions": 926,
+        "accepted_count": 10,
+        "evaluable_accepted_count": 10,
+        "correct_count": 9,
+        "unknown_gold_excluded_count": 0,
+        "wrong_boundary_count": 1,
+        "precision": 0.9,
+        "coverage": 0.01079913606911447
+      },
+      "best_supported_precision_gate": {
+        "enabled": true,
+        "score_threshold": 0.7,
+        "margin_threshold": 0.0,
+        "mention_score_threshold": 0.5,
+        "mention_count": 930,
+        "candidate_bearing_mentions": 926,
+        "accepted_count": 10,
+        "evaluable_accepted_count": 10,
+        "correct_count": 9,
+        "unknown_gold_excluded_count": 0,
+        "wrong_boundary_count": 1,
+        "precision": 0.9,
+        "coverage": 0.01079913606911447
+      },
+      "elapsed_seconds": 18.64,
+      "document_scoring": [
+        {
+          "document_id": "GUM_news_homeopathic",
+          "characters": 3548,
+          "predicted_mentions": 204,
+          "scoring_seconds": 3.398,
+          "process_peak_rss_kib": 54060
+        },
+        {
+          "document_id": "GUM_news_iodine",
+          "characters": 5931,
+          "predicted_mentions": 275,
+          "scoring_seconds": 6.718,
+          "process_peak_rss_kib": 54060
+        },
+        {
+          "document_id": "GUM_interview_cyclone",
+          "characters": 4656,
+          "predicted_mentions": 243,
+          "scoring_seconds": 4.761,
+          "process_peak_rss_kib": 54060
+        },
+        {
+          "document_id": "GUM_interview_gaming",
+          "characters": 3253,
+          "predicted_mentions": 208,
+          "scoring_seconds": 3.523,
+          "process_peak_rss_kib": 54060
+        }
+      ]
+    },
+    "prefix4": {
+      "counts": {
+        "gold_mentions": 926,
+        "known_identity_mentions": 926,
+        "unknown_identity_mentions": 0,
+        "missing_predicted_boundaries": 517,
+        "anaphoric_known_mentions": 502,
+        "distant_only_mentions": 69,
+        "gold_antecedent_inside_window": 433,
+        "oracle_top3_retrieval_hits": 329,
+        "oracle_top3_ranking_misses": 133,
+        "predicted_top3_retrieval_hits": 145,
+        "same_surface_different_entity_pairs": 275,
+        "same_surface_false_merge_pairs": 0,
+        "different_surface_same_entity_pairs": 2829,
+        "different_surface_false_split_pairs": 2829,
+        "false_merge_pairs": 0,
+        "false_split_pairs": 3748
+      },
+      "oracle_top3_recall": 0.6553784860557769,
+      "predicted_top3_recall": 0.28884462151394424,
+      "gate_enabled_by_validation": true,
+      "best_eligible_gate": {
+        "enabled": true,
+        "score_threshold": 0.7,
+        "margin_threshold": 0.0,
+        "mention_score_threshold": 0.5,
+        "mention_count": 930,
+        "candidate_bearing_mentions": 926,
+        "accepted_count": 10,
+        "evaluable_accepted_count": 10,
+        "correct_count": 9,
+        "unknown_gold_excluded_count": 0,
+        "wrong_boundary_count": 1,
+        "precision": 0.9,
+        "coverage": 0.01079913606911447
+      },
+      "best_supported_precision_gate": {
+        "enabled": true,
+        "score_threshold": 0.7,
+        "margin_threshold": 0.0,
+        "mention_score_threshold": 0.5,
+        "mention_count": 930,
+        "candidate_bearing_mentions": 926,
+        "accepted_count": 10,
+        "evaluable_accepted_count": 10,
+        "correct_count": 9,
+        "unknown_gold_excluded_count": 0,
+        "wrong_boundary_count": 1,
+        "precision": 0.9,
+        "coverage": 0.01079913606911447
+      },
+      "elapsed_seconds": 19.62,
+      "document_scoring": [
+        {
+          "document_id": "GUM_news_homeopathic",
+          "characters": 3548,
+          "predicted_mentions": 204,
+          "scoring_seconds": 3.516,
+          "process_peak_rss_kib": 54060
+        },
+        {
+          "document_id": "GUM_news_iodine",
+          "characters": 5931,
+          "predicted_mentions": 275,
+          "scoring_seconds": 6.924,
+          "process_peak_rss_kib": 54060
+        },
+        {
+          "document_id": "GUM_interview_cyclone",
+          "characters": 4656,
+          "predicted_mentions": 243,
+          "scoring_seconds": 5.128,
+          "process_peak_rss_kib": 54060
+        },
+        {
+          "document_id": "GUM_interview_gaming",
+          "characters": 3253,
+          "predicted_mentions": 208,
+          "scoring_seconds": 3.782,
+          "process_peak_rss_kib": 54060
+        }
+      ]
+    }
+  },
+  "training_elapsed_seconds": 25.19,
+  "total_elapsed_seconds": 99.74,
+  "process_peak_rss_kib": 54060,
+  "production_policy_unchanged": true
+}

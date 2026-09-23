@@ -32,8 +32,9 @@ from .schema import (
 )
 
 APPLICATION_ID = 0x4149324F
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 ANNOTATION_SCHEMA = "ai2-open-annotations-v1"
+IDENTITY_PAIRS_SCHEMA = "ai2-open-identity-pairs-v1"
 
 _SCHEMA = """
 CREATE TABLE sources (
@@ -80,6 +81,81 @@ CREATE TABLE candidates (
 );
 """
 
+_PAIR_SCHEMA = """
+CREATE TABLE IF NOT EXISTS identity_pair_scopes (
+ scope_id TEXT PRIMARY KEY, source_id TEXT NOT NULL, source_version INTEGER NOT NULL,
+ char_start INTEGER NOT NULL, char_end INTEGER NOT NULL, policy_reference TEXT NOT NULL,
+ UNIQUE(source_id, source_version, char_start, char_end),
+ FOREIGN KEY(source_id, source_version) REFERENCES revisions(source_id, version),
+ CHECK(char_start >= 0 AND char_end > char_start)
+);
+CREATE TABLE IF NOT EXISTS identity_scope_versions (
+ scope_id TEXT NOT NULL REFERENCES identity_pair_scopes(scope_id),
+ version INTEGER NOT NULL, coverage TEXT NOT NULL,
+ annotator TEXT NOT NULL, evidence TEXT NOT NULL, created_at TEXT NOT NULL,
+ PRIMARY KEY(scope_id, version), CHECK(version > 0),
+ CHECK(coverage IN ('complete', 'partial', 'unknown'))
+);
+CREATE TABLE IF NOT EXISTS identity_scope_mentions (
+ scope_id TEXT NOT NULL, scope_version INTEGER NOT NULL,
+ mention_id TEXT NOT NULL REFERENCES mentions(mention_id),
+ PRIMARY KEY(scope_id, scope_version, mention_id),
+ FOREIGN KEY(scope_id, scope_version)
+ REFERENCES identity_scope_versions(scope_id, version)
+);
+CREATE TABLE IF NOT EXISTS identity_pair_labels (
+ scope_id TEXT NOT NULL, scope_version INTEGER NOT NULL,
+ left_mention_id TEXT NOT NULL REFERENCES mentions(mention_id),
+ right_mention_id TEXT NOT NULL REFERENCES mentions(mention_id),
+ label TEXT NOT NULL,
+ PRIMARY KEY(scope_id, scope_version, left_mention_id, right_mention_id),
+ FOREIGN KEY(scope_id, scope_version)
+ REFERENCES identity_scope_versions(scope_id, version),
+ CHECK(left_mention_id < right_mention_id),
+ CHECK(label IN ('same', 'different', 'unknown'))
+);
+CREATE INDEX IF NOT EXISTS identity_scopes_by_source
+ ON identity_pair_scopes(source_id, source_version, char_start, char_end);
+"""
+
+_PAIR_TABLES = (
+    "identity_pair_scopes",
+    "identity_scope_versions",
+    "identity_scope_mentions",
+    "identity_pair_labels",
+)
+
+
+def _immutable_triggers(tables: tuple[str, ...]) -> str:
+    return "\n".join(
+        f"CREATE TRIGGER IF NOT EXISTS {table}_{operation.lower()} "
+        f"BEFORE {operation} ON {table} BEGIN "
+        "SELECT RAISE(ABORT, 'archive records are immutable'); END;"
+        for table in tables
+        for operation in ("UPDATE", "DELETE")
+    )
+
+
+def _check_pair_consistency(pairs: list[dict[str, str]]) -> None:
+    """A reviewed difference cannot contradict the transitive same relation."""
+    parent: dict[str, str] = {}
+
+    def root(mention_id: str) -> str:
+        parent.setdefault(mention_id, mention_id)
+        while parent[mention_id] != mention_id:
+            parent[mention_id] = parent[parent[mention_id]]
+            mention_id = parent[mention_id]
+        return mention_id
+
+    for pair in pairs:
+        if pair["label"] == "same":
+            parent[root(pair["left_mention_id"])] = root(pair["right_mention_id"])
+    for pair in pairs:
+        if pair["label"] == "different" and root(pair["left_mention_id"]) == root(
+            pair["right_mention_id"]
+        ):
+            raise ValueError("different identity pair contradicts reviewed same links")
+
 
 def _id(prefix: str) -> str:
     return prefix + "_" + uuid.uuid4().hex
@@ -123,11 +199,8 @@ class ObservationArchive:
             self._db.execute("PRAGMA foreign_keys=ON")
             if created:
                 # executescript owns the initialization transaction.
-                triggers = "\n".join(
-                    f"CREATE TRIGGER {table}_{operation.lower()} "
-                    f"BEFORE {operation} ON {table} BEGIN "
-                    "SELECT RAISE(ABORT, 'archive records are immutable'); END;"
-                    for table in (
+                triggers = _immutable_triggers(
+                    (
                         "sources",
                         "revisions",
                         "observations",
@@ -135,23 +208,32 @@ class ObservationArchive:
                         "mentions",
                         "bindings",
                         "candidates",
+                        *_PAIR_TABLES,
                     )
-                    for operation in ("UPDATE", "DELETE")
                 )
                 self._db.executescript(
                     "BEGIN IMMEDIATE;\n"
                     + _SCHEMA
+                    + _PAIR_SCHEMA
                     + triggers
                     + f"\nPRAGMA application_id={APPLICATION_ID};"
                     + f"\nPRAGMA user_version={SCHEMA_VERSION};\nCOMMIT;"
                 )
-            if (
-                self._db.execute("PRAGMA application_id").fetchone()[0]
-                != APPLICATION_ID
-                or self._db.execute("PRAGMA user_version").fetchone()[0]
-                != SCHEMA_VERSION
+            application_id = self._db.execute("PRAGMA application_id").fetchone()[0]
+            user_version = self._db.execute("PRAGMA user_version").fetchone()[0]
+            if application_id != APPLICATION_ID or user_version not in (
+                1,
+                SCHEMA_VERSION,
             ):
                 raise ValueError("unsupported or unrelated observation archive")
+            if user_version == 1:
+                # Additive migration keeps existing source and binding IDs pinned.
+                self._db.executescript(
+                    "BEGIN IMMEDIATE;\n"
+                    + _PAIR_SCHEMA
+                    + _immutable_triggers(_PAIR_TABLES)
+                    + f"\nPRAGMA user_version={SCHEMA_VERSION};\nCOMMIT;"
+                )
             self._db.execute("PRAGMA journal_mode=WAL")
             self._db.execute("PRAGMA synchronous=FULL")
         except (sqlite3.Error, ValueError) as exc:
@@ -724,6 +806,270 @@ class ObservationArchive:
             )
         return tuple(result)
 
+    def get_identity_scope(
+        self, scope_id: str, version: int | None = None
+    ) -> dict[str, Any]:
+        """Read one immutable snapshot of an externally reviewed pair scope."""
+        text_field(scope_id, "identity scope ID")
+        if version is not None:
+            integer(version, "scope version", minimum=1)
+        row = self._db.execute(
+            "SELECT s.*, v.version, v.coverage, v.annotator, v.evidence, "
+            "v.created_at FROM identity_pair_scopes s "
+            "JOIN identity_scope_versions v USING(scope_id) "
+            "WHERE scope_id=? AND (? IS NULL OR v.version=?) "
+            "ORDER BY v.version DESC LIMIT 1",
+            (scope_id, version, version),
+        ).fetchone()
+        if row is None:
+            raise ValueError("unknown identity scope/version")
+        mention_ids = [
+            item[0]
+            for item in self._db.execute(
+                "SELECT mention_id FROM identity_scope_mentions "
+                "WHERE scope_id=? AND scope_version=? ORDER BY mention_id",
+                (scope_id, row["version"]),
+            )
+        ]
+        pairs = [
+            {"left_mention_id": item[0], "right_mention_id": item[1], "label": item[2]}
+            for item in self._db.execute(
+                "SELECT left_mention_id, right_mention_id, label "
+                "FROM identity_pair_labels WHERE scope_id=? AND scope_version=? "
+                "ORDER BY left_mention_id, right_mention_id",
+                (scope_id, row["version"]),
+            )
+        ]
+        if (
+            len(pairs) > len(mention_ids) * (len(mention_ids) - 1) // 2
+            or row["coverage"] == "complete"
+            and len(pairs) != len(mention_ids) * (len(mention_ids) - 1) // 2
+        ):
+            raise ValueError("identity scope coverage does not match explicit pairs")
+        members = set(mention_ids)
+        for mention_id in mention_ids:
+            mention = self.get_mention(mention_id)
+            if (
+                mention.source_id != row["source_id"]
+                or mention.source_version != row["source_version"]
+                or mention.char_start < row["char_start"]
+                or mention.char_end > row["char_end"]
+            ):
+                raise ValueError("identity scope mention is outside source/window")
+        for pair in pairs:
+            if (
+                pair["left_mention_id"] not in members
+                or pair["right_mention_id"] not in members
+                or row["coverage"] == "unknown"
+                and pair["label"] != "unknown"
+            ):
+                raise ValueError("invalid identity pair label or membership")
+        _check_pair_consistency(pairs)
+        return {
+            "scope_id": row["scope_id"],
+            "source_id": row["source_id"],
+            "source_version": row["source_version"],
+            "start": row["char_start"],
+            "end": row["char_end"],
+            "policy_reference": row["policy_reference"],
+            "version": row["version"],
+            "coverage": row["coverage"],
+            "annotator": row["annotator"],
+            "evidence": row["evidence"],
+            "created_at": row["created_at"],
+            "mention_ids": mention_ids,
+            "pairs": pairs,
+        }
+
+    def identity_scopes(
+        self, source_id: str, version: int, *, offset: int = 0, limit: int = 100
+    ) -> tuple[dict[str, Any], ...]:
+        self.get_source(source_id, version)
+        integer(offset, "identity scope offset")
+        integer(limit, "page limit", minimum=1)
+        if limit > 1000:
+            raise ValueError("page limit exceeds 1000")
+        rows = self._db.execute(
+            "SELECT scope_id FROM identity_pair_scopes "
+            "WHERE source_id=? AND source_version=? "
+            "ORDER BY char_start, char_end LIMIT ? OFFSET ?",
+            (source_id, version, limit, offset),
+        )
+        return tuple(self.get_identity_scope(row[0]) for row in rows)
+
+    def annotate_identity_pairs(self, batch: Any) -> dict[str, Any]:
+        """Append a reviewed snapshot; omissions and unknowns never become negatives.
+
+        Completeness means every pair among the explicitly pinned mentions in
+        this source window was reviewed. Existing source mentions in the window
+        must all be named when declaring complete coverage.
+        """
+        batch = fields(
+            batch,
+            {
+                "schema",
+                "source_id",
+                "source_version",
+                "start",
+                "end",
+                "coverage",
+                "policy_reference",
+                "annotator",
+                "evidence",
+                "mention_ids",
+                "pairs",
+                "expected_version",
+            },
+        )
+        if batch["schema"] != IDENTITY_PAIRS_SCHEMA:
+            raise ValueError("unsupported identity pairs schema")
+        integer(batch["source_version"], "source version", minimum=1)
+        start = integer(batch["start"], "scope start")
+        end = integer(batch["end"], "scope end", minimum=1)
+        expected = integer(batch["expected_version"], "expected scope version")
+        coverage = batch["coverage"]
+        if coverage not in ("complete", "partial", "unknown"):
+            raise ValueError("invalid identity pair coverage")
+        policy = text_field(batch["policy_reference"], "identity annotation policy")
+        annotator = text_field(batch["annotator"], "identity annotator")
+        evidence = text_field(batch["evidence"], "identity review evidence")
+        mention_ids = batch["mention_ids"]
+        pairs = batch["pairs"]
+        if (
+            type(mention_ids) is not list
+            or type(pairs) is not list
+            or len(mention_ids) > self.limits.max_annotations
+            or len(pairs) > self.limits.max_annotations
+        ):
+            raise ValueError("invalid identity annotation batch size")
+        with self._transaction():
+            source = self.get_source(batch["source_id"], batch["source_version"])
+            if not start < end <= source.char_count:
+                raise ValueError("identity scope is outside source")
+            ids = set()
+            for mention_id in mention_ids:
+                mention = self.get_mention(mention_id)
+                if (
+                    mention_id in ids
+                    or mention.source_id != source.source_id
+                    or mention.source_version != source.version
+                    or mention.char_start < start
+                    or mention.char_end > end
+                ):
+                    raise ValueError("duplicate or out-of-scope identity mention")
+                ids.add(mention_id)
+            if coverage == "complete":
+                current_ids = {
+                    row[0]
+                    for row in self._db.execute(
+                        "SELECT mention_id FROM mentions WHERE source_id=? "
+                        "AND source_version=? AND char_start>=? AND char_end<=?",
+                        (source.source_id, source.version, start, end),
+                    )
+                }
+                if ids != current_ids:
+                    raise ValueError("complete scope must include all current mentions")
+            explicit = []
+            seen_pairs = set()
+            for item in pairs:
+                pair = fields(item, {"left_mention_id", "right_mention_id", "label"})
+                left, right = pair["left_mention_id"], pair["right_mention_id"]
+                if (
+                    type(left) is not str
+                    or type(right) is not str
+                    or left not in ids
+                    or right not in ids
+                    or left == right
+                ):
+                    raise ValueError(
+                        "identity pair must name two distinct scope mentions"
+                    )
+                left, right = sorted((left, right))
+                if (left, right) in seen_pairs:
+                    raise ValueError("duplicate explicit identity pair")
+                seen_pairs.add((left, right))
+                label = pair["label"]
+                if label not in ("same", "different", "unknown") or (
+                    coverage == "unknown" and label != "unknown"
+                ):
+                    raise ValueError("invalid explicit identity pair label")
+                explicit.append(
+                    {"left_mention_id": left, "right_mention_id": right, "label": label}
+                )
+            if (
+                coverage == "complete"
+                and len(explicit) != len(ids) * (len(ids) - 1) // 2
+            ):
+                raise ValueError(
+                    "complete scope requires an explicit label for every pair"
+                )
+            explicit.sort(
+                key=lambda item: (item["left_mention_id"], item["right_mention_id"])
+            )
+            _check_pair_consistency(explicit)
+            row = self._db.execute(
+                "SELECT scope_id, policy_reference FROM identity_pair_scopes "
+                "WHERE source_id=? AND source_version=? "
+                "AND char_start=? AND char_end=?",
+                (source.source_id, source.version, start, end),
+            ).fetchone()
+            if row is None:
+                overlapping = self._db.execute(
+                    "SELECT 1 FROM identity_pair_scopes WHERE source_id=? "
+                    "AND source_version=? AND char_start<? AND char_end>? LIMIT 1",
+                    (source.source_id, source.version, end, start),
+                ).fetchone()
+                if overlapping:
+                    raise ValueError("identity scopes cannot overlap")
+                scope_id = _id("scope")
+                self._db.execute(
+                    "INSERT INTO identity_pair_scopes VALUES (?,?,?,?,?,?)",
+                    (scope_id, source.source_id, source.version, start, end, policy),
+                )
+                current_version = 0
+                previous = None
+            else:
+                if row["policy_reference"] != policy:
+                    raise ValueError("identity annotation policy is immutable")
+                scope_id = row["scope_id"]
+                previous = self.get_identity_scope(scope_id)
+                current_version = previous["version"]
+            if previous and (
+                previous["coverage"] == coverage
+                and previous["annotator"] == annotator
+                and previous["evidence"] == evidence
+                and previous["mention_ids"] == sorted(ids)
+                and previous["pairs"] == explicit
+            ):
+                if expected not in (current_version, current_version - 1):
+                    raise ValueError("stale identity scope version")
+                return previous
+            if expected != current_version:
+                raise ValueError("stale identity scope version")
+            new_version = current_version + 1
+            self._db.execute(
+                "INSERT INTO identity_scope_versions VALUES (?,?,?,?,?,?)",
+                (scope_id, new_version, coverage, annotator, evidence, _now()),
+            )
+            self._db.executemany(
+                "INSERT INTO identity_scope_mentions VALUES (?,?,?)",
+                ((scope_id, new_version, mention_id) for mention_id in sorted(ids)),
+            )
+            self._db.executemany(
+                "INSERT INTO identity_pair_labels VALUES (?,?,?,?,?)",
+                (
+                    (
+                        scope_id,
+                        new_version,
+                        item["left_mention_id"],
+                        item["right_mention_id"],
+                        item["label"],
+                    )
+                    for item in explicit
+                ),
+            )
+            return self.get_identity_scope(scope_id, new_version)
+
     def verify_source(self, source_id: str, version: int) -> SourceRecord:
         source = self.get_source(source_id, version)
         digest = hashlib.sha256()
@@ -760,7 +1106,7 @@ class ObservationArchive:
                 versions += 1
                 observations += source.observation_count
                 bytes_verified += source.byte_count
-            mentions = bindings = 0
+            mentions = bindings = identity_scope_versions = 0
             for row in self._db.execute("SELECT mention_id FROM mentions"):
                 self.get_mention(row[0])
                 mentions += 1
@@ -775,6 +1121,11 @@ class ObservationArchive:
                     if self.get_instance(candidate).namespace != namespace:
                         raise ValueError("cross-namespace binding in archive")
                 bindings += 1
+            for row in self._db.execute(
+                "SELECT scope_id, version FROM identity_scope_versions"
+            ):
+                self.get_identity_scope(row[0], row[1])
+                identity_scope_versions += 1
         return {
             "status": "verified",
             "source_versions": versions,
@@ -782,5 +1133,6 @@ class ObservationArchive:
             "bytes_verified": bytes_verified,
             "mentions": mentions,
             "binding_versions": bindings,
+            "identity_scope_versions": identity_scope_versions,
             "semantic_accuracy": None,
         }

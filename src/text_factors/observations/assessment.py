@@ -10,7 +10,7 @@ import hashlib
 import json
 import math
 from collections import Counter
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from typing import Any
 
 POLICY_SCHEMA = "ai2-open-candidate-policy-v1"
@@ -132,6 +132,8 @@ def _ranked(
     text: str,
     spans: list[dict[str, Any]],
     pair_cache: dict[tuple[int, int, int, int], float] | None = None,
+    *,
+    antecedent_selector: Callable[[int, int], tuple[int, ...]] | None = None,
 ) -> list[dict[str, Any]]:
     """Rank pairs using learned link response and mention confidence.
 
@@ -147,7 +149,12 @@ def _ranked(
     result = []
     for index, span in enumerate(spans):
         candidates = []
-        for previous in range(max(0, index - budget), index):
+        antecedents = (
+            antecedent_selector(index, budget)
+            if antecedent_selector is not None
+            else range(max(0, index - budget), index)
+        )
+        for previous in antecedents:
             antecedent = spans[previous]
             pair = (antecedent["start"], antecedent["end"], span["start"], span["end"])
             if pair not in pair_cache:

@@ -11,6 +11,12 @@ from typing import Any
 from ..conversation.persistence import _atomic_write, encode_json, read_json
 from .archive import ObservationArchive
 from .corpus import CORPUS_SCHEMA, freeze_corpus, validate_corpus
+from .pilot_corpus import (
+    PILOT_ASSIGNMENTS_SCHEMA,
+    PILOT_CORPUS_SCHEMA,
+    freeze_pilot_corpus,
+    validate_pilot_corpus,
+)
 from .schema import ArchiveLimits, fields
 
 
@@ -74,10 +80,24 @@ def run(args: argparse.Namespace) -> int:
             elif args.operation == "annotate":
                 batch = read_json(Path(args.data), max_bytes=8 * 1024 * 1024)
                 _print(archive.annotate(batch))
+            elif args.operation == "annotate-pairs":
+                batch = read_json(Path(args.data), max_bytes=8 * 1024 * 1024)
+                _print(archive.annotate_identity_pairs(batch))
             elif args.operation == "annotations":
                 _print(
                     {
                         "annotations": archive.annotations(
+                            args.source,
+                            args.version,
+                            offset=args.offset,
+                            limit=args.limit,
+                        )
+                    }
+                )
+            elif args.operation == "identity-scopes":
+                _print(
+                    {
+                        "identity_scopes": archive.identity_scopes(
                             args.source,
                             args.version,
                             offset=args.offset,
@@ -117,6 +137,51 @@ def run(args: argparse.Namespace) -> int:
             elif args.operation == "validate-corpus":
                 manifest = read_json(Path(args.data), max_bytes=8 * 1024 * 1024)
                 _print(validate_corpus(archive, manifest))
+            elif args.operation == "freeze-pilot":
+                specification = fields(
+                    read_json(Path(args.data), max_bytes=8 * 1024 * 1024),
+                    {
+                        "schema",
+                        "assignments",
+                        "restricted_receipts",
+                        "near_duplicate_review",
+                    },
+                )
+                if specification["schema"] != PILOT_ASSIGNMENTS_SCHEMA:
+                    raise ValueError("unsupported pilot corpus assignment schema")
+                manifest = freeze_pilot_corpus(
+                    archive,
+                    specification["assignments"],
+                    restricted_receipts=specification["restricted_receipts"],
+                    near_duplicate_review=specification["near_duplicate_review"],
+                )
+
+                def existing_pilot_validator(value: Any) -> None:
+                    if (
+                        type(value) is not dict
+                        or value.get("schema") != PILOT_CORPUS_SCHEMA
+                    ):
+                        raise ValueError("refusing to replace an unrelated file")
+                    validate_pilot_corpus(archive, value)
+
+                _atomic_write(
+                    Path(args.output),
+                    encode_json(manifest, max_bytes=8 * 1024 * 1024),
+                    overwrite=args.overwrite,
+                    existing_validator=existing_pilot_validator,
+                )
+                _print(
+                    {
+                        "status": "frozen",
+                        "fingerprint": manifest["fingerprint"],
+                        "open_source_versions": len(
+                            manifest["payload"]["open_members"]
+                        ),
+                    }
+                )
+            elif args.operation == "validate-pilot":
+                manifest = read_json(Path(args.data), max_bytes=8 * 1024 * 1024)
+                _print(validate_pilot_corpus(archive, manifest))
     except sqlite3.Error as exc:
         raise ValueError(f"observation archive operation failed: {exc}") from exc
     return 0
@@ -133,10 +198,14 @@ def add_parsers(subparsers: Any) -> None:
         ("list", "list source identities within a namespace"),
         ("show", "read a bounded page of original observations"),
         ("annotate", "apply explicit external mention/instance annotations"),
+        ("annotate-pairs", "append explicit same/different/unknown pair review"),
         ("annotations", "inspect current bindings of a source revision"),
+        ("identity-scopes", "inspect reviewed pair windows of a source revision"),
         ("verify", "verify original bytes, coordinates and identity references"),
         ("freeze", "pin source/annotation versions and check corpus split leakage"),
         ("validate-corpus", "validate a version-pinned corpus against its archive"),
+        ("freeze-pilot", "pin five pilot splits with detached sealed receipts"),
+        ("validate-pilot", "validate a five-split pilot corpus manifest"),
     ):
         command = operations.add_parser(name, help=help_text)
         command.add_argument("--archive", required=True, help="SQLite archive path")
@@ -156,13 +225,24 @@ def add_parsers(subparsers: Any) -> None:
             command.add_argument("--namespace", required=True)
             command.add_argument("--after", default="")
             command.add_argument("--limit", type=int, default=100)
-        if name in {"show", "annotations"}:
+        if name in {"show", "annotations", "identity-scopes"}:
             command.add_argument("--source", required=True)
-            command.add_argument("--version", type=int, required=name == "annotations")
+            command.add_argument(
+                "--version",
+                type=int,
+                required=name in {"annotations", "identity-scopes"},
+            )
             command.add_argument("--offset", type=int, default=0)
             command.add_argument("--limit", type=int, default=20)
-        if name in {"annotate", "freeze", "validate-corpus"}:
+        if name in {
+            "annotate",
+            "annotate-pairs",
+            "freeze",
+            "validate-corpus",
+            "freeze-pilot",
+            "validate-pilot",
+        }:
             command.add_argument("--data", required=True, help="annotation JSON file")
-        if name == "freeze":
+        if name in {"freeze", "freeze-pilot"}:
             command.add_argument("--output", required=True)
             command.add_argument("--overwrite", action="store_true")

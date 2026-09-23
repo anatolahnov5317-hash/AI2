@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import sqlite3
 import tempfile
 import unittest
 from copy import deepcopy
@@ -73,6 +74,28 @@ class IdentityTests(unittest.TestCase):
                 restarted.annotations(self.source.source_id, 1),
                 tuple(result["annotations"]),
             )
+
+    def test_v1_archive_is_migrated_without_losing_source_or_binding_versions(self):
+        old = self.archive.annotate(batch_for(self.source, self.text))
+        self.archive.close()
+        with sqlite3.connect(self.path) as db:
+            for table in (
+                "identity_pair_labels",
+                "identity_scope_mentions",
+                "identity_scope_versions",
+                "identity_pair_scopes",
+            ):
+                db.execute(f"DROP TABLE {table}")
+            db.execute("PRAGMA user_version=1")
+        with ObservationArchive(self.path) as migrated:
+            self.assertEqual(migrated.verify()["binding_versions"], 2)
+            self.assertEqual(migrated.verify()["identity_scope_versions"], 0)
+            self.assertEqual(
+                migrated.annotations(self.source.source_id, 1),
+                tuple(old["annotations"]),
+            )
+        with sqlite3.connect(self.path) as db:
+            self.assertEqual(db.execute("PRAGMA user_version").fetchone()[0], 2)
 
     def test_ambiguous_reference_retains_alternatives_and_correction_history(self):
         batch = batch_for(self.source, self.text)
