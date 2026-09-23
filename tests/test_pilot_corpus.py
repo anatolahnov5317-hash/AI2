@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import subprocess
@@ -22,6 +23,7 @@ from text_factors.observations.pilot_corpus import (
     screening_sha256,
     validate_pilot_corpus,
 )
+from text_factors.observations.schema import canonical_json
 
 GROUPS = [f"00000000-0000-4000-8000-{index:012x}" for index in range(1, 12)]
 
@@ -467,6 +469,414 @@ class PilotCorpusTests(unittest.TestCase):
         )
         self.assertEqual(pilot_training_view(self.archive, frozen), old)
         self.assertNotEqual(self.freeze(), frozen)
+
+    def test_explicit_identity_pairs_are_versioned_and_unknown_is_not_negative(
+        self,
+    ) -> None:
+        self._annotate()
+        source = self.records[0]
+        annotated = self.archive.annotations(source.source_id, source.version)
+        first, second = [record["mention"]["mention_id"] for record in annotated]
+        batch = {
+            "schema": "ai2-open-identity-pairs-v1",
+            "source_id": source.source_id,
+            "source_version": source.version,
+            "start": 0,
+            "end": source.char_count,
+            "coverage": "complete",
+            "policy_reference": "test:identity-policy",
+            "annotator": "independent-pair-reviewer",
+            "evidence": "test:pair-review-record",
+            "mention_ids": [first, second],
+            "pairs": [
+                {
+                    "left_mention_id": second,
+                    "right_mention_id": first,
+                    "label": "unknown",
+                }
+            ],
+            "expected_version": 0,
+        }
+        initial = self.archive.annotate_identity_pairs(batch)
+        self.assertEqual(initial["version"], 1)
+        self.assertEqual(self.archive.annotate_identity_pairs(batch), initial)
+        pinned = self.freeze()
+        view = pilot_training_view(self.archive, pinned)
+        document = view["documents"][0]
+        self.assertEqual(document["identity_scopes"][0]["coverage"], "complete")
+        self.assertEqual(document["identity_pairs"][0]["label"], "unknown")
+        self.assertNotIn("negative_pairs", document)
+        self.assertNotIn("sealed_test", json.dumps(view, ensure_ascii=False))
+        self.assertEqual(
+            document["identity_pairs"][0]["annotator"], "independent-pair-reviewer"
+        )
+        revised = deepcopy(batch)
+        revised["pairs"][0]["label"] = "different"
+        revised["expected_version"] = 1
+        revised["evidence"] = "test:re-reviewed-difference"
+        correction = self.archive.annotate_identity_pairs(revised)
+        self.assertEqual(correction["version"], 2)
+        self.assertEqual(
+            self.archive.get_identity_scope(initial["scope_id"], 1), initial
+        )
+        self.assertEqual(pilot_training_view(self.archive, pinned), view)
+        updated_train = next(
+            item
+            for item in self.freeze()["payload"]["open_members"]
+            if item["split"] == "train"
+        )
+        self.assertEqual(updated_train["identity_scopes"][0]["version"], 2)
+        with ObservationArchive(self.archive_path) as reopened:
+            self.assertEqual(
+                reopened.get_identity_scope(initial["scope_id"], 1), initial
+            )
+            self.assertEqual(reopened.verify()["identity_scope_versions"], 2)
+        data_path = self.root / "pair-review.json"
+        data_path.write_text(json.dumps(revised), encoding="utf-8")
+        env = {
+            **os.environ,
+            "PYTHONPATH": str(Path(__file__).resolve().parents[1] / "src"),
+        }
+        for operation, arguments in (
+            ("annotate-pairs", ["--data", str(data_path)]),
+            (
+                "identity-scopes",
+                ["--source", source.source_id, "--version", str(source.version)],
+            ),
+        ):
+            process = subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "text_factors",
+                    "observations",
+                    operation,
+                    "--archive",
+                    str(self.archive_path),
+                    *arguments,
+                ],
+                capture_output=True,
+                text=True,
+                timeout=20,
+                env=env,
+            )
+            self.assertEqual(process.returncode, 0, process.stderr)
+            self.assertIn(initial["scope_id"], process.stdout)
+
+    def test_partial_scope_omissions_are_not_negative_and_complete_requires_all_pairs(
+        self,
+    ) -> None:
+        self._annotate()
+        source = self.records[0]
+        self.archive.annotate(
+            {
+                "schema": "ai2-open-annotations-v1",
+                "source_id": source.source_id,
+                "source_version": source.version,
+                "annotator": "test-person",
+                "evidence": "test:third-mention",
+                "instances": [],
+                "mentions": [
+                    {
+                        "start": 3,
+                        "end": 4,
+                        "surface": "😀",
+                        "candidates": [],
+                        "selected": None,
+                        "expected_version": 0,
+                    }
+                ],
+            }
+        )
+        ids = [
+            item["mention"]["mention_id"]
+            for item in self.archive.annotations(source.source_id, source.version)
+        ]
+        batch = {
+            "schema": "ai2-open-identity-pairs-v1",
+            "source_id": source.source_id,
+            "source_version": source.version,
+            "start": 0,
+            "end": source.char_count,
+            "coverage": "complete",
+            "policy_reference": "test:policy",
+            "annotator": "test-reviewer",
+            "evidence": "test:evidence",
+            "mention_ids": ids,
+            "pairs": [
+                {"left_mention_id": ids[0], "right_mention_id": ids[1], "label": "same"}
+            ],
+            "expected_version": 0,
+        }
+        with self.assertRaisesRegex(ValueError, "explicit label for every pair"):
+            self.archive.annotate_identity_pairs(batch)
+        batch["pairs"] = [
+            {"left_mention_id": ids[0], "right_mention_id": ids[1], "label": "same"},
+            {"left_mention_id": ids[1], "right_mention_id": ids[2], "label": "same"},
+            {
+                "left_mention_id": ids[0],
+                "right_mention_id": ids[2],
+                "label": "different",
+            },
+        ]
+        with self.assertRaisesRegex(ValueError, "contradicts reviewed same"):
+            self.archive.annotate_identity_pairs(batch)
+        batch["coverage"] = "partial"
+        batch["pairs"] = batch["pairs"][:1]
+        scope = self.archive.annotate_identity_pairs(batch)
+        self.assertEqual(len(scope["pairs"]), 1)
+        view = pilot_training_view(self.archive, self.freeze())
+        self.assertEqual(view["documents"][0]["identity_pairs"][0]["label"], "same")
+        self.assertEqual(len(view["documents"][0]["identity_pairs"]), 1)
+        batch["coverage"] = "unknown"
+        batch["expected_version"] = 1
+        with self.assertRaisesRegex(ValueError, "invalid explicit identity pair label"):
+            self.archive.annotate_identity_pairs(batch)
+        batch["coverage"] = "complete"
+        batch["mention_ids"] = ids[:2]
+        batch["pairs"] = [
+            {"left_mention_id": ids[0], "right_mention_id": ids[1], "label": "same"}
+        ]
+        with self.assertRaisesRegex(ValueError, "all current mentions"):
+            self.archive.annotate_identity_pairs(batch)
+
+    def test_identity_scope_rejects_cross_source_and_forged_manifest(self) -> None:
+        self._annotate()
+        source = self.records[0]
+        ids = [
+            item["mention"]["mention_id"]
+            for item in self.archive.annotations(source.source_id, source.version)
+        ]
+        batch = {
+            "schema": "ai2-open-identity-pairs-v1",
+            "source_id": source.source_id,
+            "source_version": source.version,
+            "start": 0,
+            "end": source.char_count,
+            "coverage": "partial",
+            "policy_reference": "test:policy",
+            "annotator": "test-reviewer",
+            "evidence": "test:evidence",
+            "mention_ids": ids,
+            "pairs": [
+                {
+                    "left_mention_id": ids[0],
+                    "right_mention_id": ids[1],
+                    "label": "different",
+                }
+            ],
+            "expected_version": 0,
+        }
+        scope = self.archive.annotate_identity_pairs(batch)
+        batch["source_id"] = self.records[1].source_id
+        batch["end"] = self.records[1].char_count
+        with self.assertRaisesRegex(ValueError, "out-of-scope"):
+            self.archive.annotate_identity_pairs(batch)
+        manifest = self.freeze()
+        tampered = deepcopy(manifest)
+        second = next(
+            item
+            for item in tampered["payload"]["open_members"]
+            if item["split"] == "development"
+        )
+        second["identity_scopes"] = [{"scope_id": scope["scope_id"], "version": 1}]
+        tampered["fingerprint"] = hashlib.sha256(
+            canonical_json(tampered["payload"]).encode("utf-8")
+        ).hexdigest()
+        with self.assertRaisesRegex(ValueError, "cross-source pinned identity scope"):
+            validate_pilot_corpus(self.archive, tampered)
+
+    def test_legacy_complete_binding_claim_is_not_complete_pair_supervision(
+        self,
+    ) -> None:
+        old = self.freeze()
+        source = self.records[0]
+        changed = metadata()
+        changed["annotation_coverage"]["identity"] = "complete"
+        second_revision = self.archive.import_text(
+            "Ёж 😀 и ёж.\r\n",
+            namespace="pilot",
+            external_key=source.external_key,
+            group_id=source.group_id,
+            metadata=changed,
+        )
+        self.assertEqual(second_revision.version, 2)
+        legacy = deepcopy(old)
+        train = next(
+            item
+            for item in legacy["payload"]["open_members"]
+            if item["split"] == "train"
+        )
+        train["source_version"] = 2
+        train["annotations"] = []
+        train["metadata_sha256"] = hashlib.sha256(
+            canonical_json(changed).encode("utf-8")
+        ).hexdigest()
+        train.pop("identity_scopes")
+        legacy["fingerprint"] = hashlib.sha256(
+            canonical_json(legacy["payload"]).encode("utf-8")
+        ).hexdigest()
+        self.assertEqual(
+            validate_pilot_corpus(self.archive, legacy)["status"], "validated"
+        )
+        document = pilot_training_view(self.archive, legacy)["documents"][0]
+        self.assertEqual(document["annotation_coverage"]["identity"], "unknown")
+        self.assertEqual(document["pair_supervision"], "explicit_pairs_only")
+        self.assertEqual(document["identity_pairs"], [])
+        self.assignments[0]["source_version"] = 2
+        with self.assertRaisesRegex(ValueError, "full-source pair scope"):
+            self.freeze()
+
+    def test_explicit_pairs_must_agree_with_pinned_selected_instance_versions(
+        self,
+    ) -> None:
+        self._annotate()
+        source = self.records[0]
+        records = self.archive.annotations(source.source_id, source.version)
+        first, second = [item["mention"]["mention_id"] for item in records]
+
+        def correct_second(selected: str, expected_version: int) -> None:
+            self.archive.annotate(
+                {
+                    "schema": "ai2-open-annotations-v1",
+                    "source_id": source.source_id,
+                    "source_version": source.version,
+                    "annotator": "test-human",
+                    "evidence": f"test:second-binding-{expected_version + 1}",
+                    "instances": [
+                        {"ref": "a", "external_key": "hedgehog-1", "label": "ёж"},
+                        {"ref": "b", "external_key": "hedgehog-2", "label": "ёж"},
+                    ],
+                    "mentions": [
+                        {
+                            "start": 7,
+                            "end": 9,
+                            "surface": "ёж",
+                            "candidates": ["a", "b"],
+                            "selected": selected,
+                            "expected_version": expected_version,
+                        }
+                    ],
+                }
+            )
+
+        correct_second("b", 1)
+        batch = {
+            "schema": "ai2-open-identity-pairs-v1",
+            "source_id": source.source_id,
+            "source_version": source.version,
+            "start": 0,
+            "end": source.char_count,
+            "coverage": "complete",
+            "policy_reference": "test:identity-policy",
+            "annotator": "test-reviewer",
+            "evidence": "test:first-pair-review",
+            "mention_ids": [first, second],
+            "pairs": [
+                {"left_mention_id": first, "right_mention_id": second, "label": "same"}
+            ],
+            "expected_version": 0,
+        }
+        self.archive.annotate_identity_pairs(batch)
+        with self.assertRaisesRegex(ValueError, "contradicts pinned selected"):
+            self.freeze()
+        correct_second("a", 2)
+        pinned_same = self.freeze()
+        previous_view = pilot_training_view(self.archive, pinned_same)
+        self.assertEqual(
+            previous_view["documents"][0]["identity_pairs"][0]["label"], "same"
+        )
+        correction = deepcopy(batch)
+        correction["pairs"][0]["label"] = "different"
+        correction["expected_version"] = 1
+        correction["evidence"] = "test:second-pair-review"
+        self.archive.annotate_identity_pairs(correction)
+        with self.assertRaisesRegex(ValueError, "contradicts pinned selected"):
+            self.freeze()
+        correct_second("b", 3)
+        pinned_different = self.freeze()
+        self.assertEqual(pilot_training_view(self.archive, pinned_same), previous_view)
+        self.assertEqual(
+            pilot_training_view(self.archive, pinned_different)["documents"][0][
+                "identity_pairs"
+            ][0]["label"],
+            "different",
+        )
+        for manifest, conflicting_binding_version in (
+            (pinned_same, 4),
+            (pinned_different, 3),
+        ):
+            forged = deepcopy(manifest)
+            train = next(
+                item
+                for item in forged["payload"]["open_members"]
+                if item["split"] == "train"
+            )
+            second_record = next(
+                item for item in train["annotations"] if item["mention_id"] == second
+            )
+            second_record["binding_version"] = conflicting_binding_version
+            forged["fingerprint"] = hashlib.sha256(
+                canonical_json(forged["payload"]).encode("utf-8")
+            ).hexdigest()
+            with self.assertRaisesRegex(ValueError, "contradicts pinned selected"):
+                validate_pilot_corpus(self.archive, forged)
+
+    def test_development_and_calibration_pair_labels_do_not_enter_training_view(
+        self,
+    ) -> None:
+        for source in self.records[1:]:
+            text = "".join(
+                item.text
+                for item in self.archive.iter_observations(
+                    source.source_id, source.version
+                )
+            )
+            first = text.split()[0]
+            self.archive.annotate(
+                {
+                    "schema": "ai2-open-annotations-v1",
+                    "source_id": source.source_id,
+                    "source_version": source.version,
+                    "annotator": "test-human",
+                    "evidence": "test:non-train-mention",
+                    "instances": [],
+                    "mentions": [
+                        {
+                            "start": 0,
+                            "end": len(first),
+                            "surface": first,
+                            "candidates": [],
+                            "selected": None,
+                            "expected_version": 0,
+                        }
+                    ],
+                }
+            )
+            mention_id = self.archive.annotations(source.source_id, 1)[0]
+            mention_id = mention_id["mention"]["mention_id"]
+            self.archive.annotate_identity_pairs(
+                {
+                    "schema": "ai2-open-identity-pairs-v1",
+                    "source_id": source.source_id,
+                    "source_version": source.version,
+                    "start": 0,
+                    "end": source.char_count,
+                    "coverage": "partial",
+                    "policy_reference": "test:non-train-policy",
+                    "annotator": "test-reviewer",
+                    "evidence": "test:non-train-pair-review",
+                    "mention_ids": [mention_id],
+                    "pairs": [],
+                    "expected_version": 0,
+                }
+            )
+        view = pilot_training_view(self.archive, self.freeze())
+        self.assertEqual(len(view["documents"]), 1)
+        self.assertEqual(view["documents"][0]["source_id"], self.records[0].source_id)
+        self.assertNotIn("test:non-train-pair-review", json.dumps(view))
+        for source in self.records[1:]:
+            self.assertNotIn(source.source_id, json.dumps(view))
 
 
 if __name__ == "__main__":

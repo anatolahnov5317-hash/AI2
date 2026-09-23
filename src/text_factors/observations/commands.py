@@ -80,10 +80,24 @@ def run(args: argparse.Namespace) -> int:
             elif args.operation == "annotate":
                 batch = read_json(Path(args.data), max_bytes=8 * 1024 * 1024)
                 _print(archive.annotate(batch))
+            elif args.operation == "annotate-pairs":
+                batch = read_json(Path(args.data), max_bytes=8 * 1024 * 1024)
+                _print(archive.annotate_identity_pairs(batch))
             elif args.operation == "annotations":
                 _print(
                     {
                         "annotations": archive.annotations(
+                            args.source,
+                            args.version,
+                            offset=args.offset,
+                            limit=args.limit,
+                        )
+                    }
+                )
+            elif args.operation == "identity-scopes":
+                _print(
+                    {
+                        "identity_scopes": archive.identity_scopes(
                             args.source,
                             args.version,
                             offset=args.offset,
@@ -184,7 +198,9 @@ def add_parsers(subparsers: Any) -> None:
         ("list", "list source identities within a namespace"),
         ("show", "read a bounded page of original observations"),
         ("annotate", "apply explicit external mention/instance annotations"),
+        ("annotate-pairs", "append explicit same/different/unknown pair review"),
         ("annotations", "inspect current bindings of a source revision"),
+        ("identity-scopes", "inspect reviewed pair windows of a source revision"),
         ("verify", "verify original bytes, coordinates and identity references"),
         ("freeze", "pin source/annotation versions and check corpus split leakage"),
         ("validate-corpus", "validate a version-pinned corpus against its archive"),
@@ -209,13 +225,18 @@ def add_parsers(subparsers: Any) -> None:
             command.add_argument("--namespace", required=True)
             command.add_argument("--after", default="")
             command.add_argument("--limit", type=int, default=100)
-        if name in {"show", "annotations"}:
+        if name in {"show", "annotations", "identity-scopes"}:
             command.add_argument("--source", required=True)
-            command.add_argument("--version", type=int, required=name == "annotations")
+            command.add_argument(
+                "--version",
+                type=int,
+                required=name in {"annotations", "identity-scopes"},
+            )
             command.add_argument("--offset", type=int, default=0)
             command.add_argument("--limit", type=int, default=20)
         if name in {
             "annotate",
+            "annotate-pairs",
             "freeze",
             "validate-corpus",
             "freeze-pilot",

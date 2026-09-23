@@ -203,6 +203,7 @@ def _check_member(
             "split",
             "annotations",
         },
+        {"identity_scopes"},
     )
     if item["split"] not in OPEN_SPLITS:
         raise ValueError("sealed and future sources cannot enter the training archive")
@@ -223,6 +224,7 @@ def _check_member(
     if type(annotations) is not list or len(annotations) > 10_000:
         raise ValueError("invalid pilot annotations")
     seen = set()
+    selected_ids: dict[str, str | None] = {}
     for row in annotations:
         record = fields(row, {"mention_id", "binding_version"})
         text_field(record["mention_id"], "mention ID")
@@ -231,11 +233,68 @@ def _check_member(
             raise ValueError("duplicate pinned mention")
         seen.add(record["mention_id"])
         mention = archive.get_mention(record["mention_id"])
+        binding = archive.get_binding(mention.mention_id, record["binding_version"])
         if (mention.source_id, mention.source_version) != (
             source.source_id,
             source.version,
-        ) or archive.get_binding(mention.mention_id, record["binding_version"]) is None:
+        ) or binding is None:
             raise ValueError("pinned pilot annotation belongs to another revision")
+        selected_ids[mention.mention_id] = binding.selected_id
+    scopes = item.get("identity_scopes", [])
+    if type(scopes) is not list or len(scopes) > 10_000:
+        raise ValueError("invalid pinned identity scopes")
+    scope_ids = set()
+    reviewed = []
+    for row in scopes:
+        pinned = fields(row, {"scope_id", "version"})
+        integer(pinned["version"], "identity scope version", minimum=1)
+        scope = archive.get_identity_scope(pinned["scope_id"], pinned["version"])
+        if scope["scope_id"] in scope_ids or (
+            scope["source_id"],
+            scope["source_version"],
+        ) != (source.source_id, source.version):
+            raise ValueError("duplicate or cross-source pinned identity scope")
+        scope_ids.add(scope["scope_id"])
+        if not set(scope["mention_ids"]) <= seen:
+            raise ValueError("identity scope refers to unpinned mention")
+        for pair in scope["pairs"]:
+            left = selected_ids[pair["left_mention_id"]]
+            right = selected_ids[pair["right_mention_id"]]
+            if (
+                left is not None
+                and right is not None
+                and (
+                    pair["label"] == "same"
+                    and left != right
+                    or pair["label"] == "different"
+                    and left == right
+                )
+            ):
+                raise ValueError(
+                    "explicit identity pair contradicts pinned selected instance IDs"
+                )
+        if scope["coverage"] == "complete":
+            inside = {
+                mention_id
+                for mention_id in seen
+                if (mention := archive.get_mention(mention_id)).char_start
+                >= scope["start"]
+                and mention.char_end <= scope["end"]
+            }
+            if set(scope["mention_ids"]) != inside:
+                raise ValueError("complete identity scope omits pinned mentions")
+        reviewed.append(scope)
+    if (
+        "identity_scopes" in item
+        and (source.metadata["annotation_coverage"]["identity"] == "complete")
+        and not any(
+            scope["coverage"] == "complete"
+            and scope["start"] == 0
+            and scope["end"] == source.char_count
+            for scope in reviewed
+        )
+    ):
+        raise ValueError("complete identity metadata requires a full-source pair scope")
     return item, source.sha256
 
 
@@ -332,6 +391,16 @@ def freeze_pilot_corpus(
                     if record["binding"] is not None
                 )
                 offset += len(page)
+            identity_scopes = []
+            offset = 0
+            while page := archive.identity_scopes(
+                source.source_id, source.version, offset=offset
+            ):
+                identity_scopes.extend(
+                    {"scope_id": scope["scope_id"], "version": scope["version"]}
+                    for scope in page
+                )
+                offset += len(page)
             members.append(
                 {
                     "source_id": source.source_id,
@@ -344,6 +413,7 @@ def freeze_pilot_corpus(
                     "metadata_sha256": _digest(source.metadata),
                     "split": item["split"],
                     "annotations": annotations,
+                    "identity_scopes": identity_scopes,
                 }
             )
         members.sort(key=lambda item: (item["source_id"], item["source_version"]))
@@ -417,14 +487,63 @@ def pilot_training_view(archive: ObservationArchive, manifest: Any) -> dict[str,
                     "binding_version": binding.version,
                 }
             )
+        identity_scopes = []
+        identity_pairs = []
+        for record in item.get("identity_scopes", []):
+            scope = archive.get_identity_scope(record["scope_id"], record["version"])
+            identity_scopes.append(
+                {
+                    key: scope[key]
+                    for key in (
+                        "scope_id",
+                        "version",
+                        "start",
+                        "end",
+                        "coverage",
+                        "mention_ids",
+                        "policy_reference",
+                        "annotator",
+                        "evidence",
+                    )
+                }
+            )
+            identity_pairs.extend(
+                {
+                    **pair,
+                    "scope_id": scope["scope_id"],
+                    "scope_version": scope["version"],
+                    "annotator": scope["annotator"],
+                    "evidence": scope["evidence"],
+                    "policy_reference": scope["policy_reference"],
+                }
+                for pair in scope["pairs"]
+            )
         documents.append(
             {
                 "source_id": source.source_id,
                 "source_version": source.version,
                 "source_sha256": source.sha256,
                 "text": _source_text(archive, source.source_id, source.version),
-                "annotation_coverage": source.metadata["annotation_coverage"],
+                # Old corpus manifests may declare full identity coverage via
+                # bindings without any audited pair scope. Never pass that
+                # declaration to a fitting process as pair supervision.
+                "annotation_coverage": {
+                    "mentions": source.metadata["annotation_coverage"]["mentions"],
+                    "identity": "complete"
+                    if any(
+                        scope["coverage"] == "complete"
+                        and scope["start"] == 0
+                        and scope["end"] == source.char_count
+                        for scope in identity_scopes
+                    )
+                    else "partial"
+                    if identity_scopes
+                    else "unknown",
+                },
+                "pair_supervision": "explicit_pairs_only",
                 "annotations": annotations,
+                "identity_scopes": identity_scopes,
+                "identity_pairs": identity_pairs,
             }
         )
     return {
