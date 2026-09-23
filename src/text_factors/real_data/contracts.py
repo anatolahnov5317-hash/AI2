@@ -40,6 +40,28 @@ class ClaimStatus(str, Enum):
     UNRESOLVED = "unresolved"
 
 
+class ClaimPolarity(str, Enum):
+    """Whether a relation is affirmed or negated in the source utterance.
+
+    A legacy or unreviewed claim must not be silently treated as positive.
+    """
+
+    POSITIVE = "positive"
+    NEGATIVE = "negative"
+    UNKNOWN = "unknown"
+
+
+class ClaimModality(str, Enum):
+    """How the utterance presents a proposition, separate from evidence status."""
+
+    ASSERTED = "asserted"
+    REPORTED = "reported"
+    POSSIBLE = "possible"
+    HYPOTHETICAL = "hypothetical"
+    QUESTION = "question"
+    UNKNOWN = "unknown"
+
+
 @dataclass(frozen=True, slots=True)
 class SourceSlice:
     source_id: str
@@ -126,6 +148,9 @@ class Claim:
     source: SourceSlice | None = None
     evidence_roots: tuple[str, ...] = ()
     model_version: str | None = None
+    polarity: ClaimPolarity = ClaimPolarity.UNKNOWN
+    modality: ClaimModality = ClaimModality.UNKNOWN
+    reviewer_id: str | None = None
 
     def __post_init__(self) -> None:
         _text(self.claim_id, "claim_id")
@@ -134,8 +159,13 @@ class Claim:
         _optional_text(self.valid_to, "valid_to")
         _optional_text(self.speaker_id, "speaker_id")
         _optional_text(self.model_version, "model_version")
+        _optional_text(self.reviewer_id, "reviewer_id")
         if not isinstance(self.status, ClaimStatus):
             raise ValueError("status must be ClaimStatus")
+        if not isinstance(self.polarity, ClaimPolarity):
+            raise ValueError("polarity must be ClaimPolarity")
+        if not isinstance(self.modality, ClaimModality):
+            raise ValueError("modality must be ClaimModality")
         roles = [item.role for item in self.arguments]
         if len(roles) != len(set(roles)):
             raise ValueError("claim roles must be unique")
@@ -154,6 +184,9 @@ class Claim:
             "source": self.source.to_dict() if self.source else None,
             "evidence_roots": list(self.evidence_roots),
             "model_version": self.model_version,
+            "polarity": self.polarity.value,
+            "modality": self.modality.value,
+            "reviewer_id": self.reviewer_id,
         }
 
     @classmethod
@@ -170,7 +203,14 @@ class Claim:
             "evidence_roots",
             "model_version",
         }
-        if type(value) is not dict or set(value) != expected:
+        optional = {"polarity", "modality"}
+        # Pre-polarity snapshots are accepted only as an entire legacy shape.
+        # Missing either field on a new record is a malformed partial migration.
+        if type(value) is not dict or set(value) not in (
+            expected,
+            expected | optional,
+            expected | optional | {"reviewer_id"},
+        ):
             raise ValueError("invalid claim")
         raw_arguments = value["arguments"]
         raw_roots = value["evidence_roots"]
@@ -183,6 +223,11 @@ class Claim:
             status = ClaimStatus(value["status"])
         except (TypeError, ValueError) as exc:
             raise ValueError("invalid claim status") from exc
+        try:
+            polarity = ClaimPolarity(value.get("polarity", "unknown"))
+            modality = ClaimModality(value.get("modality", "unknown"))
+        except (TypeError, ValueError) as exc:
+            raise ValueError("invalid claim polarity or modality") from exc
         return cls(
             claim_id=value["claim_id"],
             relation_id=value["relation_id"],
@@ -196,6 +241,9 @@ class Claim:
             ),
             evidence_roots=tuple(raw_roots),
             model_version=value["model_version"],
+            polarity=polarity,
+            modality=modality,
+            reviewer_id=value.get("reviewer_id"),
         )
 
 

@@ -1,0 +1,11 @@
+{
+  "families": {
+    "development_open": 3,
+    "evaluation_open_held_out": 5,
+    "train_open": 2
+  },
+  "fixture_sha256": "5fbedf4388a1a5e30b8d88efb5581ae5636739814d37cf9292aa08b90a619c01",
+  "primary_queries": 10,
+  "queries": 29,
+  "schema": "ai2-dialogue-open-fixture-check-v1"
+}

@@ -1,0 +1,262 @@
+{
+  "families": {
+    "development_open": 3,
+    "evaluation_open_held_out": 5,
+    "train_open": 2
+  },
+  "fixture_sha256": "5fbedf4388a1a5e30b8d88efb5581ae5636739814d37cf9292aa08b90a619c01",
+  "predictions_sha256": "f26087f71a1e9f391bfe5bd6b1d48bea5c54bc9465af94a65964a76301287f5e",
+  "primary_queries": 10,
+  "queries": 29,
+  "schema": "ai2-dialogue-open-fixture-check-v1",
+  "score": {
+    "attempt_id": "f8584f56c4474be69473f2f4fd9fe9ff",
+    "methods": [
+      {
+        "declared_status": "partial_selected_splits",
+        "name": "connected_dialogue",
+        "recorded_costs": {
+          "annotation_minutes": null,
+          "restarter_supplied": false,
+          "reviewer_supplied": false,
+          "selected_splits": [
+            "development_open",
+            "train_open"
+          ],
+          "training_cpu_seconds": null
+        },
+        "recorded_predictions": 13,
+        "rows": [
+          {
+            "actual_action": "ask_clarification",
+            "expected_action": "answer",
+            "family_id": "train_folder",
+            "known_unsafe_accepted": false,
+            "latency_ms": 0.3813639996224083,
+            "mechanical_match": false,
+            "peak_rss_kib": 29844,
+            "primary": false,
+            "query_id": "train_folder_initial",
+            "review": "pending",
+            "reviewed_success": false,
+            "split": "train_open"
+          },
+          {
+            "actual_action": "ask_clarification",
+            "expected_action": "answer",
+            "family_id": "train_folder",
+            "known_unsafe_accepted": false,
+            "latency_ms": 0.4935100005241111,
+            "mechanical_match": false,
+            "peak_rss_kib": 30100,
+            "primary": true,
+            "query_id": "train_folder_primary",
+            "review": "pending",
+            "reviewed_success": false,
+            "split": "train_open"
+          },
+          {
+            "actual_action": "unsupported",
+            "expected_action": "answer",
+            "family_id": "train_folder",
+            "known_unsafe_accepted": false,
+            "latency_ms": 0.0012220007192809135,
+            "mechanical_match": false,
+            "peak_rss_kib": 30100,
+            "primary": false,
+            "query_id": "train_folder_after_restart",
+            "review": "pending",
+            "reviewed_success": false,
+            "split": "train_open"
+          },
+          {
+            "actual_action": "ask_clarification",
+            "expected_action": "answer",
+            "family_id": "train_transfer",
+            "known_unsafe_accepted": false,
+            "latency_ms": 0.37255100323818624,
+            "mechanical_match": false,
+            "peak_rss_kib": 30228,
+            "primary": false,
+            "query_id": "train_transfer_initial",
+            "review": "pending",
+            "reviewed_success": false,
+            "split": "train_open"
+          },
+          {
+            "actual_action": "ask_clarification",
+            "expected_action": "answer",
+            "family_id": "train_transfer",
+            "known_unsafe_accepted": false,
+            "latency_ms": 0.3927910001948476,
+            "mechanical_match": false,
+            "peak_rss_kib": 30356,
+            "primary": true,
+            "query_id": "train_transfer_primary",
+            "review": "pending",
+            "reviewed_success": false,
+            "split": "train_open"
+          },
+          {
+            "actual_action": "ask_clarification",
+            "expected_action": "answer",
+            "family_id": "dev_two_keys",
+            "known_unsafe_accepted": false,
+            "latency_ms": 0.3589209991332609,
+            "mechanical_match": false,
+            "peak_rss_kib": 30356,
+            "primary": false,
+            "query_id": "dev_two_keys_initial",
+            "review": "pending",
+            "reviewed_success": false,
+            "split": "development_open"
+          },
+          {
+            "actual_action": "ask_clarification",
+            "expected_action": "answer",
+            "family_id": "dev_two_keys",
+            "known_unsafe_accepted": false,
+            "latency_ms": 0.3159970001433976,
+            "mechanical_match": false,
+            "peak_rss_kib": 30356,
+            "primary": true,
+            "query_id": "dev_two_keys_primary",
+            "review": "pending",
+            "reviewed_success": false,
+            "split": "development_open"
+          },
+          {
+            "actual_action": "ask_clarification",
+            "expected_action": "answer",
+            "family_id": "dev_two_keys",
+            "known_unsafe_accepted": false,
+            "latency_ms": 0.4012540011899546,
+            "mechanical_match": false,
+            "peak_rss_kib": 30356,
+            "primary": false,
+            "query_id": "dev_two_keys_other",
+            "review": "pending",
+            "reviewed_success": false,
+            "split": "development_open"
+          },
+          {
+            "actual_action": "ask_clarification",
+            "expected_action": "answer",
+            "family_id": "dev_role_reversal",
+            "known_unsafe_accepted": false,
+            "latency_ms": 0.36415900103747845,
+            "mechanical_match": false,
+            "peak_rss_kib": 30636,
+            "primary": false,
+            "query_id": "dev_role_reversal_initial",
+            "review": "pending",
+            "reviewed_success": false,
+            "split": "development_open"
+          },
+          {
+            "actual_action": "ask_clarification",
+            "expected_action": "answer",
+            "family_id": "dev_role_reversal",
+            "known_unsafe_accepted": false,
+            "latency_ms": 0.7088890015438665,
+            "mechanical_match": false,
+            "peak_rss_kib": 30636,
+            "primary": true,
+            "query_id": "dev_role_reversal_primary",
+            "review": "pending",
+            "reviewed_success": false,
+            "split": "development_open"
+          },
+          {
+            "actual_action": "ask_clarification",
+            "expected_action": "answer",
+            "family_id": "dev_role_reversal",
+            "known_unsafe_accepted": false,
+            "latency_ms": 0.4459790034161415,
+            "mechanical_match": false,
+            "peak_rss_kib": 30636,
+            "primary": false,
+            "query_id": "dev_role_reversal_sender",
+            "review": "pending",
+            "reviewed_success": false,
+            "split": "development_open"
+          },
+          {
+            "actual_action": "ask_clarification",
+            "expected_action": "answer",
+            "family_id": "dev_not_sent",
+            "known_unsafe_accepted": false,
+            "latency_ms": 0.501370999700157,
+            "mechanical_match": false,
+            "peak_rss_kib": 30892,
+            "primary": true,
+            "query_id": "dev_not_sent_primary",
+            "review": "pending",
+            "reviewed_success": false,
+            "split": "development_open"
+          },
+          {
+            "actual_action": "ask_clarification",
+            "expected_action": "answer",
+            "family_id": "dev_not_sent",
+            "known_unsafe_accepted": false,
+            "latency_ms": 0.31420500090462156,
+            "mechanical_match": false,
+            "peak_rss_kib": 30892,
+            "primary": false,
+            "query_id": "dev_not_sent_location",
+            "review": "pending",
+            "reviewed_success": false,
+            "split": "development_open"
+          }
+        ],
+        "summary": {
+          "development_open": {
+            "accepted_primary": 0,
+            "all_questions": 8,
+            "all_reviewed_success": 0,
+            "answerable_primary_families": 3,
+            "known_unsafe_accepted_primary": 0,
+            "latency_median_ms": 0.3827065011137165,
+            "latency_p95_ms": 0.7088890015438665,
+            "latency_reported": 8,
+            "peak_rss_kib_max": 30892,
+            "peak_rss_reported": 8,
+            "primary_families": 3,
+            "primary_mechanical_match_only": 0,
+            "primary_pending_review": 3,
+            "primary_reviewed_success": 0,
+            "status": "recorded",
+            "useful_supported_primary": 0
+          },
+          "evaluation_open_held_out": {
+            "available_primary_families": 5,
+            "primary_reviewed_success": null,
+            "status": "not_run",
+            "useful_supported_primary": null
+          },
+          "train_open": {
+            "accepted_primary": 0,
+            "all_questions": 5,
+            "all_reviewed_success": 0,
+            "answerable_primary_families": 2,
+            "known_unsafe_accepted_primary": 0,
+            "latency_median_ms": 0.3813639996224083,
+            "latency_p95_ms": 0.4935100005241111,
+            "latency_reported": 5,
+            "peak_rss_kib_max": 30356,
+            "peak_rss_reported": 5,
+            "primary_families": 2,
+            "primary_mechanical_match_only": 0,
+            "primary_pending_review": 2,
+            "primary_reviewed_success": 0,
+            "status": "recorded",
+            "useful_supported_primary": 0
+          }
+        }
+      }
+    ],
+    "qualification": "Open synthetic diagnostics, no P22/P24 gate; unknown human review does not count as a supported answer.",
+    "schema": "ai2-dialogue-open-score-v1"
+  }
+}
