@@ -54,6 +54,20 @@ def _claim(
         ),
         status=status,
         evidence_roots=roots,
+        # This isolated primitive test uses stub roots; production source
+        # slices must come from archive_bridge and be checked before register.
+        source=(SourceSlice("s" + roots[0][1:], 1, 0, 1, "0" * 64) if roots else None),
+    )
+
+
+def _root(root_id: str, group_id: str, source_id: str) -> EvidenceRoot:
+    return EvidenceRoot(
+        root_id,
+        group_id,
+        source_id,
+        1,
+        "default",
+        SourceSlice(source_id, 1, 0, 1, "0" * 64),
     )
 
 
@@ -223,7 +237,7 @@ class RealDataPrimitiveTests(unittest.TestCase):
 
     def test_engine_never_promotes_prediction_to_grounded_fact(self):
         engine = RealDataEngine()
-        engine.register_evidence(EvidenceRoot("r1", "g1", "s1", 1))
+        engine.register_evidence(_root("r1", "g1", "s1"))
         engine.add_claim(_claim("observed", roots=("r1",)))
         engine.add_claim(
             _claim(
@@ -251,8 +265,8 @@ class RealDataPrimitiveTests(unittest.TestCase):
 
     def test_engine_blocks_only_the_uncertain_claim(self):
         engine = RealDataEngine()
-        engine.register_evidence(EvidenceRoot("r1", "g1", "s1", 1))
-        engine.register_evidence(EvidenceRoot("r2", "g2", "s2", 1))
+        engine.register_evidence(_root("r1", "g1", "s1"))
+        engine.register_evidence(_root("r2", "g2", "s2"))
         engine.add_claim(_claim("c1", relation="location", roots=("r1",)))
         engine.add_claim(_claim("c2", relation="owner", roots=("r2",)))
         engine.mark_uncertainty(
@@ -309,7 +323,7 @@ class RealDataPrimitiveTests(unittest.TestCase):
 
     def test_real_data_state_roundtrip_preserves_contexts_and_evidence(self):
         engine = RealDataEngine()
-        engine.register_evidence(EvidenceRoot("r1", "g1", "s1", 1))
+        engine.register_evidence(_root("r1", "g1", "s1"))
         engine.add_claim(_claim("c1", roots=("r1",)))
         contexts = ContextRegistry(width=64)
         contexts.learn(LearningEpisode("e1", "g1", (1,), (10,)))

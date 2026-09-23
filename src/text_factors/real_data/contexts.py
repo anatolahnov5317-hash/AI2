@@ -22,14 +22,40 @@ def jaccard(left: tuple[int, ...], right: tuple[int, ...]) -> float:
 
 
 class SparseTransform:
-    """Positive sparse association learned only from observed source/target bits."""
+    """Sparse associations with one vote per independent group and bit pair.
+
+    A mask lists *known* target bits. Bits outside it are unknown, while known
+    bits missing from ``target_bits`` are observed negatives. Without a group
+    ID, historical ``fit`` callers retain their episode-frequency behavior;
+    those counts are never reported as independent support.
+    """
+
+    MAX_GROUP_VOTES: int = 100_000
 
     def __init__(self, width: int):
         if type(width) is not int or width <= 0:
             raise ValueError("width must be positive")
         self.width = width
         self._counts: dict[int, dict[int, int]] = {}
+        self._negative_counts: dict[int, dict[int, int]] = {}
+        self._group_votes: dict[str, dict[int, dict[int, int]]] = {}
+        self._vote_entries = 0
         self.episodes = 0
+
+    @staticmethod
+    def _adjust(
+        rows: dict[int, dict[int, int]], source: int, bit: int, delta: int
+    ) -> None:
+        row = rows.setdefault(source, {})
+        count = row.get(bit, 0) + delta
+        if count < 0:
+            raise ValueError("invalid association count")
+        if count:
+            row[bit] = count
+        else:
+            row.pop(bit, None)
+            if not row:
+                rows.pop(source)
 
     def fit(
         self,
@@ -37,39 +63,132 @@ class SparseTransform:
         target_bits: tuple[int, ...],
         *,
         observed_target_bits: tuple[int, ...] | None = None,
+        group_id: str | None = None,
     ) -> None:
         source = _code(source_bits, self.width, "source")
-        target = _code(target_bits, self.width, "target")
+        target = set(_code(target_bits, self.width, "target"))
+        observed: set[int] | None = None
         if observed_target_bits is not None:
             observed = set(_code(observed_target_bits, self.width, "observed target"))
-            target = tuple(bit for bit in target if bit in observed)
+        positive = target if observed is None else target & observed
+        negative = set() if observed is None else observed - positive
+        if group_id is not None and (
+            type(group_id) is not str or not group_id or len(group_id) > 4096
+        ):
+            raise ValueError("invalid independent group ID")
+        if group_id is not None:
+            existing = self._group_votes.get(group_id, {})
+            new_entries = sum(
+                bit not in existing.get(source_bit, {})
+                for source_bit in source
+                for bit in positive | negative
+            )
+            if self._vote_entries + new_entries > self.MAX_GROUP_VOTES:
+                raise ValueError("independent group vote capacity exceeded")
         for source_bit in source:
-            row = self._counts.setdefault(source_bit, {})
-            for target_bit in target:
-                row[target_bit] = row.get(target_bit, 0) + 1
+            if group_id is None:
+                for bit in positive:
+                    self._adjust(self._counts, source_bit, bit, 1)
+                for bit in negative:
+                    self._adjust(self._negative_counts, source_bit, bit, 1)
+                continue
+            row = self._group_votes.setdefault(group_id, {}).setdefault(source_bit, {})
+            for bit, vote in ((bit, 1) for bit in positive):
+                previous = row.get(bit)
+                if previous is None:
+                    row[bit] = vote
+                    self._vote_entries += 1
+                    self._adjust(self._counts, source_bit, bit, 1)
+                elif previous == -1:
+                    # Contradictory versions in one group cannot produce two
+                    # independent votes or a confident positive/negative.
+                    self._adjust(self._negative_counts, source_bit, bit, -1)
+                    row[bit] = 0
+            for bit, vote in ((bit, -1) for bit in negative):
+                previous = row.get(bit)
+                if previous is None:
+                    row[bit] = vote
+                    self._vote_entries += 1
+                    self._adjust(self._negative_counts, source_bit, bit, 1)
+                elif previous == 1:
+                    # Contradictory versions in one group cannot produce two
+                    # independent votes or a confident positive/negative.
+                    self._adjust(self._counts, source_bit, bit, -1)
+                    row[bit] = 0
         self.episodes += 1
 
-    def predict(self, source_bits: tuple[int, ...], *, limit: int) -> tuple[int, ...]:
-        if type(limit) is not int or limit <= 0:
-            raise ValueError("limit must be positive")
-        source = _code(source_bits, self.width, "source")
+    def _ranked(
+        self, source: tuple[int, ...], *, observed: set[int] | None = None
+    ) -> list[int]:
         scores: dict[int, float] = {}
         for source_bit in source:
             row = self._counts.get(source_bit)
             if not row:
                 continue
             total = sum(row.values())
-            for target_bit, count in row.items():
-                scores[target_bit] = scores.get(target_bit, 0.0) + count / total
-        ranked = sorted(scores, key=lambda bit: (-scores[bit], bit))
+            negatives = self._negative_counts.get(source_bit, {})
+            for bit, count in row.items():
+                if observed is not None and bit not in observed:
+                    continue
+                # A known negative weakens the link. Unknown bits do not.
+                reliability = count / (count + negatives.get(bit, 0))
+                scores[bit] = scores.get(bit, 0.0) + count / total * reliability
+        return sorted(scores, key=lambda bit: (-scores[bit], bit))
+
+    def predict(self, source_bits: tuple[int, ...], *, limit: int) -> tuple[int, ...]:
+        if type(limit) is not int or limit <= 0:
+            raise ValueError("limit must be positive")
+        source = _code(source_bits, self.width, "source")
+        ranked = self._ranked(source)
         return tuple(sorted(ranked[:limit]))
 
+    def support_for(
+        self, source_bits: tuple[int, ...], target_bit: int
+    ) -> tuple[int, int]:
+        """Return positive/negative *independent groups* supporting a link."""
+
+        source = _code(source_bits, self.width, "source")
+        bit = _code((target_bit,), self.width, "target")[0]
+        positive = negative = 0
+        for group in self._group_votes.values():
+            votes = {group.get(source_bit, {}).get(bit, 0) for source_bit in source}
+            votes.discard(0)
+            if votes == {1}:
+                positive += 1
+            elif votes == {-1}:
+                negative += 1
+        return positive, negative
+
     def score(
-        self, source_bits: tuple[int, ...], target_bits: tuple[int, ...]
+        self,
+        source_bits: tuple[int, ...],
+        target_bits: tuple[int, ...],
+        *,
+        observed_target_bits: tuple[int, ...] | None = None,
     ) -> float:
         target = _code(target_bits, self.width, "target")
-        prediction = self.predict(source_bits, limit=max(1, len(target)))
-        return jaccard(prediction, target)
+        if observed_target_bits is None:
+            prediction = self.predict(source_bits, limit=max(1, len(target)))
+            return jaccard(prediction, target)
+        observed = set(_code(observed_target_bits, self.width, "observed target"))
+        if not observed:
+            return 0.0  # An empty mask gives no basis for context assignment.
+        visible_target = tuple(bit for bit in target if bit in observed)
+        ranked = self._ranked(
+            _code(source_bits, self.width, "source"), observed=observed
+        )
+        # Every known absence is informative: a previously predicted bit
+        # inside the mask must count against the context if it is now absent.
+        prediction = tuple(sorted(ranked))
+        if not prediction and not visible_target:
+            source = _code(source_bits, self.width, "source")
+            if not any(
+                self._negative_counts.get(source_bit, {}).get(bit, 0)
+                for source_bit in source
+                for bit in observed
+            ):
+                return 0.0  # Shared inactivity is not evidence of similarity.
+        return jaccard(prediction, visible_target)
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -81,37 +200,128 @@ class SparseTransform:
                 }
                 for source, row in sorted(self._counts.items())
             },
+            "negative_counts": {
+                str(source): {
+                    str(target): count for target, count in sorted(row.items())
+                }
+                for source, row in sorted(self._negative_counts.items())
+            },
+            "group_votes": {
+                group: {
+                    str(source): {str(bit): vote for bit, vote in sorted(row.items())}
+                    for source, row in sorted(sources.items())
+                }
+                for group, sources in sorted(self._group_votes.items())
+            },
         }
 
     @classmethod
     def from_dict(cls, value: dict[str, Any]) -> SparseTransform:
-        if type(value) is not dict or set(value) != {"width", "episodes", "counts"}:
+        legacy = {"width", "episodes", "counts"}
+        current = legacy | {"negative_counts", "group_votes"}
+        if type(value) is not dict or set(value) not in (legacy, current):
             raise ValueError("invalid sparse transform")
         transform = cls(value["width"])
         if type(value["episodes"]) is not int or value["episodes"] < 0:
             raise ValueError("invalid transform episode count")
         if type(value["counts"]) is not dict:
             raise ValueError("invalid transform counts")
-        for source, row in value["counts"].items():
-            if type(source) is not str or not source.isdigit() or type(row) is not dict:
-                raise ValueError("invalid transform row")
-            source_bit = int(source)
-            if not 0 <= source_bit < transform.width:
-                raise ValueError("transform source bit outside width")
-            decoded: dict[int, int] = {}
-            for target, count in row.items():
+
+        def parse_counts(raw: dict[str, Any]) -> dict[int, dict[int, int]]:
+            decoded_rows: dict[int, dict[int, int]] = {}
+            for source, row in raw.items():
                 if (
-                    type(target) is not str
-                    or not target.isdigit()
-                    or type(count) is not int
-                    or count <= 0
+                    type(source) is not str
+                    or not source.isdigit()
+                    or type(row) is not dict
                 ):
-                    raise ValueError("invalid transform count")
-                target_bit = int(target)
-                if not 0 <= target_bit < transform.width:
-                    raise ValueError("transform target bit outside width")
-                decoded[target_bit] = count
-            transform._counts[source_bit] = decoded
+                    raise ValueError("invalid transform row")
+                source_bit = int(source)
+                if str(source_bit) != source or not 0 <= source_bit < transform.width:
+                    raise ValueError("transform source bit outside width")
+                decoded: dict[int, int] = {}
+                for target, count in row.items():
+                    if (
+                        type(target) is not str
+                        or not target.isdigit()
+                        or type(count) is not int
+                        or count <= 0
+                    ):
+                        raise ValueError("invalid transform count")
+                    target_bit = int(target)
+                    if (
+                        str(target_bit) != target
+                        or not 0 <= target_bit < transform.width
+                    ):
+                        raise ValueError("transform target bit outside width")
+                    decoded[target_bit] = count
+                decoded_rows[source_bit] = decoded
+            return decoded_rows
+
+        transform._counts = parse_counts(value["counts"])
+        if set(value) == current:
+            negatives = value["negative_counts"]
+            votes = value["group_votes"]
+            if type(negatives) is not dict or type(votes) is not dict:
+                raise ValueError("invalid transform independent votes")
+            transform._negative_counts = parse_counts(negatives)
+            for group, sources in votes.items():
+                if (
+                    type(group) is not str
+                    or not group
+                    or len(group) > 4096
+                    or type(sources) is not dict
+                ):
+                    raise ValueError("invalid transform group")
+                decoded_sources: dict[int, dict[int, int]] = {}
+                for source, row in sources.items():
+                    if (
+                        type(source) is not str
+                        or not source.isdigit()
+                        or type(row) is not dict
+                    ):
+                        raise ValueError("invalid transform group row")
+                    source_bit = int(source)
+                    if (
+                        str(source_bit) != source
+                        or not 0 <= source_bit < transform.width
+                    ):
+                        raise ValueError("invalid transform group source")
+                    decoded_row: dict[int, int] = {}
+                    for target, vote in row.items():
+                        if type(target) is not str or not target.isdigit():
+                            raise ValueError("invalid transform group target")
+                        bit = int(target)
+                        if (
+                            str(bit) != target
+                            or not 0 <= bit < transform.width
+                            or type(vote) is not int
+                            or vote not in (-1, 0, 1)
+                        ):
+                            raise ValueError("invalid transform group vote")
+                        decoded_row[bit] = vote
+                        transform._vote_entries += 1
+                    decoded_sources[source_bit] = decoded_row
+                transform._group_votes[group] = decoded_sources
+            if transform._vote_entries > transform.MAX_GROUP_VOTES:
+                raise ValueError("independent group vote capacity exceeded")
+            positive: dict[int, dict[int, int]] = {}
+            negative: dict[int, dict[int, int]] = {}
+            for sources in transform._group_votes.values():
+                for source, row in sources.items():
+                    for bit, vote in row.items():
+                        if vote:
+                            transform._adjust(
+                                positive if vote == 1 else negative, source, bit, 1
+                            )
+            for aggregate, grouped in (
+                (transform._counts, positive),
+                (transform._negative_counts, negative),
+            ):
+                for source, row in grouped.items():
+                    for bit, count in row.items():
+                        if aggregate.get(source, {}).get(bit, 0) < count:
+                            raise ValueError("group votes exceed association counts")
         transform.episodes = value["episodes"]
         return transform
 
@@ -196,9 +406,25 @@ class ContextRegistry:
     def learn(self, episode: LearningEpisode) -> tuple[str, bool, float]:
         source = _code(episode.source_code, self.width, "source")
         target = _code(episode.target_code, self.width, "target")
+        observed = (
+            episode.observed_target_bits
+            if episode.observed_target_bits is not None
+            else target
+        )
+        if not source or not observed:
+            raise ValueError(
+                "learning episode must contain source and observed target bits"
+            )
         ranked = sorted(
             (
-                (candidate.transform.score(source, target), candidate.context_id)
+                (
+                    candidate.transform.score(
+                        source,
+                        target,
+                        observed_target_bits=episode.observed_target_bits,
+                    ),
+                    candidate.context_id,
+                )
                 for candidate in self._contexts.values()
                 if candidate.transform.episodes
             ),
@@ -211,6 +437,7 @@ class ContextRegistry:
             source,
             target,
             observed_target_bits=episode.observed_target_bits,
+            group_id=episode.group_id,
         )
         candidate.group_ids.add(episode.group_id)
         candidate.episode_ids.add(episode.episode_id)
