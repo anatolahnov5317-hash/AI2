@@ -1,0 +1,136 @@
+{
+  "schema_version": "ai2-pilot-contract-v1",
+  "stage": "P01",
+  "status": "draft",
+  "based_on_commit": "9bbae264eced86e6be2cccb565ea5c4162fc1e16",
+  "scope": {
+    "candidate_process": "История документов и изменений задач в одном проекте",
+    "decision_owner": null,
+    "data_controller": null,
+    "target_language": "ru",
+    "supported_questions": [
+      "Каков подтверждённый статус конкретной задачи на указанное время?",
+      "Что изменилось между двумя подтверждёнными редакциями документа?",
+      "Какой источник и его версия подтверждают ответ?"
+    ],
+    "out_of_scope": [
+      "Ответы без разрешённого источника и его версии",
+      "Автономное изменение задач или других внешних систем",
+      "Утверждения о качестве на языке, отсутствующем в закрытой оценке"
+    ]
+  },
+  "data": {
+    "sources": [
+      {
+        "source_id": "document_history",
+        "kind": "Полные документы с редакциями и временными метками",
+        "location_reference": null,
+        "rights_evidence_reference": null,
+        "collection_owner": null,
+        "status": "not_provided"
+      },
+      {
+        "source_id": "task_change_log",
+        "kind": "Журнал задач и наблюдаемых изменений",
+        "location_reference": null,
+        "rights_evidence_reference": null,
+        "collection_owner": null,
+        "status": "not_provided"
+      }
+    ],
+    "language_evidence_reference": null,
+    "annotation_policy_reference": null,
+    "discovery_budget_not_acceptance_sample": {
+      "independent_documents": 200,
+      "correction_chains": 50,
+      "observed_transitions": 100,
+      "reestimate_after_documents": 30
+    },
+    "privacy": {
+      "raw_text_in_repository": false,
+      "weights_from_restricted_data_in_repository": false,
+      "revocation_and_deletion_required": true,
+      "authorized_access_policy_reference": null
+    }
+  },
+  "independence": {
+    "unit": "document_family_and_task_history",
+    "grouping_rules": [
+      "Редакции, комментарии и исправления одной задачи принадлежат одной группе",
+      "Перепечатки и производные документы принадлежат той же группе",
+      "Окна одного документа никогда не разделяются между выборками"
+    ],
+    "deduplication": [
+      "Проверка точных совпадений байтов и нормализованного текста",
+      "Поиск близких перепечаток с ручной проверкой спорных пар"
+    ],
+    "splits": [
+      "train",
+      "development",
+      "calibration",
+      "sealed_test",
+      "future_stream"
+    ],
+    "sealed_test_source_reference": null,
+    "sealed_test_policy": "Группы и ответы изолированы до заморозки кода, весов, порогов и бюджета; после использования для исправления модели нужна новая независимая проверка",
+    "already_disclosed": [
+      "Четыре test-документа английского GUM-пилота являются регрессией, а не новым sealed_test",
+      "Три связанных пользовательских текста не считаются тремя независимыми проверками"
+    ]
+  },
+  "baseline": {
+    "model_commit": "9bbae264eced86e6be2cccb565ea5c4162fc1e16",
+    "report": "reports/open-data/02_mention_learning.md",
+    "language": "en",
+    "corpus": "GUM: 20 train / 4 validation / 4 disclosed test documents",
+    "mention_f1": 0.4055,
+    "surface_baseline_mention_f1": 0.3124,
+    "automatic_link_coverage": 0.0,
+    "status": "research_baseline_only_not_russian_pilot_evidence"
+  },
+  "evaluation": {
+    "question_adjudication": "Независимый разметчик до ответа модели устанавливает разрешимость вопроса по доступным источникам; конфликт согласуется без изменения исходной метки",
+    "accepted_answer": "Непустой содержательный ответ, который система разрешила к выдаче; отказ, просьба об уточнении и служебный статус сюда не входят",
+    "unsupported_answer_risk": {
+      "numerator": "accepted_substantive_answers_with_unsupported_or_materially_wrong_claim",
+      "denominator": "all_accepted_substantive_answers",
+      "trial_unit": "one_preselected_query_from_each_independent_group",
+      "bound": "one_sided_exact_binomial_clopper_pearson",
+      "confidence": 0.95,
+      "upper_bound_max": 0.01,
+      "zero_denominator": "undefined_not_zero_risk"
+    },
+    "useful_coverage": {
+      "numerator": "adjudicated_answerable_queries_with_accepted_useful_supported_answer",
+      "denominator": "all_preselected_adjudicated_answerable_queries",
+      "trial_unit": "one_preselected_query_from_each_independent_group",
+      "minimum": 0.70,
+      "abstention": "counts_as_not_covered"
+    },
+    "answer_attribution": {
+      "numerator": "accepted_answers_with_valid_authorized_source_and_exact_version_receipt",
+      "denominator": "all_accepted_substantive_answers",
+      "minimum": 1.0
+    },
+    "critical_errors": [
+      "wrong_entity_identity",
+      "wrong_time_or_obsolete_version",
+      "wrong_negation_or_speaker",
+      "source_without_access",
+      "revoked_source_reused"
+    ],
+    "block1_quality_gates_reference": null,
+    "calibration_rule": "Пороги выбираются на calibration до единственного открытия sealed_test; после просмотра закрытых ошибок нужна новая независимая выборка",
+    "language_rule": "Результаты английского GUM не подтверждают русский пилот; новые целевые домены и языки оцениваются отдельно"
+  },
+  "operations": {
+    "target_hardware_reference": null,
+    "ram_limit_gib": null,
+    "disk_limit_gib": null,
+    "latency_p95_seconds": null,
+    "revision_job_deadline_seconds": null,
+    "error_cost_policy_reference": null,
+    "rollback_required": true,
+    "checkpoint_and_progress_required": true
+  }
+}
