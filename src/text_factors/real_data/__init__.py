@@ -7,6 +7,7 @@ existing observations and mention-learning layers without replacing them.
 from .archive_bridge import evidence_root, source_slice
 from .attention import AttentionCandidate, AttentionExample, HashedAttentionRanker
 from .budget import BudgetExceeded, BudgetSnapshot, BudgetTracker, ResourceBudget
+from .bundle import LoadedBundle, load_bundle, migrate_v1_state, save_bundle
 from .composition import (
     CompositionalEncoder,
     CompositionalRepresentation,
@@ -38,9 +39,18 @@ from .recognition import (
     prospective_read,
     recognize_observation,
 )
+from .storage import (
+    AccessDenied,
+    OperationalStore,
+    PublicationQuote,
+    PublishedAnswer,
+    StalePublication,
+    TaskStatus,
+)
 from .uncertainty import UncertaintyIndex
 
 __all__ = [
+    "AccessDenied",
     "AnswerReceipt",
     "AttentionCandidate",
     "AttentionExample",
@@ -59,12 +69,16 @@ __all__ = [
     "HashedAttentionRanker",
     "Interpretation",
     "LearningEpisode",
+    "LoadedBundle",
     "ObservedReadout",
+    "OperationalStore",
     "PrequentialStep",
     "PilotGateConfig",
     "PilotSample",
     "ProspectiveReadout",
     "ProspectiveResponse",
+    "PublicationQuote",
+    "PublishedAnswer",
     "RealDataEngine",
     "ResourceBudget",
     "RevisionCheckpoint",
@@ -73,6 +87,8 @@ __all__ = [
     "SourceSlice",
     "SparseCode",
     "SparseTransform",
+    "StalePublication",
+    "TaskStatus",
     "UncertaintyIndex",
     "UncertaintyScope",
     "evaluate_pilot",
@@ -80,10 +96,13 @@ __all__ = [
     "evidence_root",
     "jaccard",
     "load_state",
+    "load_bundle",
+    "migrate_v1_state",
     "prequential_step",
     "prospective_read",
     "recognize_observation",
     "save_state",
+    "save_bundle",
     "source_slice",
     "state_payload",
 ]

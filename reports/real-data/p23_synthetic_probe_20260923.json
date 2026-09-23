@@ -1,0 +1,43 @@
+{
+  "schema": "ai2-p23-synthetic-probe-v1",
+  "workload": {
+    "claims_per_state": 128,
+    "iterations": 30,
+    "reader_threads": 4,
+    "data": "synthetic claims; one writer, concurrent readers"
+  },
+  "runtime": {
+    "python": "3.12.14",
+    "system": "Linux",
+    "machine": "x86_64",
+    "cpu_count_visible": 9,
+    "hardware_selected_by_p01": false
+  },
+  "results": {
+    "readers_valid": 553,
+    "write_operations": 30,
+    "published_runs": 30,
+    "recovery_from_copy_valid": true,
+    "total_seconds": 1.962,
+    "read": {
+      "count": 553,
+      "median_ms": 13.275,
+      "p95_ms": 26.658,
+      "max_ms": 41.605
+    },
+    "write": {
+      "count": 30,
+      "median_ms": 25.411,
+      "p95_ms": 51.793,
+      "max_ms": 54.36
+    },
+    "publish": {
+      "count": 30,
+      "median_ms": 40.501,
+      "p95_ms": 57.283,
+      "max_ms": 68.563
+    },
+    "peak_process_rss_kib": 32348
+  },
+  "scope": "process-level regression only; no real workload or selected target hardware"
+}
