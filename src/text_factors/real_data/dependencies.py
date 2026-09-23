@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+import json
 from dataclasses import asdict, dataclass
+from hashlib import sha256
+from heapq import heappop, heappush
 from typing import Any
 
 from .budget import BudgetExceeded, BudgetTracker
@@ -73,10 +76,12 @@ class DependencyGraph:
 
     def __init__(self) -> None:
         self._dependents: dict[str, set[str]] = {}
+        self._parents: dict[str, set[str]] = {}
 
     def add_node(self, node_id: str) -> None:
         _id(node_id, "node_id")
         self._dependents.setdefault(node_id, set())
+        self._parents.setdefault(node_id, set())
 
     def add_dependency(self, parent_id: str, dependent_id: str) -> None:
         _id(parent_id, "parent_id")
@@ -86,10 +91,23 @@ class DependencyGraph:
         self.add_node(parent_id)
         self.add_node(dependent_id)
         self._dependents[parent_id].add(dependent_id)
+        self._parents[dependent_id].add(parent_id)
 
     def dependents(self, node_id: str) -> tuple[str, ...]:
         _id(node_id, "node_id")
         return tuple(sorted(self._dependents.get(node_id, set())))
+
+    def parents(self, node_id: str) -> tuple[str, ...]:
+        _id(node_id, "node_id")
+        return tuple(sorted(self._parents.get(node_id, set())))
+
+    @property
+    def fingerprint(self) -> str:
+        """Bind a revision plan to the exact graph, including unrelated nodes."""
+        encoded = json.dumps(
+            self.to_dict(), ensure_ascii=False, sort_keys=True, separators=(",", ":")
+        ).encode("utf-8")
+        return sha256(encoded).hexdigest()
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -136,6 +154,37 @@ class DependencyGraph:
                     seen.add(dependent)
                     queue.append(dependent)
         return tuple(queue)
+
+    def ordered_affected(self, changed_ids: tuple[str, ...]) -> tuple[str, ...]:
+        """Stable topological order for recomputing all reachable dependents.
+
+        A breadth-first queue alone may visit a dependent before a second
+        parent has been recomputed. Cyclic derivations cannot be replayed
+        consistently and are refused.
+        """
+        reachable = self.affected(changed_ids)
+        rank = {node_id: i for i, node_id in enumerate(reachable)}
+        degrees = {node_id: 0 for node_id in reachable}
+        for parent in reachable:
+            for child in self._dependents.get(parent, ()):
+                if child in degrees:
+                    degrees[child] += 1
+        ready: list[tuple[int, str]] = []
+        for node_id, count in degrees.items():
+            if count == 0:
+                heappush(ready, (rank[node_id], node_id))
+        ordered: list[str] = []
+        while ready:
+            _, parent = heappop(ready)
+            ordered.append(parent)
+            for child in self._dependents.get(parent, ()):
+                if child in degrees:
+                    degrees[child] -= 1
+                    if degrees[child] == 0:
+                        heappush(ready, (rank[child], child))
+        if len(ordered) != len(reachable):
+            raise ValueError("cycle in affected dependency graph")
+        return tuple(ordered)
 
     def start_revision(
         self, changed_ids: tuple[str, ...], *, state_version: str

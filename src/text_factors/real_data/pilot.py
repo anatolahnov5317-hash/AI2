@@ -30,20 +30,54 @@ class PilotSample:
     critical_error: bool = False
 
 
-def _wilson_upper(errors: int, total: int, confidence: float) -> float:
+def _exact_binomial_upper(errors: int, total: int, confidence: float) -> float:
+    """One-sided Clopper-Pearson upper bound, without a SciPy dependency.
+
+    For 0 < errors < total, invert P(X <= errors | p) = 1 - confidence.
+    The recurrence sums backwards from the observed count. In the searched
+    interval p >= errors / total, each preceding probability is no larger.
+    """
+
+    if type(errors) is not int or type(total) is not int or not 0 <= errors <= total:
+        raise ValueError("invalid binomial counts")
+    if type(confidence) not in (float, int) or not 0.0 < confidence < 1.0:
+        raise ValueError("confidence must be in (0, 1)")
     if total <= 0:
         return 1.0
     if errors == 0:
         alpha = 1.0 - confidence
         return 1.0 - alpha ** (1.0 / total)
-    # 95% is the declared default gate. For custom confidence use a conservative
-    # normal approximation without adding a scipy dependency.
-    z = 1.959963984540054 if abs(confidence - 0.95) < 1e-12 else 2.5758293035489004
-    p = errors / total
-    denominator = 1.0 + z * z / total
-    centre = p + z * z / (2.0 * total)
-    spread = z * math.sqrt(p * (1.0 - p) / total + z * z / (4.0 * total * total))
-    return min(1.0, (centre + spread) / denominator)
+    if errors == total:
+        return 1.0
+
+    def left_tail(probability: float) -> float:
+        log_at_observed = (
+            math.lgamma(total + 1)
+            - math.lgamma(errors + 1)
+            - math.lgamma(total - errors + 1)
+            + errors * math.log(probability)
+            + (total - errors) * math.log1p(-probability)
+        )
+        term = math.exp(log_at_observed)
+        result = term
+        for count in range(errors, 0, -1):
+            term *= count * (1.0 - probability) / ((total - count + 1) * probability)
+            result += term
+            if term < result * 1e-16:
+                break
+        return result
+
+    alpha = 1.0 - confidence
+    lower, upper = errors / total, 1.0
+    for _ in range(64):
+        midpoint = (lower + upper) / 2.0
+        if midpoint in (lower, upper):
+            break
+        if left_tail(midpoint) > alpha:
+            lower = midpoint
+        else:
+            upper = midpoint
+    return upper
 
 
 def evaluate_pilot(
@@ -58,7 +92,7 @@ def evaluate_pilot(
     ungrounded = sum(not sample.grounded for sample in answered)
     critical = sum(sample.critical_error for sample in samples)
     coverage = 0.0 if resolvable == 0 else answered_resolvable / resolvable
-    upper = _wilson_upper(ungrounded, len(answered), config.confidence)
+    upper = _exact_binomial_upper(ungrounded, len(answered), config.confidence)
     passed = (
         critical == 0
         and coverage >= config.min_resolvable_coverage

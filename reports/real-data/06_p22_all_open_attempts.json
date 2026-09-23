@@ -1,0 +1,822 @@
+{
+  "attempts": [
+    {
+      "error": null,
+      "result": {
+        "cost": {
+          "machine": "x86_64",
+          "process_cpu_seconds": 0.004655971000000009,
+          "process_peak_rss_kib": 30452,
+          "python": "3.12.14",
+          "wall_seconds": 0.004655734001062228
+        },
+        "fingerprints": {
+          "ablation_model_sha256": "8925100c80a5bf262befc7360038a21fabc1ebc15b5230270b8fbaeb4b18462a",
+          "candidate_model_sha256": "7b2a7b1b08baef468981edca3266eb653e8923ad410a7765aab9500d378cc476",
+          "fixture_sha256": "2fb4fbbdf2f01f5c3f269b35b984fc9a86ba8c3a090bcdce6ccf2ba58eaf10b8",
+          "git_head": "a19c01ceb5442a1d2d4b01db8d3799908684ae29",
+          "git_tree": "68aee987c1da3ddef87cdf15fe396d233002515b",
+          "worktree_dirty": true
+        },
+        "groups": [
+          {
+            "cases": [
+              {
+                "case_id": "dev-0",
+                "gold_claims": [
+                  "illuminate|actor=вера|target=двор"
+                ],
+                "methods": {
+                  "candidate": {
+                    "accepted": true,
+                    "evidence_pointers_present": true,
+                    "exact": true,
+                    "unverified_or_wrong": false,
+                    "useful": true
+                  },
+                  "exact_text_control": {
+                    "accepted": false,
+                    "evidence_pointers_present": false,
+                    "exact": false,
+                    "unverified_or_wrong": false,
+                    "useful": false
+                  },
+                  "without_new_relation_ablation": {
+                    "accepted": false,
+                    "evidence_pointers_present": false,
+                    "exact": false,
+                    "unverified_or_wrong": false,
+                    "useful": false
+                  }
+                },
+                "novel_to_baseline": true,
+                "relation_id": "illuminate"
+              },
+              {
+                "case_id": "dev-1",
+                "gold_claims": [
+                  "repair|actor=вера|object=датчик"
+                ],
+                "methods": {
+                  "candidate": {
+                    "accepted": true,
+                    "evidence_pointers_present": true,
+                    "exact": true,
+                    "unverified_or_wrong": false,
+                    "useful": true
+                  },
+                  "exact_text_control": {
+                    "accepted": false,
+                    "evidence_pointers_present": false,
+                    "exact": false,
+                    "unverified_or_wrong": false,
+                    "useful": false
+                  },
+                  "without_new_relation_ablation": {
+                    "accepted": true,
+                    "evidence_pointers_present": true,
+                    "exact": true,
+                    "unverified_or_wrong": false,
+                    "useful": true
+                  }
+                },
+                "novel_to_baseline": false,
+                "relation_id": "repair"
+              }
+            ],
+            "history_group_id": "dev-x"
+          },
+          {
+            "cases": [
+              {
+                "case_id": "dev-2",
+                "gold_claims": [
+                  "illuminate|actor=олег|target=цех"
+                ],
+                "methods": {
+                  "candidate": {
+                    "accepted": true,
+                    "evidence_pointers_present": true,
+                    "exact": true,
+                    "unverified_or_wrong": false,
+                    "useful": true
+                  },
+                  "exact_text_control": {
+                    "accepted": false,
+                    "evidence_pointers_present": false,
+                    "exact": false,
+                    "unverified_or_wrong": false,
+                    "useful": false
+                  },
+                  "without_new_relation_ablation": {
+                    "accepted": false,
+                    "evidence_pointers_present": false,
+                    "exact": false,
+                    "unverified_or_wrong": false,
+                    "useful": false
+                  }
+                },
+                "novel_to_baseline": true,
+                "relation_id": "illuminate"
+              },
+              {
+                "case_id": "dev-3",
+                "gold_claims": [
+                  "repair|actor=олег|object=станок"
+                ],
+                "methods": {
+                  "candidate": {
+                    "accepted": true,
+                    "evidence_pointers_present": true,
+                    "exact": true,
+                    "unverified_or_wrong": false,
+                    "useful": true
+                  },
+                  "exact_text_control": {
+                    "accepted": false,
+                    "evidence_pointers_present": false,
+                    "exact": false,
+                    "unverified_or_wrong": false,
+                    "useful": false
+                  },
+                  "without_new_relation_ablation": {
+                    "accepted": true,
+                    "evidence_pointers_present": true,
+                    "exact": true,
+                    "unverified_or_wrong": false,
+                    "useful": true
+                  }
+                },
+                "novel_to_baseline": false,
+                "relation_id": "repair"
+              }
+            ],
+            "history_group_id": "dev-y"
+          }
+        ],
+        "limits": [
+          "Input gold and source permission are not independently verified here.",
+          "Evidence pointers record structure only; use the P18/P20 receipt to check access.",
+          "Development confidence intervals do not establish pilot acceptance."
+        ],
+        "methods": [
+          "candidate",
+          "exact_text_control",
+          "without_new_relation_ablation"
+        ],
+        "newly_trained_relation_ids": [
+          "illuminate"
+        ],
+        "paired_candidate_minus_ablation": {
+          "bootstrap_repeats": 2000,
+          "bootstrap_seed": 2209,
+          "independent_groups": 2,
+          "mean_difference": 0.5,
+          "percentile_95_lower": 0.5,
+          "percentile_95_upper": 0.5
+        },
+        "paired_candidate_minus_baseline": {
+          "bootstrap_repeats": 2000,
+          "bootstrap_seed": 2209,
+          "independent_groups": 2,
+          "mean_difference": 1.0,
+          "percentile_95_lower": 1.0,
+          "percentile_95_upper": 1.0
+        },
+        "per_method": {
+          "candidate": {
+            "accepted_cases": 4,
+            "accepted_group_risk_upper_95": 0.6576197724933469,
+            "accepted_groups": 2,
+            "cases": 4,
+            "exact_cases": 4,
+            "independent_groups": 2,
+            "new_relation_cases": 2,
+            "new_relation_exact_cases": 2,
+            "unverified_or_wrong_accepted_groups": 0,
+            "useful_group_fraction": 1.0,
+            "useful_group_wilson_95": [
+              0.34238022750665303,
+              1.0
+            ],
+            "useful_groups": 2
+          },
+          "exact_text_control": {
+            "accepted_cases": 0,
+            "accepted_group_risk_upper_95": null,
+            "accepted_groups": 0,
+            "cases": 4,
+            "exact_cases": 0,
+            "independent_groups": 2,
+            "new_relation_cases": 2,
+            "new_relation_exact_cases": 0,
+            "unverified_or_wrong_accepted_groups": 0,
+            "useful_group_fraction": 0.0,
+            "useful_group_wilson_95": [
+              0.0,
+              0.6576197724933469
+            ],
+            "useful_groups": 0
+          },
+          "without_new_relation_ablation": {
+            "accepted_cases": 2,
+            "accepted_group_risk_upper_95": 0.6576197724933469,
+            "accepted_groups": 2,
+            "cases": 4,
+            "exact_cases": 2,
+            "independent_groups": 2,
+            "new_relation_cases": 2,
+            "new_relation_exact_cases": 0,
+            "unverified_or_wrong_accepted_groups": 0,
+            "useful_group_fraction": 0.0,
+            "useful_group_wilson_95": [
+              0.0,
+              0.6576197724933469
+            ],
+            "useful_groups": 0
+          }
+        },
+        "run_id": "141e35f0f7804ba9b930483747040141",
+        "schema": "ai2-p22-open-grouped-v1",
+        "split": "development",
+        "status": "open_diagnostic_not_independent_pilot",
+        "trained_history_groups": [
+          "train-a",
+          "train-b",
+          "train-c",
+          "train-d"
+        ],
+        "unit": "history_group"
+      },
+      "run_id": "141e35f0f7804ba9b930483747040141",
+      "source_revision": {
+        "git_head": "a19c01ceb5442a1d2d4b01db8d3799908684ae29",
+        "git_tree": "68aee987c1da3ddef87cdf15fe396d233002515b",
+        "worktree_dirty": true
+      },
+      "started_at": "2026-09-23T06:34:02.353087+00:00",
+      "status": "finished"
+    },
+    {
+      "error": null,
+      "result": {
+        "cost": {
+          "machine": "x86_64",
+          "process_cpu_seconds": 0.004760016000000006,
+          "process_peak_rss_kib": 28220,
+          "python": "3.12.14",
+          "wall_seconds": 0.004760339999847929
+        },
+        "fingerprints": {
+          "ablation_model_sha256": "8925100c80a5bf262befc7360038a21fabc1ebc15b5230270b8fbaeb4b18462a",
+          "candidate_model_sha256": "7b2a7b1b08baef468981edca3266eb653e8923ad410a7765aab9500d378cc476",
+          "fixture_sha256": "95ff2e4df6c622d20a4bb954414995c8674f8a7ee5e2e3dc27ee02a19bba5a6f",
+          "git_head": "41bd291d134ebcbc9238d8654d6a7e82d62373db",
+          "git_tree": "d6d2958f891847e0f850511dab79ff29f8ead252",
+          "plan_sha256": "a92c03c166b666e18b07d320c621982cfe352cb10e948bbbf5e594756f33a964",
+          "runner_sha256": "40496a3c5c1b4d94ae9433eb303245b658b667d940715a6ead5940334cf7ae30",
+          "scorer_sha256": "1d43cbc5b96fc232a77d860885215675580f7ca2287587ac3704eafb4bfd531a",
+          "semantic_source_sha256": "93fb7face1b929a3601eb022ae2b884fce0a596cdc0da10fbec9c64bb33f6373",
+          "worktree_dirty": false
+        },
+        "groups": [
+          {
+            "cases": [
+              {
+                "case_id": "dev-0",
+                "gold_claims": [
+                  "illuminate|actor=вера|target=двор"
+                ],
+                "methods": {
+                  "candidate": {
+                    "accepted": true,
+                    "evidence_pointers_present": true,
+                    "exact": true,
+                    "unverified_or_wrong": false,
+                    "useful": true
+                  },
+                  "exact_text_control": {
+                    "accepted": false,
+                    "evidence_pointers_present": false,
+                    "exact": false,
+                    "unverified_or_wrong": false,
+                    "useful": false
+                  },
+                  "without_new_relation_ablation": {
+                    "accepted": false,
+                    "evidence_pointers_present": false,
+                    "exact": false,
+                    "unverified_or_wrong": false,
+                    "useful": false
+                  }
+                },
+                "novel_to_baseline": true,
+                "relation_id": "illuminate"
+              },
+              {
+                "case_id": "dev-1",
+                "gold_claims": [
+                  "repair|actor=вера|object=датчик"
+                ],
+                "methods": {
+                  "candidate": {
+                    "accepted": true,
+                    "evidence_pointers_present": true,
+                    "exact": true,
+                    "unverified_or_wrong": false,
+                    "useful": true
+                  },
+                  "exact_text_control": {
+                    "accepted": false,
+                    "evidence_pointers_present": false,
+                    "exact": false,
+                    "unverified_or_wrong": false,
+                    "useful": false
+                  },
+                  "without_new_relation_ablation": {
+                    "accepted": true,
+                    "evidence_pointers_present": true,
+                    "exact": true,
+                    "unverified_or_wrong": false,
+                    "useful": true
+                  }
+                },
+                "novel_to_baseline": false,
+                "relation_id": "repair"
+              }
+            ],
+            "history_group_id": "dev-x"
+          },
+          {
+            "cases": [
+              {
+                "case_id": "dev-2",
+                "gold_claims": [
+                  "illuminate|actor=олег|target=цех"
+                ],
+                "methods": {
+                  "candidate": {
+                    "accepted": true,
+                    "evidence_pointers_present": true,
+                    "exact": true,
+                    "unverified_or_wrong": false,
+                    "useful": true
+                  },
+                  "exact_text_control": {
+                    "accepted": false,
+                    "evidence_pointers_present": false,
+                    "exact": false,
+                    "unverified_or_wrong": false,
+                    "useful": false
+                  },
+                  "without_new_relation_ablation": {
+                    "accepted": false,
+                    "evidence_pointers_present": false,
+                    "exact": false,
+                    "unverified_or_wrong": false,
+                    "useful": false
+                  }
+                },
+                "novel_to_baseline": true,
+                "relation_id": "illuminate"
+              },
+              {
+                "case_id": "dev-3",
+                "gold_claims": [
+                  "repair|actor=олег|object=станок"
+                ],
+                "methods": {
+                  "candidate": {
+                    "accepted": true,
+                    "evidence_pointers_present": true,
+                    "exact": true,
+                    "unverified_or_wrong": false,
+                    "useful": true
+                  },
+                  "exact_text_control": {
+                    "accepted": false,
+                    "evidence_pointers_present": false,
+                    "exact": false,
+                    "unverified_or_wrong": false,
+                    "useful": false
+                  },
+                  "without_new_relation_ablation": {
+                    "accepted": true,
+                    "evidence_pointers_present": true,
+                    "exact": true,
+                    "unverified_or_wrong": false,
+                    "useful": true
+                  }
+                },
+                "novel_to_baseline": false,
+                "relation_id": "repair"
+              }
+            ],
+            "history_group_id": "dev-y"
+          }
+        ],
+        "limits": [
+          "Input gold and source permission are not independently verified here.",
+          "Evidence pointers record structure only; access needs P18/P20 receipts.",
+          "Development confidence intervals do not establish pilot acceptance."
+        ],
+        "methods": [
+          "candidate",
+          "exact_text_control",
+          "without_new_relation_ablation"
+        ],
+        "newly_trained_relation_ids": [
+          "illuminate"
+        ],
+        "paired_candidate_minus_ablation": {
+          "bootstrap_repeats": 2000,
+          "bootstrap_seed": 2209,
+          "independent_groups": 2,
+          "loser_groups": 0,
+          "mean_difference": 0.5,
+          "percentile_95_lower": 0.5,
+          "percentile_95_upper": 0.5,
+          "tie_groups": 0,
+          "warning": "Few groups can collapse the bootstrap interval.",
+          "win_fraction_wilson_95_non_ties": [
+            0.34238022750665303,
+            1.0
+          ],
+          "winner_groups": 2
+        },
+        "paired_candidate_minus_baseline": {
+          "bootstrap_repeats": 2000,
+          "bootstrap_seed": 2209,
+          "independent_groups": 2,
+          "loser_groups": 0,
+          "mean_difference": 1.0,
+          "percentile_95_lower": 1.0,
+          "percentile_95_upper": 1.0,
+          "tie_groups": 0,
+          "warning": "Few groups can collapse the bootstrap interval.",
+          "win_fraction_wilson_95_non_ties": [
+            0.34238022750665303,
+            1.0
+          ],
+          "winner_groups": 2
+        },
+        "per_method": {
+          "candidate": {
+            "accepted_cases": 4,
+            "accepted_group_risk_upper_95": 0.6576197724933469,
+            "accepted_groups": 2,
+            "cases": 4,
+            "exact_cases": 4,
+            "independent_groups": 2,
+            "new_relation_cases": 2,
+            "new_relation_exact_cases": 2,
+            "unverified_or_wrong_accepted_groups": 0,
+            "useful_group_fraction": 1.0,
+            "useful_group_wilson_95": [
+              0.34238022750665303,
+              1.0
+            ],
+            "useful_groups": 2
+          },
+          "exact_text_control": {
+            "accepted_cases": 0,
+            "accepted_group_risk_upper_95": null,
+            "accepted_groups": 0,
+            "cases": 4,
+            "exact_cases": 0,
+            "independent_groups": 2,
+            "new_relation_cases": 2,
+            "new_relation_exact_cases": 0,
+            "unverified_or_wrong_accepted_groups": 0,
+            "useful_group_fraction": 0.0,
+            "useful_group_wilson_95": [
+              0.0,
+              0.6576197724933469
+            ],
+            "useful_groups": 0
+          },
+          "without_new_relation_ablation": {
+            "accepted_cases": 2,
+            "accepted_group_risk_upper_95": 0.6576197724933469,
+            "accepted_groups": 2,
+            "cases": 4,
+            "exact_cases": 2,
+            "independent_groups": 2,
+            "new_relation_cases": 2,
+            "new_relation_exact_cases": 0,
+            "unverified_or_wrong_accepted_groups": 0,
+            "useful_group_fraction": 0.0,
+            "useful_group_wilson_95": [
+              0.0,
+              0.6576197724933469
+            ],
+            "useful_groups": 0
+          }
+        },
+        "run_id": "da790e33f1c94b1b98e8780f990d5119",
+        "schema": "ai2-p22-open-grouped-v1",
+        "split": "development",
+        "status": "open_diagnostic_not_independent_pilot",
+        "trained_history_groups": [
+          "train-a",
+          "train-b",
+          "train-c",
+          "train-d"
+        ],
+        "unit": "history_group"
+      },
+      "run_id": "da790e33f1c94b1b98e8780f990d5119",
+      "source_revision": {
+        "git_head": "41bd291d134ebcbc9238d8654d6a7e82d62373db",
+        "git_tree": "d6d2958f891847e0f850511dab79ff29f8ead252",
+        "runner_sha256": "40496a3c5c1b4d94ae9433eb303245b658b667d940715a6ead5940334cf7ae30",
+        "scorer_sha256": "1d43cbc5b96fc232a77d860885215675580f7ca2287587ac3704eafb4bfd531a",
+        "semantic_source_sha256": "93fb7face1b929a3601eb022ae2b884fce0a596cdc0da10fbec9c64bb33f6373",
+        "worktree_dirty": false
+      },
+      "started_at": "2026-09-23T06:41:11.670719+00:00",
+      "status": "finished"
+    },
+    {
+      "error": null,
+      "result": {
+        "cost": {
+          "machine": "x86_64",
+          "process_cpu_seconds": 0.004253773000000016,
+          "process_peak_rss_kib": 28232,
+          "python": "3.12.14",
+          "wall_seconds": 0.004253709001204697
+        },
+        "fingerprints": {
+          "ablation_model_sha256": "8925100c80a5bf262befc7360038a21fabc1ebc15b5230270b8fbaeb4b18462a",
+          "candidate_model_sha256": "7b2a7b1b08baef468981edca3266eb653e8923ad410a7765aab9500d378cc476",
+          "fixture_sha256": "95ff2e4df6c622d20a4bb954414995c8674f8a7ee5e2e3dc27ee02a19bba5a6f",
+          "git_head": "5e4876b7d9e2aa8511a92687b6354c4744b437eb",
+          "git_tree": "e9ba6ca0d583a663e844d94c7c0d76a278e2068c",
+          "plan_sha256": "a92c03c166b666e18b07d320c621982cfe352cb10e948bbbf5e594756f33a964",
+          "runner_sha256": "667c194626fce433e80955f7595a8f1e13dd354083938a635cab511c15e19b82",
+          "scorer_sha256": "1d43cbc5b96fc232a77d860885215675580f7ca2287587ac3704eafb4bfd531a",
+          "semantic_source_sha256": "93fb7face1b929a3601eb022ae2b884fce0a596cdc0da10fbec9c64bb33f6373",
+          "worktree_dirty": false
+        },
+        "groups": [
+          {
+            "cases": [
+              {
+                "case_id": "dev-0",
+                "gold_claims": [
+                  "illuminate|actor=вера|target=двор"
+                ],
+                "methods": {
+                  "candidate": {
+                    "accepted": true,
+                    "evidence_pointers_present": true,
+                    "exact": true,
+                    "unverified_or_wrong": false,
+                    "useful": true
+                  },
+                  "exact_text_control": {
+                    "accepted": false,
+                    "evidence_pointers_present": false,
+                    "exact": false,
+                    "unverified_or_wrong": false,
+                    "useful": false
+                  },
+                  "without_new_relation_ablation": {
+                    "accepted": false,
+                    "evidence_pointers_present": false,
+                    "exact": false,
+                    "unverified_or_wrong": false,
+                    "useful": false
+                  }
+                },
+                "novel_to_baseline": true,
+                "relation_id": "illuminate"
+              },
+              {
+                "case_id": "dev-1",
+                "gold_claims": [
+                  "repair|actor=вера|object=датчик"
+                ],
+                "methods": {
+                  "candidate": {
+                    "accepted": true,
+                    "evidence_pointers_present": true,
+                    "exact": true,
+                    "unverified_or_wrong": false,
+                    "useful": true
+                  },
+                  "exact_text_control": {
+                    "accepted": false,
+                    "evidence_pointers_present": false,
+                    "exact": false,
+                    "unverified_or_wrong": false,
+                    "useful": false
+                  },
+                  "without_new_relation_ablation": {
+                    "accepted": true,
+                    "evidence_pointers_present": true,
+                    "exact": true,
+                    "unverified_or_wrong": false,
+                    "useful": true
+                  }
+                },
+                "novel_to_baseline": false,
+                "relation_id": "repair"
+              }
+            ],
+            "history_group_id": "dev-x"
+          },
+          {
+            "cases": [
+              {
+                "case_id": "dev-2",
+                "gold_claims": [
+                  "illuminate|actor=олег|target=цех"
+                ],
+                "methods": {
+                  "candidate": {
+                    "accepted": true,
+                    "evidence_pointers_present": true,
+                    "exact": true,
+                    "unverified_or_wrong": false,
+                    "useful": true
+                  },
+                  "exact_text_control": {
+                    "accepted": false,
+                    "evidence_pointers_present": false,
+                    "exact": false,
+                    "unverified_or_wrong": false,
+                    "useful": false
+                  },
+                  "without_new_relation_ablation": {
+                    "accepted": false,
+                    "evidence_pointers_present": false,
+                    "exact": false,
+                    "unverified_or_wrong": false,
+                    "useful": false
+                  }
+                },
+                "novel_to_baseline": true,
+                "relation_id": "illuminate"
+              },
+              {
+                "case_id": "dev-3",
+                "gold_claims": [
+                  "repair|actor=олег|object=станок"
+                ],
+                "methods": {
+                  "candidate": {
+                    "accepted": true,
+                    "evidence_pointers_present": true,
+                    "exact": true,
+                    "unverified_or_wrong": false,
+                    "useful": true
+                  },
+                  "exact_text_control": {
+                    "accepted": false,
+                    "evidence_pointers_present": false,
+                    "exact": false,
+                    "unverified_or_wrong": false,
+                    "useful": false
+                  },
+                  "without_new_relation_ablation": {
+                    "accepted": true,
+                    "evidence_pointers_present": true,
+                    "exact": true,
+                    "unverified_or_wrong": false,
+                    "useful": true
+                  }
+                },
+                "novel_to_baseline": false,
+                "relation_id": "repair"
+              }
+            ],
+            "history_group_id": "dev-y"
+          }
+        ],
+        "limits": [
+          "Input gold and source permission are not independently verified here.",
+          "Evidence pointers record structure only; access needs P18/P20 receipts.",
+          "Development confidence intervals do not establish pilot acceptance."
+        ],
+        "methods": [
+          "candidate",
+          "exact_text_control",
+          "without_new_relation_ablation"
+        ],
+        "newly_trained_relation_ids": [
+          "illuminate"
+        ],
+        "paired_candidate_minus_ablation": {
+          "bootstrap_repeats": 2000,
+          "bootstrap_seed": 2209,
+          "independent_groups": 2,
+          "loser_groups": 0,
+          "mean_difference": 0.5,
+          "percentile_95_lower": 0.5,
+          "percentile_95_upper": 0.5,
+          "tie_groups": 0,
+          "warning": "Few groups can collapse the bootstrap interval.",
+          "win_fraction_wilson_95_non_ties": [
+            0.34238022750665303,
+            1.0
+          ],
+          "winner_groups": 2
+        },
+        "paired_candidate_minus_baseline": {
+          "bootstrap_repeats": 2000,
+          "bootstrap_seed": 2209,
+          "independent_groups": 2,
+          "loser_groups": 0,
+          "mean_difference": 1.0,
+          "percentile_95_lower": 1.0,
+          "percentile_95_upper": 1.0,
+          "tie_groups": 0,
+          "warning": "Few groups can collapse the bootstrap interval.",
+          "win_fraction_wilson_95_non_ties": [
+            0.34238022750665303,
+            1.0
+          ],
+          "winner_groups": 2
+        },
+        "per_method": {
+          "candidate": {
+            "accepted_cases": 4,
+            "accepted_group_risk_upper_95": 0.6576197724933469,
+            "accepted_groups": 2,
+            "cases": 4,
+            "exact_cases": 4,
+            "independent_groups": 2,
+            "new_relation_cases": 2,
+            "new_relation_exact_cases": 2,
+            "unverified_or_wrong_accepted_groups": 0,
+            "useful_group_fraction": 1.0,
+            "useful_group_wilson_95": [
+              0.34238022750665303,
+              1.0
+            ],
+            "useful_groups": 2
+          },
+          "exact_text_control": {
+            "accepted_cases": 0,
+            "accepted_group_risk_upper_95": null,
+            "accepted_groups": 0,
+            "cases": 4,
+            "exact_cases": 0,
+            "independent_groups": 2,
+            "new_relation_cases": 2,
+            "new_relation_exact_cases": 0,
+            "unverified_or_wrong_accepted_groups": 0,
+            "useful_group_fraction": 0.0,
+            "useful_group_wilson_95": [
+              0.0,
+              0.6576197724933469
+            ],
+            "useful_groups": 0
+          },
+          "without_new_relation_ablation": {
+            "accepted_cases": 2,
+            "accepted_group_risk_upper_95": 0.6576197724933469,
+            "accepted_groups": 2,
+            "cases": 4,
+            "exact_cases": 2,
+            "independent_groups": 2,
+            "new_relation_cases": 2,
+            "new_relation_exact_cases": 0,
+            "unverified_or_wrong_accepted_groups": 0,
+            "useful_group_fraction": 0.0,
+            "useful_group_wilson_95": [
+              0.0,
+              0.6576197724933469
+            ],
+            "useful_groups": 0
+          }
+        },
+        "run_id": "5bb215c5dde34afaa4c23ff92b9223b6",
+        "schema": "ai2-p22-open-grouped-v1",
+        "split": "development",
+        "status": "open_diagnostic_not_independent_pilot",
+        "trained_history_groups": [
+          "train-a",
+          "train-b",
+          "train-c",
+          "train-d"
+        ],
+        "unit": "history_group"
+      },
+      "run_id": "5bb215c5dde34afaa4c23ff92b9223b6",
+      "source_revision": {
+        "git_head": "5e4876b7d9e2aa8511a92687b6354c4744b437eb",
+        "git_tree": "e9ba6ca0d583a663e844d94c7c0d76a278e2068c",
+        "runner_sha256": "667c194626fce433e80955f7595a8f1e13dd354083938a635cab511c15e19b82",
+        "scorer_sha256": "1d43cbc5b96fc232a77d860885215675580f7ca2287587ac3704eafb4bfd531a",
+        "semantic_source_sha256": "93fb7face1b929a3601eb022ae2b884fce0a596cdc0da10fbec9c64bb33f6373",
+        "worktree_dirty": false
+      },
+      "started_at": "2026-09-23T06:43:07.522406+00:00",
+      "status": "finished"
+    }
+  ],
+  "schema": "ai2-p22-all-attempts-v1"
+}

@@ -31,6 +31,10 @@ class RealDataEngine:
     def state_version(self) -> str:
         return f"real-data-state-{self._revision}"
 
+    def is_superseded(self, claim_id: str) -> bool:
+        """Return whether an addressed correction replaced this historical claim."""
+        return claim_id in self._corrections
+
     def _changed(self) -> None:
         self._revision += 1
 
