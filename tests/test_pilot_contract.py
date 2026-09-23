@@ -6,10 +6,13 @@ import copy
 import json
 import unittest
 from pathlib import Path
+from runpy import run_path
 
-from scripts.validate_pilot_contract import REQUIRED_DECISIONS, validate_contract
-
-CONTRACT = Path(__file__).resolve().parents[1] / "docs/real_data/pilot_contract.yaml"
+ROOT = Path(__file__).resolve().parents[1]
+VALIDATOR = run_path(str(ROOT / "scripts/validate_pilot_contract.py"))
+REQUIRED_DECISIONS = VALIDATOR["REQUIRED_DECISIONS"]
+validate_contract = VALIDATOR["validate_contract"]
+CONTRACT = ROOT / "docs/real_data/pilot_contract.yaml"
 
 
 class PilotContractTests(unittest.TestCase):
