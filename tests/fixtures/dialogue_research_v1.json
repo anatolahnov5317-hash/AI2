@@ -1,0 +1,124 @@
+{
+  "schema": "ai2-dialogue-research-open-v1",
+  "scope": "Author-written synthetic Russian diagnostics. Every split, including evaluation_open_held_out, is public and is not a P01/P22/P24 sealed test.",
+  "interface": "Only event.kind, source_id, version, text, query_id, principal and question are visible to a model. expected is evaluator-only and must never be passed to inference.",
+  "independence": "One primary query per story family. All revisions, repeated questions and restarts of that family stay in the same split and count as one independent group.",
+  "families": [
+    {
+      "family_id": "train_folder",
+      "split": "train_open",
+      "events": [
+        {"kind": "ingest", "source_id": "train_folder_note", "version": 1, "text": "Лена положила папку в шкаф."},
+        {"kind": "query", "query_id": "train_folder_initial", "question": "Где папка?", "expected": {"action": "answer", "fact": {"subject": "папка", "relation": "location", "value": "шкаф", "negated": false}, "evidence": [{"source_id": "train_folder_note", "version": 1, "quote": "Лена положила папку в шкаф."}]}},
+        {"kind": "ingest", "source_id": "train_folder_note", "version": 2, "text": "Исправление: папку положили в ящик, а не в шкаф."},
+        {"kind": "query", "query_id": "train_folder_primary", "question": "Где сейчас папка?", "expected": {"action": "answer", "fact": {"subject": "папка", "relation": "location", "value": "ящик", "negated": false}, "evidence": [{"source_id": "train_folder_note", "version": 2, "quote": "папку положили в ящик"}], "primary": true}},
+        {"kind": "restart"},
+        {"kind": "query", "query_id": "train_folder_after_restart", "question": "Где папка после исправления?", "expected": {"action": "answer", "fact": {"subject": "папка", "relation": "location", "value": "ящик", "negated": false}, "evidence": [{"source_id": "train_folder_note", "version": 2, "quote": "папку положили в ящик"}]}}
+      ]
+    },
+    {
+      "family_id": "train_transfer",
+      "split": "train_open",
+      "events": [
+        {"kind": "ingest", "source_id": "train_transfer_note", "version": 1, "text": "Ира передала схему Павлу."},
+        {"kind": "query", "query_id": "train_transfer_initial", "question": "Кому Ира передала схему?", "expected": {"action": "answer", "fact": {"subject": "Ира", "relation": "transfer_to", "object": "схема", "value": "Павел", "negated": false}, "evidence": [{"source_id": "train_transfer_note", "version": 1, "quote": "Ира передала схему Павлу."}]}},
+        {"kind": "ingest", "source_id": "train_transfer_note", "version": 2, "text": "Исправление: Ира не передала схему Павлу; схема осталась у Иры."},
+        {"kind": "query", "query_id": "train_transfer_primary", "question": "Передала ли Ира схему Павлу?", "expected": {"action": "answer", "fact": {"subject": "Ира", "relation": "transfer_to", "object": "схема", "value": "Павел", "negated": true}, "evidence": [{"source_id": "train_transfer_note", "version": 2, "quote": "Ира не передала схему Павлу"}], "primary": true}}
+      ]
+    },
+    {
+      "family_id": "dev_two_keys",
+      "split": "development_open",
+      "events": [
+        {"kind": "ingest", "source_id": "dev_two_keys_m1", "version": 1, "text": "Первый ключ лежит в синем ящике. Второй ключ лежит в сером ящике."},
+        {"kind": "query", "query_id": "dev_two_keys_initial", "question": "Где второй ключ?", "expected": {"action": "answer", "fact": {"subject": "второй ключ", "relation": "location", "value": "серый ящик", "negated": false}, "evidence": [{"source_id": "dev_two_keys_m1", "version": 1, "quote": "Второй ключ лежит в сером ящике."}]}},
+        {"kind": "ingest", "source_id": "dev_two_keys_m2", "version": 1, "text": "Второй ключ переложили в белый ящик."},
+        {"kind": "query", "query_id": "dev_two_keys_primary", "question": "Где теперь второй ключ?", "expected": {"action": "answer", "fact": {"subject": "второй ключ", "relation": "location", "value": "белый ящик", "negated": false}, "evidence": [{"source_id": "dev_two_keys_m2", "version": 1, "quote": "Второй ключ переложили в белый ящик."}], "primary": true}},
+        {"kind": "query", "query_id": "dev_two_keys_other", "question": "А где первый ключ?", "expected": {"action": "answer", "fact": {"subject": "первый ключ", "relation": "location", "value": "синий ящик", "negated": false}, "evidence": [{"source_id": "dev_two_keys_m1", "version": 1, "quote": "Первый ключ лежит в синем ящике."}]}}
+      ]
+    },
+    {
+      "family_id": "dev_role_reversal",
+      "split": "development_open",
+      "events": [
+        {"kind": "ingest", "source_id": "dev_role_reversal_m1", "version": 1, "text": "Рита передала карту Борису."},
+        {"kind": "query", "query_id": "dev_role_reversal_initial", "question": "Кто получил карту?", "expected": {"action": "answer", "fact": {"subject": "карта", "relation": "recipient", "value": "Борис", "negated": false}, "evidence": [{"source_id": "dev_role_reversal_m1", "version": 1, "quote": "Рита передала карту Борису."}]}},
+        {"kind": "ingest", "source_id": "dev_role_reversal_m2", "version": 1, "text": "Нет, всё было наоборот: Борис передал карту Рите."},
+        {"kind": "query", "query_id": "dev_role_reversal_primary", "question": "Кто на самом деле получил карту?", "expected": {"action": "answer", "fact": {"subject": "карта", "relation": "recipient", "value": "Рита", "negated": false}, "evidence": [{"source_id": "dev_role_reversal_m2", "version": 1, "quote": "Борис передал карту Рите."}], "primary": true}},
+        {"kind": "query", "query_id": "dev_role_reversal_sender", "question": "А кто её передал?", "expected": {"action": "answer", "fact": {"subject": "карта", "relation": "sender", "value": "Борис", "negated": false}, "evidence": [{"source_id": "dev_role_reversal_m2", "version": 1, "quote": "Борис передал карту Рите."}]}}
+      ]
+    },
+    {
+      "family_id": "dev_not_sent",
+      "split": "development_open",
+      "events": [
+        {"kind": "ingest", "source_id": "dev_not_sent_v1", "version": 1, "text": "Тамара передала ключ Петру."},
+        {"kind": "ingest", "source_id": "dev_not_sent_v2", "version": 1, "text": "Уточнение к предыдущей записи: Тамара НЕ передала ключ Петру, ключ остался у неё."},
+        {"kind": "query", "query_id": "dev_not_sent_primary", "question": "Передала ли Тамара ключ Петру?", "expected": {"action": "answer", "fact": {"subject": "Тамара", "relation": "transfer_to", "object": "ключ", "value": "Пётр", "negated": true}, "evidence": [{"source_id": "dev_not_sent_v2", "version": 1, "quote": "Тамара НЕ передала ключ Петру"}], "primary": true}},
+        {"kind": "query", "query_id": "dev_not_sent_location", "question": "У кого остался ключ?", "expected": {"action": "answer", "fact": {"subject": "ключ", "relation": "holder", "value": "Тамара", "negated": false}, "evidence": [{"source_id": "dev_not_sent_v2", "version": 1, "quote": "ключ остался у неё"}]}}
+      ]
+    },
+    {
+      "family_id": "eval_new_names_coreference",
+      "split": "evaluation_open_held_out",
+      "events": [
+        {"kind": "ingest", "source_id": "eval_coref_m1", "version": 1, "text": "Жасмин повесила пропуск на крючок."},
+        {"kind": "ingest", "source_id": "eval_coref_m2", "version": 1, "text": "Рядом стояла лампа. Она погасла."},
+        {"kind": "ingest", "source_id": "eval_coref_m3", "version": 1, "text": "Потом Жасмин убрала пропуск в ящик."},
+        {"kind": "query", "query_id": "eval_coref_primary", "question": "Где теперь пропуск?", "expected": {"action": "answer", "fact": {"subject": "пропуск", "relation": "location", "value": "ящик", "negated": false}, "evidence": [{"source_id": "eval_coref_m3", "version": 1, "quote": "Жасмин убрала пропуск в ящик."}], "primary": true}},
+        {"kind": "query", "query_id": "eval_coref_unrelated", "question": "Что произошло с лампой?", "expected": {"action": "answer", "fact": {"subject": "лампа", "relation": "state", "value": "погасла", "negated": false}, "evidence": [{"source_id": "eval_coref_m2", "version": 1, "quote": "Она погасла."}]}}
+      ]
+    },
+    {
+      "family_id": "eval_ambiguous_keys",
+      "split": "evaluation_open_held_out",
+      "events": [
+        {"kind": "ingest", "source_id": "eval_keys_m1", "version": 1, "text": "Первый ключ лежит на столе. Второй ключ лежит в ящике."},
+        {"kind": "ingest", "source_id": "eval_keys_m2", "version": 1, "text": "Потом Женя забрал его."},
+        {"kind": "query", "query_id": "eval_keys_primary", "question": "Какой ключ теперь у Жени?", "expected": {"action": "ask_clarification", "reason": "ambiguous_key_reference", "required_slot": "which_key_was_taken", "evidence": [], "primary": true}},
+        {"kind": "ingest", "source_id": "eval_keys_m3", "version": 1, "text": "Уточняю: Женя забрал второй ключ."},
+        {"kind": "query", "query_id": "eval_keys_after_clarification", "question": "Какой ключ у Жени?", "expected": {"action": "answer", "fact": {"subject": "второй ключ", "relation": "holder", "value": "Женя", "negated": false}, "evidence": [{"source_id": "eval_keys_m3", "version": 1, "quote": "Женя забрал второй ключ."}]}},
+        {"kind": "query", "query_id": "eval_keys_first_unchanged", "question": "Где первый ключ?", "expected": {"action": "answer", "fact": {"subject": "первый ключ", "relation": "location", "value": "стол", "negated": false}, "evidence": [{"source_id": "eval_keys_m1", "version": 1, "quote": "Первый ключ лежит на столе."}]}}
+      ]
+    },
+    {
+      "family_id": "eval_revocation",
+      "split": "evaluation_open_held_out",
+      "events": [
+        {"kind": "ingest", "source_id": "eval_revoked_report", "version": 1, "text": "Семён записал в отчёте номер 42."},
+        {"kind": "query", "query_id": "eval_revocation_before", "question": "Какой номер записал Семён?", "expected": {"action": "answer", "fact": {"subject": "Семён", "relation": "recorded_number", "value": "42", "negated": false}, "evidence": [{"source_id": "eval_revoked_report", "version": 1, "quote": "Семён записал в отчёте номер 42."}]}},
+        {"kind": "revoke_source_family", "source_id": "eval_revoked_report"},
+        {"kind": "query", "query_id": "eval_revocation_primary", "question": "Какой номер записал Семён?", "expected": {"action": "abstain", "reason": "no_accessible_evidence", "evidence": [], "primary": true}},
+        {"kind": "restart"},
+        {"kind": "query", "query_id": "eval_revocation_after_restart", "question": "Какой номер записал Семён?", "expected": {"action": "abstain", "reason": "no_accessible_evidence", "evidence": []}},
+        {"kind": "ingest", "source_id": "eval_new_report", "version": 1, "text": "Новая записка Семёна: актуальный номер — 48."},
+        {"kind": "query", "query_id": "eval_revocation_new_source", "question": "Какой номер сейчас в записке Семёна?", "expected": {"action": "answer", "fact": {"subject": "Семён", "relation": "recorded_number", "value": "48", "negated": false}, "evidence": [{"source_id": "eval_new_report", "version": 1, "quote": "актуальный номер — 48."}]}}
+      ]
+    },
+    {
+      "family_id": "eval_indirect_revision_restart",
+      "split": "evaluation_open_held_out",
+      "events": [
+        {"kind": "ingest", "source_id": "eval_revision_m1", "version": 1, "text": "Кирилл положил отчёт в сейф."},
+        {"kind": "ingest", "source_id": "eval_revision_m2", "version": 1, "text": "Майя нашла пароль в записке."},
+        {"kind": "query", "query_id": "eval_revision_initial", "question": "Где отчёт?", "expected": {"action": "answer", "fact": {"subject": "отчёт", "relation": "location", "value": "сейф", "negated": false}, "evidence": [{"source_id": "eval_revision_m1", "version": 1, "quote": "Кирилл положил отчёт в сейф."}]}},
+        {"kind": "ingest", "source_id": "eval_revision_m3", "version": 1, "text": "Нет, отчёт лежал в портфеле. Я ошиблась насчёт сейфа."},
+        {"kind": "query", "query_id": "eval_revision_after_correction", "question": "Где отчёт после исправления?", "expected": {"action": "answer", "fact": {"subject": "отчёт", "relation": "location", "value": "портфель", "negated": false}, "evidence": [{"source_id": "eval_revision_m3", "version": 1, "quote": "отчёт лежал в портфеле"}]}},
+        {"kind": "restart"},
+        {"kind": "query", "query_id": "eval_revision_primary", "question": "Где теперь отчёт?", "expected": {"action": "answer", "fact": {"subject": "отчёт", "relation": "location", "value": "портфель", "negated": false}, "evidence": [{"source_id": "eval_revision_m3", "version": 1, "quote": "отчёт лежал в портфеле"}], "primary": true}},
+        {"kind": "query", "query_id": "eval_revision_unchanged", "question": "Где Майя нашла пароль?", "expected": {"action": "answer", "fact": {"subject": "пароль", "relation": "location", "value": "записка", "negated": false}, "evidence": [{"source_id": "eval_revision_m2", "version": 1, "quote": "Майя нашла пароль в записке."}]}}
+      ]
+    },
+    {
+      "family_id": "eval_negation_then_event",
+      "split": "evaluation_open_held_out",
+      "events": [
+        {"kind": "ingest", "source_id": "eval_letter_m1", "version": 1, "text": "Утром Роман не отправил письмо Нине: оно осталось в архиве."},
+        {"kind": "query", "query_id": "eval_letter_morning", "question": "Утром Роман отправил письмо Нине?", "expected": {"action": "answer", "fact": {"subject": "Роман", "relation": "sent_to", "object": "письмо", "value": "Нина", "event_time": "утро", "negated": true}, "evidence": [{"source_id": "eval_letter_m1", "version": 1, "quote": "Утром Роман не отправил письмо Нине"}]}},
+        {"kind": "ingest", "source_id": "eval_letter_m2", "version": 1, "text": "Вечером Роман всё-таки отправил письмо Нине."},
+        {"kind": "query", "query_id": "eval_letter_primary", "question": "В итоге Роман отправил письмо Нине?", "expected": {"action": "answer", "fact": {"subject": "Роман", "relation": "sent_to", "object": "письмо", "value": "Нина", "event_time": "вечер", "negated": false}, "evidence": [{"source_id": "eval_letter_m2", "version": 1, "quote": "Вечером Роман всё-таки отправил письмо Нине."}], "primary": true}},
+        {"kind": "query", "query_id": "eval_letter_still_morning", "question": "А утром он уже отправил письмо?", "expected": {"action": "answer", "fact": {"subject": "Роман", "relation": "sent_to", "object": "письмо", "value": "Нина", "event_time": "утро", "negated": true}, "evidence": [{"source_id": "eval_letter_m1", "version": 1, "quote": "Утром Роман не отправил письмо Нине"}]}}
+      ]
+    }
+  ]
+}

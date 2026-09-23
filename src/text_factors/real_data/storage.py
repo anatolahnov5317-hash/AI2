@@ -134,6 +134,29 @@ class TaskStatus:
     fingerprint: str
 
 
+@dataclass(frozen=True, slots=True)
+class RetrievalAccess:
+    """Consistent, read-only access view for choosing dialogue candidates.
+
+    This is only a retrieval filter. `publish_answer` still verifies grants,
+    revocations, revisions, and source bytes under its SQLite write lock.
+    """
+
+    allowed_scopes: tuple[str, ...]
+    revoked_sources: frozenset[tuple[str, int]]
+    revoked_source_families: frozenset[str]
+    pending_claim_ids: frozenset[str]
+    revision_epoch: int
+    task_status: str | None
+
+    def permits_source(self, source: SourceSlice) -> bool:
+        return (
+            source.access_scope in self.allowed_scopes
+            and (source.source_id, source.source_version) not in self.revoked_sources
+            and source.source_id not in self.revoked_source_families
+        )
+
+
 class OperationalStore:
     """SQLite access authority and idempotent journal, independent of bundles."""
 
@@ -318,6 +341,13 @@ class OperationalStore:
                 db.execute("SELECT epoch FROM revision_meta WHERE id=1").fetchone()[0]
             )
 
+    def active_state_version(self) -> str | None:
+        """Read the committed engine version without activating a checkpoint."""
+        with self._connection() as db:
+            return db.execute(
+                "SELECT state_version FROM revision_meta WHERE id=1"
+            ).fetchone()[0]
+
     def pending_claim_ids(self) -> tuple[str, ...]:
         with self._connection() as db:
             return tuple(
@@ -476,6 +506,83 @@ class OperationalStore:
                 "SELECT status,fingerprint FROM tasks WHERE request_id=?", (request_id,)
             ).fetchone()
         return None if row is None else TaskStatus(request_id, row[0], row[1])
+
+    def retrieval_access(
+        self,
+        principal_id: str,
+        requested_scopes: tuple[str, ...],
+        *,
+        request_id: str,
+        request_fingerprint: str,
+    ) -> RetrievalAccess:
+        """Read grants and revocations in one snapshot before selecting facts.
+
+        A matching prior request is visible only to its original principal.
+        This read does not authorize publication and creates no task entry.
+        """
+        _nonempty(principal_id, "principal_id")
+        _nonempty(request_id, "request_id")
+        _nonempty(request_fingerprint, "request_fingerprint")
+        if (
+            type(requested_scopes) is not tuple
+            or not requested_scopes
+            or any(type(scope) is not str or not scope for scope in requested_scopes)
+        ):
+            raise ValueError("requested_scopes must be a nonempty tuple of scopes")
+        with self._connection() as db:
+            db.execute("BEGIN")
+            try:
+                grants = {
+                    scope
+                    for (scope,) in db.execute(
+                        "SELECT scope FROM grants WHERE principal_id=?", (principal_id,)
+                    )
+                }
+                revoked_sources = frozenset(
+                    (source_id, version)
+                    for source_id, version in db.execute(
+                        "SELECT source_id,version FROM revoked_sources"
+                    )
+                )
+                revoked_families = frozenset(
+                    source_id
+                    for (source_id,) in db.execute(
+                        "SELECT source_id FROM revoked_source_families"
+                    )
+                )
+                pending_claim_ids = frozenset(
+                    claim_id
+                    for (claim_id,) in db.execute(
+                        "SELECT DISTINCT claim_id FROM pending_claims"
+                    )
+                )
+                epoch = int(
+                    db.execute("SELECT epoch FROM revision_meta WHERE id=1").fetchone()[
+                        0
+                    ]
+                )
+                task = db.execute(
+                    "SELECT fingerprint,principal_id,status FROM tasks "
+                    "WHERE request_id=?",
+                    (request_id,),
+                ).fetchone()
+            finally:
+                db.execute("ROLLBACK")
+        if task is not None and (task[0], task[1]) != (
+            request_fingerprint,
+            principal_id,
+        ):
+            raise StalePublication(
+                "request ID reused with different content or principal"
+            )
+        return RetrievalAccess(
+            allowed_scopes=tuple(sorted(grants.intersection(requested_scopes))),
+            revoked_sources=revoked_sources,
+            revoked_source_families=revoked_families,
+            pending_claim_ids=pending_claim_ids,
+            revision_epoch=epoch,
+            task_status=task[2] if task is not None else None,
+        )
 
     def begin_task(
         self, request_id: str, request_fingerprint: str, principal_id: str

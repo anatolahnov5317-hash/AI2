@@ -1,0 +1,17 @@
+{
+  "batch_size_limit": 20,
+  "batches_passed": 106,
+  "batches_total": 106,
+  "note": "Open local Python 3.12 suite; not an independent held-out real-data pilot.",
+  "peak_worker_rss_kib": 132820,
+  "python": "3.12.14",
+  "runner_sha256": "222332737974f1e84b5ef4abb9d012554c66d7fa0558a90710430e02efc6d38b",
+  "schema": "ai2-dialogue-full-suite-local-v1",
+  "source_sha256": "b2161bc1ece245a883c7caf36fa3f3e214a7798346f45aaf0d068e6449195b5c",
+  "sum_batch_wall_seconds": 216.01,
+  "test_statuses": {
+    "passed": 1091
+  },
+  "tests_total": 1091,
+  "timeout_seconds": 180.0
+}

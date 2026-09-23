@@ -1,0 +1,377 @@
+{
+  "schema": "ai2-dialogue-open-predictions-v1",
+  "attempt_id": "f8584f56c4474be69473f2f4fd9fe9ff",
+  "methods": [
+    {
+      "name": "connected_dialogue",
+      "status": "partial_selected_splits",
+      "costs": {
+        "selected_splits": [
+          "development_open",
+          "train_open"
+        ],
+        "reviewer_supplied": false,
+        "restarter_supplied": false,
+        "training_cpu_seconds": null,
+        "annotation_minutes": null
+      },
+      "predictions": [
+        {
+          "family_id": "train_folder",
+          "query_id": "train_folder_initial",
+          "action": "ask_clarification",
+          "raw_status": "clarify",
+          "answer_text": "",
+          "fact": null,
+          "evidence": [],
+          "human_supported": null,
+          "human_appropriate": null,
+          "pending_review": true,
+          "clarification": "Уточните объект и тип вопроса.",
+          "claim_ids": [],
+          "latency_ms": 0.3813639996224083,
+          "peak_rss_kib": 29844
+        },
+        {
+          "family_id": "train_folder",
+          "query_id": "train_folder_primary",
+          "action": "ask_clarification",
+          "raw_status": "clarify",
+          "answer_text": "",
+          "fact": null,
+          "evidence": [],
+          "human_supported": null,
+          "human_appropriate": null,
+          "pending_review": true,
+          "clarification": "Уточните объект и тип вопроса.",
+          "claim_ids": [],
+          "latency_ms": 0.4935100005241111,
+          "peak_rss_kib": 30100
+        },
+        {
+          "family_id": "train_folder",
+          "query_id": "train_folder_after_restart",
+          "action": "unsupported",
+          "answer_text": "",
+          "fact": null,
+          "evidence": [],
+          "human_supported": null,
+          "human_appropriate": null,
+          "pending_review": true,
+          "error": "restart not implemented by this runner",
+          "latency_ms": 0.0012220007192809135,
+          "peak_rss_kib": 30100
+        },
+        {
+          "family_id": "train_transfer",
+          "query_id": "train_transfer_initial",
+          "action": "ask_clarification",
+          "raw_status": "clarify",
+          "answer_text": "",
+          "fact": null,
+          "evidence": [],
+          "human_supported": null,
+          "human_appropriate": null,
+          "pending_review": true,
+          "clarification": "Уточните объект и тип вопроса.",
+          "claim_ids": [],
+          "latency_ms": 0.37255100323818624,
+          "peak_rss_kib": 30228
+        },
+        {
+          "family_id": "train_transfer",
+          "query_id": "train_transfer_primary",
+          "action": "ask_clarification",
+          "raw_status": "clarify",
+          "answer_text": "",
+          "fact": null,
+          "evidence": [],
+          "human_supported": null,
+          "human_appropriate": null,
+          "pending_review": true,
+          "clarification": "Уточните объект и тип вопроса.",
+          "claim_ids": [],
+          "latency_ms": 0.3927910001948476,
+          "peak_rss_kib": 30356
+        },
+        {
+          "family_id": "dev_two_keys",
+          "query_id": "dev_two_keys_initial",
+          "action": "ask_clarification",
+          "raw_status": "clarify",
+          "answer_text": "",
+          "fact": null,
+          "evidence": [],
+          "human_supported": null,
+          "human_appropriate": null,
+          "pending_review": true,
+          "clarification": "Уточните объект и тип вопроса.",
+          "claim_ids": [],
+          "latency_ms": 0.3589209991332609,
+          "peak_rss_kib": 30356
+        },
+        {
+          "family_id": "dev_two_keys",
+          "query_id": "dev_two_keys_primary",
+          "action": "ask_clarification",
+          "raw_status": "clarify",
+          "answer_text": "",
+          "fact": null,
+          "evidence": [],
+          "human_supported": null,
+          "human_appropriate": null,
+          "pending_review": true,
+          "clarification": "Уточните объект и тип вопроса.",
+          "claim_ids": [],
+          "latency_ms": 0.3159970001433976,
+          "peak_rss_kib": 30356
+        },
+        {
+          "family_id": "dev_two_keys",
+          "query_id": "dev_two_keys_other",
+          "action": "ask_clarification",
+          "raw_status": "clarify",
+          "answer_text": "",
+          "fact": null,
+          "evidence": [],
+          "human_supported": null,
+          "human_appropriate": null,
+          "pending_review": true,
+          "clarification": "Уточните объект и тип вопроса.",
+          "claim_ids": [],
+          "latency_ms": 0.4012540011899546,
+          "peak_rss_kib": 30356
+        },
+        {
+          "family_id": "dev_role_reversal",
+          "query_id": "dev_role_reversal_initial",
+          "action": "ask_clarification",
+          "raw_status": "clarify",
+          "answer_text": "",
+          "fact": null,
+          "evidence": [],
+          "human_supported": null,
+          "human_appropriate": null,
+          "pending_review": true,
+          "clarification": "Уточните объект и тип вопроса.",
+          "claim_ids": [],
+          "latency_ms": 0.36415900103747845,
+          "peak_rss_kib": 30636
+        },
+        {
+          "family_id": "dev_role_reversal",
+          "query_id": "dev_role_reversal_primary",
+          "action": "ask_clarification",
+          "raw_status": "clarify",
+          "answer_text": "",
+          "fact": null,
+          "evidence": [],
+          "human_supported": null,
+          "human_appropriate": null,
+          "pending_review": true,
+          "clarification": "Уточните объект и тип вопроса.",
+          "claim_ids": [],
+          "latency_ms": 0.7088890015438665,
+          "peak_rss_kib": 30636
+        },
+        {
+          "family_id": "dev_role_reversal",
+          "query_id": "dev_role_reversal_sender",
+          "action": "ask_clarification",
+          "raw_status": "clarify",
+          "answer_text": "",
+          "fact": null,
+          "evidence": [],
+          "human_supported": null,
+          "human_appropriate": null,
+          "pending_review": true,
+          "clarification": "Уточните объект и тип вопроса.",
+          "claim_ids": [],
+          "latency_ms": 0.4459790034161415,
+          "peak_rss_kib": 30636
+        },
+        {
+          "family_id": "dev_not_sent",
+          "query_id": "dev_not_sent_primary",
+          "action": "ask_clarification",
+          "raw_status": "clarify",
+          "answer_text": "",
+          "fact": null,
+          "evidence": [],
+          "human_supported": null,
+          "human_appropriate": null,
+          "pending_review": true,
+          "clarification": "Уточните объект и тип вопроса.",
+          "claim_ids": [],
+          "latency_ms": 0.501370999700157,
+          "peak_rss_kib": 30892
+        },
+        {
+          "family_id": "dev_not_sent",
+          "query_id": "dev_not_sent_location",
+          "action": "ask_clarification",
+          "raw_status": "clarify",
+          "answer_text": "",
+          "fact": null,
+          "evidence": [],
+          "human_supported": null,
+          "human_appropriate": null,
+          "pending_review": true,
+          "clarification": "Уточните объект и тип вопроса.",
+          "claim_ids": [],
+          "latency_ms": 0.31420500090462156,
+          "peak_rss_kib": 30892
+        }
+      ],
+      "diagnostics": [
+        {
+          "family_id": "train_folder",
+          "event": {
+            "kind": "ingest",
+            "source_id": "train_folder_note",
+            "version": 1,
+            "text": "Лена положила папку в шкаф."
+          },
+          "status": "imported",
+          "proposals": 0,
+          "reviewed": 0,
+          "pending_review": true,
+          "unexplained_spans": 1
+        },
+        {
+          "family_id": "train_folder",
+          "event": {
+            "kind": "ingest",
+            "source_id": "train_folder_note",
+            "version": 2,
+            "text": "Исправление: папку положили в ящик, а не в шкаф."
+          },
+          "status": "imported",
+          "proposals": 0,
+          "reviewed": 0,
+          "pending_review": true,
+          "unexplained_spans": 1
+        },
+        {
+          "family_id": "train_folder",
+          "event": {
+            "kind": "restart"
+          },
+          "status": "unsupported_no_checkpoint_restarter"
+        },
+        {
+          "family_id": "train_transfer",
+          "event": {
+            "kind": "ingest",
+            "source_id": "train_transfer_note",
+            "version": 1,
+            "text": "Ира передала схему Павлу."
+          },
+          "status": "imported",
+          "proposals": 1,
+          "reviewed": 0,
+          "pending_review": true,
+          "unexplained_spans": 3
+        },
+        {
+          "family_id": "train_transfer",
+          "event": {
+            "kind": "ingest",
+            "source_id": "train_transfer_note",
+            "version": 2,
+            "text": "Исправление: Ира не передала схему Павлу; схема осталась у Иры."
+          },
+          "status": "imported",
+          "proposals": 1,
+          "reviewed": 0,
+          "pending_review": true,
+          "unexplained_spans": 5
+        },
+        {
+          "family_id": "dev_two_keys",
+          "event": {
+            "kind": "ingest",
+            "source_id": "dev_two_keys_m1",
+            "version": 1,
+            "text": "Первый ключ лежит в синем ящике. Второй ключ лежит в сером ящике."
+          },
+          "status": "imported",
+          "proposals": 0,
+          "reviewed": 0,
+          "pending_review": true,
+          "unexplained_spans": 2
+        },
+        {
+          "family_id": "dev_two_keys",
+          "event": {
+            "kind": "ingest",
+            "source_id": "dev_two_keys_m2",
+            "version": 1,
+            "text": "Второй ключ переложили в белый ящик."
+          },
+          "status": "imported",
+          "proposals": 0,
+          "reviewed": 0,
+          "pending_review": true,
+          "unexplained_spans": 1
+        },
+        {
+          "family_id": "dev_role_reversal",
+          "event": {
+            "kind": "ingest",
+            "source_id": "dev_role_reversal_m1",
+            "version": 1,
+            "text": "Рита передала карту Борису."
+          },
+          "status": "imported",
+          "proposals": 1,
+          "reviewed": 0,
+          "pending_review": true,
+          "unexplained_spans": 2
+        },
+        {
+          "family_id": "dev_role_reversal",
+          "event": {
+            "kind": "ingest",
+            "source_id": "dev_role_reversal_m2",
+            "version": 1,
+            "text": "Нет, всё было наоборот: Борис передал карту Рите."
+          },
+          "status": "imported",
+          "proposals": 1,
+          "reviewed": 0,
+          "pending_review": true,
+          "unexplained_spans": 6
+        },
+        {
+          "family_id": "dev_not_sent",
+          "event": {
+            "kind": "ingest",
+            "source_id": "dev_not_sent_v1",
+            "version": 1,
+            "text": "Тамара передала ключ Петру."
+          },
+          "status": "imported",
+          "proposals": 1,
+          "reviewed": 0,
+          "pending_review": true,
+          "unexplained_spans": 2
+        },
+        {
+          "family_id": "dev_not_sent",
+          "event": {
+            "kind": "ingest",
+            "source_id": "dev_not_sent_v2",
+            "version": 1,
+            "text": "Уточнение к предыдущей записи: Тамара НЕ передала ключ Петру, ключ остался у неё."
+          },
+          "status": "imported",
+          "proposals": 1,
+          "reviewed": 0,
+          "pending_review": true,
+          "unexplained_spans": 11
+        }
+      ]
+    }
+  ]
+}

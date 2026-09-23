@@ -19,7 +19,8 @@ from .contracts import AnswerReceipt, Claim, ClaimStatus, SourceSlice
 from .engine import RealDataEngine
 
 if TYPE_CHECKING:
-    from .storage import OperationalStore
+    from .question_language import QueryHypothesis
+    from .storage import OperationalStore, RetrievalAccess
 
 
 def _id(value: str, name: str) -> str:
@@ -154,9 +155,9 @@ class GroundedDialogue:
     def _no_answer(
         self, status: str, clarification: str | None = None
     ) -> DialogueAnswer:
-        return DialogueAnswer(
-            status, self.engine.state_version, clarification=clarification
-        )
+        # A global engine version also changes when unrelated private claims
+        # change; no-answer responses have no citeable state to expose.
+        return DialogueAnswer(status, "", clarification=clarification)
 
     def _read_quote(self, claim: Claim) -> VerifiedQuote:
         if claim.source is None:
@@ -184,6 +185,8 @@ class GroundedDialogue:
         *,
         allowed_scopes: tuple[str, ...],
         pending_claim_ids: frozenset[str],
+        access: RetrievalAccess | None = None,
+        interpreted: QueryHypothesis | None = None,
     ) -> _Prepared | DialogueAnswer:
         if not allowed_scopes or any(
             type(item) is not str or not item for item in allowed_scopes
@@ -191,15 +194,19 @@ class GroundedDialogue:
             raise ValueError("allowed_scopes must contain at least one scope")
         if not isinstance(pending_claim_ids, frozenset):
             raise ValueError("pending_claim_ids must be a frozenset")
-        if self._has_unreviewed_words(question.text):
+        if interpreted is None and self._has_unreviewed_words(question.text):
             return self._no_answer("clarify", "Уточните объект и тип вопроса.")
         subjects = (
-            {question.subject_id}
+            {interpreted.subject_id}
+            if interpreted is not None
+            else {question.subject_id}
             if question.subject_id is not None
             else self._resolve(question.text, self.vocabulary.entity_aliases)
         )
         relations = (
-            {question.relation_id}
+            {interpreted.relation_id}
+            if interpreted is not None
+            else {question.relation_id}
             if question.relation_id is not None
             else self._resolve(question.text, self.vocabulary.relation_aliases)
         )
@@ -217,6 +224,18 @@ class GroundedDialogue:
             and claim.relation_id == relation
             and claim.source is not None
             and claim.source.access_scope in allowed_scopes
+            and (
+                access is None
+                or (
+                    access.permits_source(claim.source)
+                    and all(
+                        (root_source := self.engine.evidence.root(root_id).source)
+                        is not None
+                        and access.permits_source(root_source)
+                        for root_id in self.engine.evidence.claim_roots(claim.claim_id)
+                    )
+                )
+            )
             and any(
                 argument.value_id == subject
                 and (
@@ -224,6 +243,10 @@ class GroundedDialogue:
                     or argument.role in self.vocabulary.subject_roles
                 )
                 for argument in claim.arguments
+            )
+            and (
+                interpreted is None
+                or any(arg.role == interpreted.asked_role for arg in claim.arguments)
             )
         ]
         if not candidates:
@@ -256,6 +279,8 @@ class GroundedDialogue:
                 ),
                 claim.valid_from,
                 claim.valid_to,
+                claim.polarity,
+                claim.modality,
             )
             for claim in confirmed
         }
@@ -303,37 +328,143 @@ class GroundedDialogue:
         `allowed_scopes` only narrows retrieval. Real grants and revocations are
         checked again by `store.publish_answer` in its publication transaction.
         """
+        return self._ask(
+            question,
+            principal_id=principal_id,
+            store=store,
+            allowed_scopes=allowed_scopes,
+            pending_claim_ids=pending_claim_ids,
+            interpreted=None,
+        )
+
+    def ask_interpreted(
+        self,
+        question: DialogueQuestion,
+        hypothesis: QueryHypothesis,
+        *,
+        principal_id: str,
+        store: OperationalStore | None,
+        allowed_scopes: tuple[str, ...] = ("default",),
+        pending_claim_ids: frozenset[str] = frozenset(),
+    ) -> DialogueAnswer:
+        """Use a fully explained typed question interpretation.
+
+        A raw question without this plan still goes through the reviewed alias
+        gate. The interpretation must be produced from the exact question text;
+        downstream authority always belongs to the SQLite publication store.
+        """
+        from .open_semantics import Span
+        from .question_language import QueryHypothesis
+
+        if (
+            type(hypothesis) is not QueryHypothesis
+            or hypothesis.fully_covered is not True
+            or not hypothesis.resolved
+            or type(hypothesis.subject_id) is not str
+            or not hypothesis.subject_id
+            or type(hypothesis.relation_id) is not str
+            or not hypothesis.relation_id
+            or type(hypothesis.asked_role) is not str
+            or not hypothesis.asked_role
+            or type(hypothesis.subject_span) is not Span
+            or hypothesis.subject_span.end > len(question.text)
+            or not _alias_tokens(
+                question.text[
+                    hypothesis.subject_span.start : hypothesis.subject_span.end
+                ]
+            )
+            or hypothesis.text_sha256
+            != hashlib.sha256(question.text.encode("utf-8")).hexdigest()
+            or question.subject_id not in (None, hypothesis.subject_id)
+            or question.relation_id not in (None, hypothesis.relation_id)
+            or any(
+                token in {"не", "ни", "никогда", "нет", "без"}
+                for token in _alias_tokens(question.text)
+            )
+        ):
+            return self._no_answer("clarify", "Уточните объект и тип вопроса.")
+        return self._ask(
+            question,
+            principal_id=principal_id,
+            store=store,
+            allowed_scopes=allowed_scopes,
+            pending_claim_ids=pending_claim_ids,
+            interpreted=hypothesis,
+        )
+
+    def _ask(
+        self,
+        question: DialogueQuestion,
+        *,
+        principal_id: str,
+        store: OperationalStore | None,
+        allowed_scopes: tuple[str, ...],
+        pending_claim_ids: frozenset[str],
+        interpreted: QueryHypothesis | None,
+    ) -> DialogueAnswer:
         _id(principal_id, "principal ID")
         if store is None:
             return self._no_answer("blocked", "Публикация пока недоступна.")
-        # The epoch is captured before any draft reads. A revision which starts
-        # during retrieval increments this epoch under the publication lock.
-        expected_revision_epoch = store.revision_epoch()
-        prepared = self._prepare(
-            question,
-            allowed_scopes=allowed_scopes,
-            pending_claim_ids=pending_claim_ids,
-        )
-        if isinstance(prepared, DialogueAnswer):
-            return prepared
-        # This late import keeps the retrieval module isolated from the store's
-        # migrations; there is no fallback publication path.
+        if not isinstance(pending_claim_ids, frozenset):
+            raise ValueError("pending_claim_ids must be a frozenset")
+        # A request ID also scopes the read-only access view. Authorization is
+        # evaluated before selection: inaccessible claims cannot affect either
+        # ambiguity or the status of an otherwise unanswered question.
         from .storage import AccessDenied, PublicationQuote, StalePublication
 
+        fingerprint_fields: tuple[object, ...] = (
+            question.question_id,
+            question.text,
+            question.subject_id,
+            question.relation_id,
+            self.model_version,
+            allowed_scopes,
+        )
+        if interpreted is not None:
+            fingerprint_fields += (
+                "interpreted-v1",
+                interpreted.subject_id,
+                interpreted.relation_id,
+                interpreted.asked_role,
+                interpreted.text_sha256,
+                interpreted.subject_span.start if interpreted.subject_span else None,
+                interpreted.subject_span.end if interpreted.subject_span else None,
+            )
         fingerprint = hashlib.sha256(
             json.dumps(
-                (
-                    question.question_id,
-                    question.text,
-                    question.subject_id,
-                    question.relation_id,
-                    self.model_version,
-                    allowed_scopes,
-                ),
+                fingerprint_fields,
                 ensure_ascii=False,
                 separators=(",", ":"),
             ).encode("utf-8")
         ).hexdigest()
+        try:
+            access = store.retrieval_access(
+                principal_id,
+                allowed_scopes,
+                request_id=question.question_id,
+                request_fingerprint=fingerprint,
+            )
+        except StalePublication:
+            return self._no_answer("blocked", "Публикация пока недоступна.")
+        if not access.allowed_scopes or access.task_status in {"revoked", "complete"}:
+            return self._no_answer("blocked", "Публикация пока недоступна.")
+        # The epoch is captured with grants and revocations. A change after
+        # drafting is checked again, including for non-publication responses.
+        expected_revision_epoch = access.revision_epoch
+        prepared = self._prepare(
+            question,
+            allowed_scopes=access.allowed_scopes,
+            pending_claim_ids=pending_claim_ids | access.pending_claim_ids,
+            access=access,
+            interpreted=interpreted,
+        )
+        if isinstance(prepared, DialogueAnswer):
+            if (
+                store.revision_epoch() != expected_revision_epoch
+                or access.task_status == "published"
+            ):
+                return self._no_answer("blocked", "Публикация пока недоступна.")
+            return prepared
         publication_quotes = tuple(
             PublicationQuote(quote.source, quote.claim_id, quote.text)
             for quote in prepared.quotes

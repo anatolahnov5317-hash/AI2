@@ -86,6 +86,28 @@ class RealDataPrimitiveTests(unittest.TestCase):
         self.assertNotEqual(first.lexical.bits, second.lexical.bits)
         self.assertEqual(first.structural.bits, second.structural.bits)
 
+    def test_negative_claim_changes_compositional_meaning(self):
+        from dataclasses import replace
+
+        from text_factors.real_data.contracts import ClaimModality, ClaimPolarity
+
+        encoder = CompositionalEncoder(width=512, active_bits_per_atom=6, seed=7)
+        positive = replace(
+            _claim("c1", agent="alice", target="book"),
+            polarity=ClaimPolarity.POSITIVE,
+            modality=ClaimModality.ASSERTED,
+        )
+        negative = replace(positive, polarity=ClaimPolarity.NEGATIVE)
+        uncertain = replace(positive, modality=ClaimModality.POSSIBLE)
+        self.assertNotEqual(
+            encoder.encode_claim(positive).structural.atoms,
+            encoder.encode_claim(negative).structural.atoms,
+        )
+        self.assertNotEqual(
+            encoder.encode_claim(positive).structural.atoms,
+            encoder.encode_claim(uncertain).structural.atoms,
+        )
+
     def test_budget_stops_and_snapshot_resumes(self):
         now = [100.0]
 

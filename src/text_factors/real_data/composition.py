@@ -115,10 +115,14 @@ class CompositionalEncoder:
         lexical = [
             f"relation:{claim.relation_id}",
             f"status:{claim.status.value}",
+            f"polarity:{claim.polarity.value}",
+            f"modality:{claim.modality.value}",
         ]
         structural = [
             f"relation:{claim.relation_id}",
             f"status:{claim.status.value}",
+            f"polarity:{claim.polarity.value}",
+            f"modality:{claim.modality.value}",
         ]
         if claim.valid_from is not None:
             lexical.append(f"valid-from:{claim.valid_from}")

@@ -35,6 +35,10 @@ class RealDataEngine:
         """Return whether an addressed correction replaced this historical claim."""
         return claim_id in self._corrections
 
+    def is_source_obsolete(self, source_id: str, source_version: int) -> bool:
+        """Return whether this revision was already invalidated on import."""
+        return (source_id, source_version) in self._obsolete_sources
+
     def _changed(self) -> None:
         self._revision += 1
 
